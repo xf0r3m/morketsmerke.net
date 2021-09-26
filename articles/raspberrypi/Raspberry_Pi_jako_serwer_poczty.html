@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">Raspberry Pi jako serwer poczty</h1>
+    <p>
+      Był już serwer wydruku, a teraz przyszedł czas na serwer poczty.
+      Materiał ten jest podobny, do tego z wykorzystaniem BSD i bardzo
+      starego serwera. Wykorzystałem go jako bazę, jednak nie wszystko zostało
+      przeniesione 1:1 na Raspberry Pi. 
+    </p>
+    <p>
+      Jak każdą pracę z wykorzystaniem RPI jako serwera czegoś, należy 
+      zacząć od przygotowania sobie czystego środowiska. Na kartę microSD
+      nagrywamy obraz z systemem. Jeśli korzystamy z Linux-a to możemy
+      użyć do tego polecenia <em>dd</em>.
+    </p>
+<pre class="code-block">
+$ sudo dd if=~/Downloads/2021-05-07-raspios-buster-armhf-lite.img bs=1M of=/dev/mmcblk0 status=progress
+</pre>
+    <p>
+      Instalowany system operacyjny to klasycznie RasPiOS. Po przegraniu
+      systemu na kartę warto ustawić sobie możliwość zdalnego połączenia się
+      przez SSH. Jeśli mamy już urządzenie gotowe do pracy to zaczynamy od:
+    </p>
+    <ol>
+      <li>
+        <strong>
+          Usunięcie domyślnego użytkownika i dodanie nowego, swojego
+        </strong>
+        <p>
+          W systemach RasPiOS domyślnym użytkownikiem jest <em>pi</em>, a jego
+          hasło <em>raspberry</em> do najtrudniejszych nie należy i najlepiej
+          ze względów bezpieczeństwa pozbyć się tego użytkownika. Użytkownicy
+          w przypadku przedstawionej tutaj konfiguracji serwera będą mapowani
+          na użytkowników usług pocztowych, a pozostawienie niewykorzystanego
+          konta z możliwością logowania, może stanowić potencjalną furtkę do
+          systemu. Użytkownika pozbywamy się za pomocą
+          polecenia <em>deluser</em>. Jednak przed jego usunięciem musimy 
+          stworzyć nowego użytkownika i nadać mu uprawnienia administracyjne,
+          w przeciwnym wypadku zostalibyśmy bez zwykłego użytkownika, a co 
+          za tym idzie bez możliwości zdalnego logowania się na serwerze, chyba
+          że pozwolimy na logowanie przez SSH użytkownika <em>root</em>, co
+          jest jeszcze bardziej niebezpieczne niż pozostawienie użytkownika 
+          <em>pi</em>
+        </p>
+<pre class="code-block">
+pi@raspberrypi:~ $ sudo adduser xf0r3m
+...
+pi@raspberrypi: $ sudo usermod -aG sudo xf0r3m
+# Przelogowanie się na nowego użytkownika.
+xf0r3m@raspberrypi: $ sudo deluser pi
+</pre>
+      </li>
+      <li>
+        <strong>Aktualizacja systemu</strong>
+        <p>
+          Po pozbyciu się użytkownika <em>pi</em>, możemy przejeść do
+          aktualizacji systemu.
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+</pre>
+      </li>
+      <li>
+        <strong>Opcjonalnie: zmiana nazwy hosta</strong>
+        <p>
+          Wypadałoby, aby host będący w domenie serwerem mailowym miał
+          odpowienią nazwę, chociaż nie jest to wymagane.
+        </p>
+<pre class="code-block">
+$ sudo raspi-config
+1 System Options -&gt; S4 Hostname -&gt; OK
+</pre>
+      </li>
+      <li>
+        <strong>Instalacja Postfix-a</strong>
+        <p>
+          Naszym serwerem protokołu SMTP będzie 
+          <em>Postfix</em>. Jest to chyba jedyny rzetelny, open sourcowy 
+          serwer SMTP, dostępny na UNIX-y, którego konfiguracja nie jest
+          jakąś czarną magią.
+        </p>
+<pre class="code-block">
+$ sudo apt install postfix
+</pre>
+      </li>
+      <li>
+        <strong>Monit o konfiguracji Postfix-a w trakcie instalacji</strong>
+        <p>
+          Podczas instalacji <em>Postfix</em>-a, zostanie nam wyświetlone
+          okno <em>dialog</em>-u na temat konfiguracji, wybieramy
+          <em>Strona internetowa/Internet site</em> w polu do uzupełnienia
+          wpisujemy nazwę swojej domeny.
+        </p>
+      </li>
+      <li>
+        <strong>Ustawienie opcji
+          <code class="code-inline">mydestination</code> na nazwwę domeny
+        </strong>
+        <p>
+          Niestety wybór opcji w oknie dialogowym i podanie odpowiedniej
+          wartość nie załatwią poprawnej konfiguracji (takiej, która
+          działa). Żeby serwer SMTP obsługiwał pocztę wewnątrz naszej
+          organizacji, musimy ustawić w odpowiedniej opcji, że ten
+          serwer jest jednym z serwerów obsługujących tą domenę.
+        </p>
+<pre class="code-block">
+$ sudo postconf -e "mydestination=example.com"
+</pre> 
+      </li>
+      <li>
+        <strong>Sprawdzenie możliwości użycia Dovecot SASL</strong>
+        <p>
+          Przed wdrożeniem konkretnej implementacji mechanizmów
+          uwierzytelniania musimy sprawdzić czy zainstalowana wersja 
+          <em>Postfix</em>-a jest z nią kompatybilna.
+          Przedstawione tutaj czynności (całość materiału, konfiguracji) są 
+          tylko jednym ze sposobów. Możemy
+          je dostosować do własnych potrzeb. Poniższe polecenie zwróci nam
+          listę obsługiwanych implementacji uwierzytelniania. 
+        </p>
+<pre class="code-block">
+$ sudo postconf -a
+</pre>
+        <p>
+          Polecenie na 99,9% zwróci <code class="code-inline">dovecot</code>,
+          i to jest implementacja, która zostanie tutaj przedstawiona.
+        </p>
+      </li>
+      <li>
+        <strong>Instalacja dovecot</strong>
+        <p>
+          Instalacja <em>dovecot</em>, akurat w przypadku dystrybucji opartych 
+          na GNU/Linux Debian, nie jest wcale taka oczywista. <em>Dovecot</em>
+          to kombajn, który zawiera masę usług, więc postanowiono go podzielić
+          na pomniejsze pakiety zawierające tylko tą usługę, której nazwa jest
+          zawarta w nazwie pakietu. Tak więc aby na RPI zainstalować
+          <em>dovecot</em> mogący świadczyć usługi w organizacji potrzebujemy
+          dwóch pakietów. 
+        </p>
+<pre class="code-block">
+$ sudo apt dovecot-imapd dovecot-pop3d 
+</pre>  
+        <p>
+          System uwierzytelniania SASL, zostanie zainstalowany wraz z pakietem
+          <em>dovecot-core</em>, który jest zależnością dla powyższych
+          pakietów, a te pakiety i tak będą nam potrzebne.
+        </p>
+      </li>
+      <li>
+        <strong>Uruchomienie uwierzytelniania dla Postfix-a</strong>
+        <p>
+          Tę czynność rozpoczniemy od konfiguracji <em>dovecot</em>-a, w pliku
+          <em>/etc/dovecot/conf.d/10-master.conf</em>, w sekcji
+          <code class="code-inline">service auth</code> włączamy -
+          usuwając znaki komentarza, sekcję 
+          <code class="code-inline">
+            unix_listener /var/spool/postfix/private/auth
+          </code>
+          wewnątrz tej sekcji zmieniamy wartość opcji
+          <code class="code-inline">mode</code> na <em>0660</em> oraz dodajemy 
+          dwie opcje: <em>user</em> oraz <em>group</em> ustawione na wartość 
+          <em>postfix</em>. Już poza sekcją 
+          <code class="code-inline">auth</code> określamy rodzaje mechanizmów
+          uwierzytelniania. Poniżej znajduje się listing przedstawiający poprawnie
+          skonfigurowaną sekcję.
+        </p>
+<pre class="code-block">
+service auth {
+...
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0660
+    user = postfix
+    group = postfix
+  }
+...
+}
+
+auth_mechanisms = plain login
+</pre>
+        <p>
+          Po zapisaniu zmian, w kolejnym pliku
+          <em>/etc/postfix/main.cf</em> dopisujemy poniższe opcje:
+        </p>
+<pre class="code-block">
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_relay_restrictions = permit mynetworks, permit_sasl_authenticated, reject_unauth_destination
+</pre>
+        <p>
+          Te opcje wprowadzają restrykcje dla serwera SMTP nasłuchującego na
+          porcie TCP/25. Tak, ten port musi być otwarty, w przeciwynym wypadku
+          żaden mail z zewnątrz do nas nie dotrze. Użytkownicy poczty będą
+          używać portu <em>submission</em> czyli TCP/587, ale maile przesyłane
+          są między domenami (serwerami SMTP) przy użyciu portu TCP/25. Warto
+          też dodać, że maile pomiędzy domenami przesyłane są zwykłym tekstem,
+          dlatego też wiele osób stosuje szyfrowanie od końca do końca  
+          (ang. <em>End-to-end encryption</em>). Po
+          zapisaniu tych ustawień możemy przejść do uruchomienia
+          <em>submission</em>.
+        </p>
+      </li>
+      <li>
+        <strong>
+          Uruchomienie submission dla połączeń klient-serwer SMTP
+        </strong>
+        <p>
+          W pliku <em>/etc/postfix/master.cf</em> odnajdujemy wiersz tabeli
+          zawierający napis <em>submission</em>, usuwamy poprzedzający go znak
+          komentarza, następnie pod tym wierszem zapisujemy opcje z jakimi ma
+          zostać uruchomiony.
+        <p>
+<pre class="code-block">
+submission  inet  n - y - - smtpd
+ -o smtpd_tls_security_level=encrypt
+ -o smtpd_sasl_auth_enable=yes
+ -o smtpd_sasl_type=dovecot
+ -o smtpd_sasl_path=private/auth
+ -o smtpd_sasl_security_options=noanonymous
+ -o smtpd_sasl_local_domain=example.com
+ -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+ -o smtpd_sender_login_maps=hash:/etc/postfix/virtual
+ -o smtpd_sender_restrictions=reject_sender_login_mismatch
+ -o smtpd_recipient_restrictions=reject_non_fqdn_recipient,reject_unknown_recipient_domain,permit_sasl_authenticated,reject
+</pre>
+      </li>
+      <li>
+        <strong>
+          Restart Postfix-a
+        </strong>
+        <p>
+          Teraz przyszedł czas na sprawdzenie poprawności wprowadzonych
+          ustawień. Na początek uruchomimy ponownie <em>Postfix</em>-a.
+        </p>
+<pre class="code-block">
+$ sudo postfix reload
+</pre>
+        <p>
+          Jeśli teraz daemon nie zwróci żadnych komunikatów, to 
+          wszystko jest na dobrej drodze. Warto jeszcze zajrzeć do pliku
+          <em>/var/log/syslog</em>.
+        </p>
+      </li>
+      <li>
+        <strong>
+          Instalacja certyfikatów SSL organizacji dla SMTP
+        </strong>
+        <p>
+          W pliku <em>/etc/postfix/main.cf</em>, odnajdujemy dwie opcje
+          <code class="code-inline">smtpd_tls_cert_file</code> oraz
+          <code class="code-inline">smtpd_tls_cert_key</code>. Tej pierwszej,
+          jako wartość ustawiamy ścieżkę do pliku certyfikatu, a drugiej
+          ścieżkę do pliku klucza certyfikatu.
+        </p>
+<pre class="code-block">
+smtpd_tls_cert_file=/etc/openssl/certs/fullchain1.pem
+smtpd_tls_cert_key=/etc/openssl/private/privkey1.pem
+</pre>
+      </li>
+      <li>
+        <strong>
+          Utworzenie bazy użytkowników usług pocztowych
+        </strong>
+        <p>
+          Baza użytkowników jest zwykłym plikem tekstowym, w którym występują
+          mapowania adresów e-mail organizacji na nazwy użytkowników systemu.
+          W pliku każda linia to jedno mapowanie, a bazą użytkowników dla
+          <em>Postfix</em>-a jest <em>/etc/postfix/virtual</em>. Po zapisaniu
+          zmian plik ten należy dostosować za pomocą polecnia dostarczanego 
+          wraz z <em>Postfix</em>-em, aby był dla niego czytelny. Za każdym
+          dodanie mapowania baza będzie wymagała konwersji. 
+        </p>
+<pre class="code-block">
+/etc/postfix/virtual:
+root@example.com  root
+xf0r3m@example.com  xf0r3m
+
+$ sudo postmap /etc/postfix/virtual
+</pre>
+        <p>
+          Po skonwertowaniu bazy, należy zrestartować <em>Postfix</em>-a.
+        </p>
+<pre class="code-block">
+$ sudo postfix reload
+</pre>
+      </li>
+      <li>
+        <strong>
+          Włączenie SSL w Dovecot
+        </strong>
+        <p>
+          Za pomocą protokołów IMAP oraz POP3 użytkownicy będą pobierać maile
+          z serwera, aby zabezpieczyć komunikację pomiędzy klientem a serwerem
+          tak jak zrobiliśmy to z protkołem SMTP tu również użyjemy 
+          certyfikatów
+          SSL. W <em>/etc/dovecot/ssl/10-ssl.conf</em> ustawiamy ścieżki
+          do plików certyfikatu.
+        </p>
+        <p>
+          Jeśli przed opcją <code class="code-inline">ssl</code> znajduje się
+          znak komentarza, to należy go usunąć.
+        </p>
+        <p>
+          A pliki certyfikatu ustawiane są w opcjach
+          <code class="code-inline">ssl_cert</code> - dla pliku certyfikatu i
+          <code class="code-inline">ssl_key</code> - dla pliku klucza
+          prywatnego certyfikatu.
+        </p>
+<pre class="code-block">
+ssl_cert=&lt;/etc/openssl/certs/fullchain1.pem
+ssl_key=&lt;/etc/openssl/private/privkey1.pem
+</pre>
+        <p>
+          <strong>Uwaga!</strong> Ostre nawiasy są cześcią składni wartości
+          opcji.
+        </p>
+      </li>
+      <li>
+          <strong>
+            Uruchomienie IMAPS i POP3S
+          </strong>
+          <p>
+            Po ustawieniu SSL dla usług <em>dovecot</em>, przyszedł czas aby
+            je włączyć. W pliku <em>/etc/dovecot/conf.d/10-master.conf</em>
+            musimy odnaleźć dwie sekcje: 
+            <code class="code-inline">inet_listener imaps</code> oraz
+            <code class="code-inline">inet_listener pop3s</code>, w tych
+            sekcjach dopisujemy dwie opcje: <em>port</em> wskazującą na numer
+            portu usługi oraz opcje <em>ssl</em> uruchamiającą szyfrowaną
+            transmisję dla połączeń z tym serwerem. Te opcje oczywiście o
+            innych portach ustawiamy w obu wymienionych sekcjach.
+          </p>
+<pre class="code-block">
+...
+inet_listener imaps {
+  port = 993
+  ssl = yes
+}
+
+...
+inet_listener pop3s {
+  port = 995
+  ssl = yes
+}
+</pre>
+      </li>
+      <li>
+        <strong>
+          Restart dovecot
+        </strong>
+        <p>
+          Po wdrożeniu ostatnich zmian, trzeba zrestartować usługę aby zmiany
+          zostały uzwględnione przez działającego daemona.
+        </p>
+<pre class="code-inline">
+$ sudo dovecot reload
+</pre>
+      </li>
+      <li>
+        <strong>
+          Sprawdzenie poprawności działania serwera za pomocą Thunderbirda
+        </strong>
+        <p>
+          W internecie jest bardzo dużo dostępnych klientów pocztowych różnej
+          maści. Jednak tutaj będzie zależało nam na prostocie konfiguracji,
+          dlatego do celów testowych wybierzemy Thunderbirda.
+        </p>
+        <p>
+          Tworząc nowe konto pocztowe, w początkowych polach podajemy nazwę,
+          adres e-mail oraz hasło. Na dole okna klikamy przycisk ręcznej
+          konfiguracji. Następnie uzupełniamy pola, tak jak opisano to poniżej 
+        </p>
+        <p>
+          <u>Konfiguracja serwera poczty wychodzącej:</u>
+          <ul>
+            <li>
+              <strong>Protokół:</strong> SMTP
+            </li>
+            <li>
+              <strong>Serwer:</strong> mail.example.com
+            </li>
+            <li>
+              <strong>Port:</strong> 587
+            </li>
+            <li>
+              <strong>SSL:</strong> STARTTLS
+            </li>
+            <li>
+              <strong>Uwierzytelnianie:</strong> Normalne hasło
+            </li>
+            <li>
+              <strong>Nazwa użytkownika:</strong>  
+              <em>Nazwa użytkownika (systemowa z serwera mailowego)</em>
+            </li>
+          </ul>
+        </p>
+        <p>
+          <u>Konfiguracja serwera poczty przychodzącej:</u>
+          <ul>
+            <li>
+              <strong>Protokół:</strong> IMAP/POP3
+            </li>
+            <li>
+              <strong>Serwer:</strong> mail.example.com
+            </li>
+            <li>
+              <strong>Port:</strong> 993/995
+            </li>
+            <li>
+              <strong>SSL:</strong> SSL/TLS
+            </li>
+            <li>
+              <strong>Uwierzytelnianie:</strong> Normalne hasło
+            </li>
+            <li>
+              <strong>Nazwa użytkownika:</strong>  
+              <em>Nazwa użytkownika (systemowa z serwera mailowego)</em>
+            </li>
+          </ul>
+        </p>
+        <p>
+          Po zatwierdzeniu będziemy mieć już gotową skrzynkę. W celach
+          testowych wyślijmy maila z załącznikiem (serwer nie przepuści
+          wiadomości większej niż 10MB) do siebie. Powinna wysłać się
+          bez problemu i od razu pojawić się w skrzynce.
+        </p>
+      </li>
+    </ol>
+    <p>
+      Jeśli chodzi o pracę tego typu rozwiązania w jakieś konkretnej 
+      organizacji, to zostało jeszcze wiele pracy. Większość skrzynek
+      pocztowych będzie traktować maile wysłane z tego serwera jako SPAM.
+      Jeśli odpowiemy na maila, to trafi on automatycznie do skrzynki 
+      odbiorczej jako kontynuacja wątku. To rozwiązanie w takiej postaci
+      może sprawdzić się w korespondencji wewnętrznej. 
+    </p>
+    <p>
+      Jeśli ktoś jest spragniony testowania tego rozwiązania, to w materiale
+      na podbny temat w sekcji "bsd" znajduje się więcej informacji. W tym
+      materiale znajduje się konfiguracja programu <em>MUTT</em> dla
+      usług pocztowych tego typu. Link poniżej:
+    </p>
+    <p>
+      <a href="https://morketsmerke.net/site/articles/bsd/20_letni_Sun_Netra_T1_jako_serwer_mailowy_z_wykorzystaniem_NetBSD.html">https://morketsmerke.net/site/articles/bsd/20_letni_Sun_Netra_T1_jako_serwer_mailowy_z_wykorzystaniem_NetBSD.html</a>
+    </p>
+    <p>
+    ~xf0r3m
+    </p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHTS REVERSED;
+		</p>
+
+	</body>
+	</html>

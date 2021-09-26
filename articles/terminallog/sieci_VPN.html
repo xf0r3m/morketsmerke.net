@@ -1,0 +1,3348 @@
+<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+      <style>
+        .code-block {
+          display: block;
+          background-color: silver;
+          font-family: monospace;
+          font-weight: bolder;
+          text-align: left;
+        }
+        .code-inline {
+          background-color: silver;
+          font-family: monospace;
+          font-weight: bolder;
+        }
+        ul { text-align: left; }
+        p { text-align: justify; }
+      </style>
+    </head>
+    <body style="font-family: monospace;" >
+<pre>
+ _                      _             _ _
+| |_ ___ _ __ _ __ ___ (_)_ __   __ _| | | ___   __ _
+| __/ _ \ '__| '_ ` _ \| | '_ \ / _` | | |/ _ \ / _` |
+| ||  __/ |  | | | | | | | | | | (_| | | | (_) | (_| |
+ \__\___|_|  |_| |_| |_|_|_| |_|\__,_|_|_|\___/ \__, |
+			                        |___/
+</pre>
+      <p style="margin: 0; padding: 0; outline: 0; font-size: 18pt;">
+      	&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+      </p>
+      <div style="margin-left: auto; margin-right: auto; width: 80%;">
+        <h2 style="text-align: center;">Sieci VPN</h2>
+        <p>
+          <strong>VPN</strong> (ang. Virtual Private Network) - Wirtualna Sieć
+          Prywatna jest to usługa sieciowa, która pozwala na bezpieczne i
+          swobodne (chyba, że konfiguracja stanowi inaczej) połączenie 
+          odległych hostów.
+        </p>
+        <p>
+          <strong>
+          Ta strona jest oparta o książkę Marka Serfina pt. "Sieci VPN. Zdalna 
+          praca i bezpieczeństwo danych. Wydanie II rozszerzone.". Oznacza to 
+          tyle że mogą znaleźć się tu fragmenty, przykłady fragmenty kodu, a 
+          nawet całe rozdziały przepisane 1:1 z książki. Materiał na tej 
+          stronie został dostosowany tak, aby był jak najszybciej przyswajany 
+          oraz służył czytelnikowi za ściągę pod czas wdrażania/administracji 
+          technologią VPN.
+          </strong>
+        </p>
+        <p>
+          <u>Spis treści: </u>
+        </p>
+        <ol>
+          <li><a href="#wstep">Wstęp</a></li>
+          <li><a href="#slabosc_protokolow">Słabość protokołów sieciowych i
+              związane z tym problemy</a></li>
+          <li><a href="#ssl">SSL jako standard bezpiecznego przesyłania danych
+              </a></li>
+          <li><a href="#tunel">Tunelowanie portów</a></li>
+          <li><a href="#openvpn">OpenVPN - praktyczne implementacja tuneli VPN
+              </a></li>
+          <li><a href="#ipsec">IPSec</a></li>
+          <li><a href="#ipsec_linux">IPSec w systemie Linux</a></li>
+        </ol>
+        <h3 id="wstep">Wstęp</h3>
+        <p>
+          Żyjemy w czasach ogromnej informatyzacji przedsiębiorstw. Trudno
+          wyobrazić sobie obecnie działanie korporacji bez przynajmniej jednego
+          serwera plików czy bazy danych. Współczesne aplikacje pisane są 
+          prawie zawsze w architekturze klient-serwer, co umożliwia łatwy 
+          dostęp do zasobów wielu użytkownikom z różnych komputerów. Budowa 
+          protokołu IP sprawia, że serwer w sieci wewnętrznej może w łatwy 
+          sposób stać się osiągalny z innej sieci lub Internetu. Popularyzacja 
+          stałego, a często także szybkiego dostępu do globalnej sieci sprawia,
+          że miejsce, w którym się pracuje, przestaje mieć znaczenie. Liczy się
+          za to stały dostęp do zasobów firmy, a co za tym idzie — możliwość 
+          pracy w dowolnym miejscu o każdej porze.
+        </p>
+        <h3 id="slabosc_protokolow">Słabość protokołów sieciowych i związane z 
+          tym problemy</h3>
+        <p>
+          Leżący u podstaw działania Internetu protokół IP nie zapewnia sam w
+          sobie bezpiecznego przesyłu danych przez sieć. Podobnie rzecz ma się
+          z protokołami warstwy transportowej TCP/UDP — nie zaimplementowano w
+          nich żadnego algorytmu szyfrowania, uwierzytelniania i sprawdzania
+          integralności danych. Na domiar złego w powszechnym użyciu są
+          aplikacje zaprojektowane jeszcze na początku poprzedniej dekady —
+          takie, jak POP3 czy IMAP, które przesyłają dane (w tym hasła) jawnym
+          tekstem.
+        </p>
+        <p>
+          Mnogość aplikacji klienckich oraz skala Internetu sprawiają, że nie
+          można z dnia na dzień wycofać z użycia danego protokołu i zastąpić
+          go nowszym — łatwo wyobrazić sobie panujący w konsekwencji tego
+          posunięcia chaos.
+        </p>
+        <p>
+          W odpowiedzi na przedstawione problemy specjaliści IT opracowali
+          różne metody, a także standardy bezpiecznej transmisji danych w
+          niezabezpieczonej sieci. Najpopularniejsze z nich to: tunele SSL —
+          dla pojedynczych aplikacji, lub połączenia VPN — gdy potrzebujemy
+          przepuścić cały ruch szyfrowanym kanałem (niezależnie od protokołu
+          warstw wyższych).
+        </p>
+        <h3 id="ssl">SSL jako standard bezpiecznego przesyłania danych</h3>
+        <p>
+          <strong>SSL</strong> - Protokół bezpieczeństwa umożliwiający
+          zabezpieczenie transmisji innych protokołów zapewniający podstawowe
+          funkcje bezpieczeństwa tj.:
+        </p>
+        <ul>
+          <li>uwierzytelnienie stron - czyli potwierdzenie ich autentyczności
+              na podstawie certyfikatów,</li>
+          <li>poufność i integralność przesyłu - tzn. ochronę przed
+              podsłuchaniem i modyfikacją.</li>
+        </ul>
+        <h4>Historia i znacznie protokołu SSL</h4>
+        <p>
+          Protokół SSL został opracowany przez firmę Netscape Communications
+          Corporation w odpowiedzi na brak zabezpieczeń w popularnych wtedy
+          protokołach (tj. lata 90, ubiegłego wieku). Obecnie najpopularniejszą
+          wersją jest <strong>TLS 1.3</strong>, który jest rozwinięciem SSL. 
+          Mówiąc w obecnych czasach o SSL, to tak naprawdę mówimy o TLS.
+        </p>
+        <p>
+          W założeniach SSL powstał jako zabezpieczenie do protokołu HTTP dla
+          potrzeb usług e-commerce. Jednak dzięki jego uniwersalności można go
+          wykorzystać do zabezpieczenia większości usług TCP, a nawet do
+          tworzenia sieci VPN.
+        </p>
+        <h4>Przebieg nawiązania połączenia SSL</h4>
+        <p>
+          Zanim protokoły warstwy aplikacji będą mogły wymieniać dane w
+          bezpieczny sposób, musi nastąpić nawiązanie sesji SSL (ang.
+          <em>SSL handshake</em>). Na <strong>SSL handshake</strong> składa się
+          kilka faz negocjacji, które przedstawiono w poniżej:
+        </p>
+        <ol>
+          <li>
+           Klient łączy się z serwerem i wysyła pakiet początkowy 
+           <em>Hello</em>, a wraz z nim numer obsługiwanej wersji SSL, 
+           obsługiwane algorytmy szyfrujące, algorytmy kompresji, oraz losowy 
+           numer związany z rozpoczętą sesja (ID).</li>
+          <li>
+            Serwer w odpowiedzi wysyła klientowi numer obsługiwanej wersji SSL,
+            obsługiwane algorytmy szyfrujące, a także swój certyfikat (klucz
+            publiczny).</li>
+          <li>
+            Na tym etapie klient sprawdza certyfikat serwera - czy jest on 
+            ważny oraz czy wystawił go zaufany urząd (CA). Protokół SSL 
+            przewiduje także możliwość wysłania przez serwer żądania 
+            uwierzytelnienia klienta. Uwierzytelnienie to jest opcjonalnie i 
+            stosuje się je w określonych warunkach.</li>
+          <li>
+            W przypadku pozytywnego uwierzytelnienia serwera klient generuje
+            48-bajtową liczbę zwaną <em>pre-master secret</em> i szyfruje ją, 
+            używając przy tym klucza publicznego serwera (zawartego w 
+            certyfikacie serwera). Liczba <em>pre-master</em> składa się z 2 
+            bajtów identyfikujących klienta oraz 46 bajtów losowych.
+          </li>
+          <li>
+            Serwer po otrzymaniu liczby <em>pre-master</em> odszyfrowuje ją, 
+            używając do tego swojego klucza prywatnego, i porównuje 2 bajty 
+            identyfikujące klienta z danymi, które otrzymał w inicjacyjnym 
+            pakiecie Hello</li>
+          <li>
+            Jeśli jest wymagane uwierzytelnienie klienta, jest to robione w tej
+            chwili. Wówczas klient musi przesłać certyfikat.</li>
+          <li>
+            Na podstawie już wymienionych danych (m.in. <em>pre-master key</em>,
+            losowe dane wygenerowane w punkcie 1.) serwer i klient generuje 
+            tzw. <em>master-key</em> (znany tylko im).</li>
+          <li>
+            Zarówno klient, jak i serwer na podstawie <em>master-key</em> 
+            generują symetryczne klucze sesyjne (sześć, trzy w kierunku 
+            serwer-klient i trzy w drugą stronę), które umożliwiają im 
+            szyfrowanie i sprawdzenie integralności przesyłanych danych.</li>
+          <li>
+            Kończąc handshake, klient przesyła do serwera wiadomość 
+            zaszyfrowaną ustalonym kluczem sesyjnym. Wiadomość ta nazywana 
+            końcowym uzgodnieniem (ang. <em>finished handshake</em>), jest jako
+            pierwsza szyfrowana tajnym kluczem.</li>
+          <li>
+            Serwer odpowiada także wiadomością zaszyfrowaną za pomocą wspólnego
+            klucza. Od tej widomości, sesja SSL jest nawiązna.
+          </li>
+        </ol>
+        <h4>Znaczenie zaufanego certyfikatu</h4>
+        <p>
+          Zaufanym certyfikatem możemy określić każdy certyfikat, który został
+          wystawiony przez wiarygodne (zaufane) <strong>Centrum Certyfikacji 
+          (CA)</strong>. Każda aplikacja korzystająca z SSL, ma gdzieś w swoich
+          zasobach lokalnych bazę zaufanych wystawców, przez co nie zostajemy 
+          w ogóle poinformowani o nawiązywaniu połączenia czy sesji SSL.
+        </p>
+        <p>
+          Certyfikaty wystawione przez zaufane CA mają znaczenie głównie dla
+          publicznych serwerów, gdzie ludzie z różnych stron świata mają 
+          pewność, że serwera za który się łączą na pewno jest tym za który się
+          podaje (np. bank czy sklep internetowy).
+        </p>
+        <p>
+          Z tego względu, iż będziemy korzystać z sesji SSL do tworzenia sieci
+          VPN, nie ma przeciwwskazań aby twoja organizacja stała się CA 
+          (centrum certyfikacji) i aby można było samodzielnie generować 
+          certyfikaty i instalować je na hostach klienckich sieci. Przecież 
+          możemy zaufać przez nas wygenerowanym certyfikatom. W przeciwieństwie
+          do HTTPS, SSL w zastosowaniach VPN-owych ważne jest uwierzytelnienie 
+          klienta przez serwer, dzięku temu z naszą siecią będą mogły łączyć 
+          się tylko osoby posiadające odpowiednie certyfikaty.
+        </p>
+        <h4>Generowanie certyfikatów przy użyciu programu <em>OpenSSL</em></h4>
+        <p>
+          Zawarte w tej części informacje są niezwykle istotne, dla dalszych
+          konfiguracji, czy to <em>OpenVPN</em> czy też technologii 
+          <em>IPSec</em>. Dlatego wiele innych zagadnień będzie tu linkować.
+        </p>
+        <p>
+          Niezwykle istotne dla samego uruchomienia sieci VPN jest umiejętność
+          generowania kluczy i certyfikatów <em>X.509</em>. W systemach 
+          unixopodobnych narzędzie wykorzystywane do tego może się nieco 
+          różnić. W dystrybucjach systemu Linux raczej będziemy spotykać 
+          oryginalnym <em>OpenSSL</em>. Jeśli będziemy się decydować na 
+          skorzystanie z np. OpenBSD (co wg. mnie jest bardziej wskazane na 
+          bramę VPN niż np. Ubuntu. Dlatego że jest bardzo prosty system, ale 
+          oczywiście nie w swojej funkcjonalności raczej w architekturze czy 
+          też budowie, jest on również zorientowany na bezpieczeństwo jeśli 
+          ktoś jest fanem jądra GNU/Linux może Alpine Linux) to skorzystamy z 
+          pakietu <em>LibreSSL</em>, <em>OpenSSL</em> dla Alpine Linux.
+        </p>
+        <p>
+          Zanim jednak przejdziemy do generowania certyfikatów dla serwera i
+          klientów, musimy stworzyć własny urząd certyfikacji (CA). Dwie uwagi.  
+        </p>
+        <p>
+          Istotną rzeczą CA jest utworzenie go na jakimś bezpiecznym komputerze
+          najlepiej odłączonym od Internetu lub przynajmniej za dodatkowym
+          firewallem nie dopuszczającym żadnych innych połączeń poza jednym 
+          (tylko jednym) z swoich komputerów. Chodzi głównie aby nie był on 
+          widoczny w Internecie i ograniczyć komunikację z nim w sieci lokalnej.
+        </p>
+        <p>
+          Ważne jest aby robić kopie zapasowe, wystawionych certyfikatów oraz
+          całego katalogu <em>/etc/ssl</em>, tak aby w razie potrzeby można 
+          było unieważnić, któryś z certyfikatów.
+        </p>
+        <h5>Tworzenie własnego CA</h5>
+        <p>
+          W pierwszej kolejności odnajdujemy plik <em>openssl.cnf</em>.
+          Prawdopodobne lokalizacje tego pliku to:
+        </p>
+        <ul>
+          <li><em>/etc/ssl/openssl.cnf</em> - dla instalacji z pakietów 
+              dystrybucji,</li>
+          <li><em>/usr/local/etc/openssl.cnf</em> - w przypadkach ręcznej 
+              kompilacji,</li>
+          <li><em>C:\<em>OpenSSL</em>\bin</em> - dla systemów MS Windows.</li>
+        </ul>
+        <p>
+          W tym pliku musimy odnaleźć sekcje 
+          <code class="code-inline">[ CA_default ]</code>. Powinniśmy zmienić 
+          wpisy tak jak poniżej.
+        </p>
+<pre class="code-block">
+[ CA_default ]
+dir = /etc/ssl                        # katalog główny, w którym zapisywane są pliki.
+certs = /etc/ssl/certs                # katalog, w którym zapisywane są certyfikaty.
+crl_dir = $dir/crl                        # katalog z listą certyfikatów unieważnionych (CRL)
+private_key = $dir/private/cakey.pem  # klucz prywatny CA
+database = $dir/index.txt             # baza, w której przechowywane są informacje
+                                        o wystawionych certyfikatach wraz ze statusem
+certficate = $dir/cacrt.pem           # Certyfikat CA -  do podpisu wniosków
+serial = $dir/serial                  # plik pomocniczy z bieżącym numerem -
+                                        inkrementowany po każdym wystawieniu certyfikatu
+crl = $dir/crl.pem                    # bieżąca lista certyfikatów unieważnionych
+
+[ v3_ca ]
+# wykazujemy punkt dystrybucji listy CRL
+crlDistributionPoints=URI:http://example.com/crl.pem
+</pre>
+        <p>
+          <u>Jeśli będziemy edytować istniejący wpis, opcje których nie ma w
+          sekcji</u> <code class="code-inline">[ CA_default ]</code> 
+          <u>umieszczamy w komentarzu</u>.
+        </p>
+        <p>
+          Upewniamy się czy istnieje katalog podany w zmiennej
+          <code class="code-inline">dir</code> czyli <em>/etc/ssl</em>, oraz
+          wszystkie jego podkatalogi. Jeżeli nie, musimy je założyć. Dla 
+          katalogu <em>ssl/private</em> należy ustawić uprawnienia tak, aby 
+          tylko użytkownik <em>root</em> mógł do niego wejść.
+        </p>
+        <p>
+          Stwórzmy pliki <em>/etc/ssl/index.txt</em> oraz 
+          <em>/etc/ssl/serial</em>, używając podanych poniżej poleceń.
+        </p>
+<pre class="code-block">
+root@ca:~# touch /etc/ssl/index.txt   #(ma być pusty)
+root@ca:~# echo 00 &gt; /etc/ssl/serial  #(ma zawierać wpis 00)
+</pre>
+        <p>
+          Przystępujemy do generowania klucza prywatnego centrum certyfikacji 
+          CA. Jest to czynność jednorazowa, tzn. po wygenerowaniu klucza 
+          prywatnego CA, a następnie odpowiadającego mu certyfikatu będziemy 
+          ich używać do podpisywania innych certyfikatów. Należy pamiętać aby 
+          zarchiwizować pliki z katalogi <em>/etc/ssl</em> w bezpiecznym 
+          miejscu.
+        </p>
+        <p>
+          Będąc w katalogu <em>/etc/ssl</em>, wydajemy następujące polecenie:
+        </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl genrsa -des3 -out private/cakey.pem 1024
+Generating RSA private key, 1024 bit long modulus
+.....++++++
+...++++++
+e is 65537 (0x10001)
+Enter pass phrase for private/cakey.pem: &lt;podaj hasło klucza prywatnego CA&gt;
+</pre>
+        <p>
+          Po potwierdzeniu hasła do klucza prywatnego CA klucz zostanie 
+          zapisany w pliku <em>private/cakey.pem</em>. Nie możemy zapomnieć 
+          tego hasła, będzie nam nieraz potrzebne.
+        </p>
+        <p>
+          Kolejną czynnością jest wygenerowanie certyfikatu CA. W tym celu
+          wpisujemy następujące polecenie:
+        </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl req -new -x509 -days 365 -key private/cakey.pem -out cacert.pem
+</pre>
+        <p>
+          Zostaniemy poproszeni o podanie danych z kilku pól zawartych w 
+          certyfikacie.
+        </p>
+<pre class="code-block">
+Country Name (2 letter code) [AU]:PL
+State or Province Name (fuli name) [Some-State]:Wonderland
+Locality Name (eg. city) []: Liberty City
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:morketsmerke.net
+Organizational Unit Name (eg, section) []:
+Common Name (eg, YOUR name) []: ca.morketsmerke.net
+Email Address []:
+</pre>
+        <p>
+          Zwrócić należy uwagę na pole <code class="code-inline">
+          Common Name</code>, które powinno zawierać nazwę podmiotu - np. nazwę
+          użytkownika lub jednostki. W przypadku gdy generujemy certyfikat dla
+          CA, wpisujemy nazwę domeny firmowej lub podajemy nazwę organizacji.
+        </p>
+        <p>
+          Po podaniu hasła do klucza prywatnego certyfikat zostanie zapisany w
+          pliku <em>cacert.pem</em>. W powyższym przykładzie czas ważności
+          certyfikatu będzie wynosić 1 rok. Można go oczywiście przedłużyć.
+        </p>
+        <p>
+          Na tym kończymy tworzenie własnego urzędu CA. Mając pliki 
+          <em>cakey.pem</em> i <em>cacert.pem</em>, czyli klucz prywatny i 
+          certyfikat CA. Teraz można rozpocząć wystawianie certyfikatów innym 
+          podmiotom.
+        </p>
+        <h5>Tworzenie klucza prywatnego dla serwera</h5>
+        <p>
+          Aby stworzyć klucz prywatny należy na urzędzie CA w katalogu
+          <em>/etc/ssl</em> wydać polecenie:
+        </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl genrsa -des3 -out private/serverkey.pem 1024
+</pre>
+        <p>
+          Openssl zapyta o hasło - będzie to hasło klucza prywatnego serwera.
+          Klucz prywatny zapisany zostanie w pliku 
+          <em>private/serverkey.pem</em>
+        </p>
+        <h5>Generowanie wniosku o wystawienie certyfikatu</h5>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl req -new -key private/serverkey.pem  -out serverreq.pem
+</pre>
+        <p>
+          Potrzebne będzie hasło klucza prywatnego serwera, które podawaliśmy
+          punkt wyżej. Jeśli hasło będzie poprawne, zostaniesz zapytani o dane
+          do wniosku.
+        </p>
+<pre class="code-block">
+Country Name (2 letter code) [AU]:PL
+State or Province Name (fuli name) [Some-State]:Slask
+Locality Name (eg, city) []:G1iwice
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Moja Firma Sp. z o.o.
+Organizational Unit Name (eg, section) []:
+Common Name (eg, YOUR name) []: server.firma.pl
+Email Address []:
+</pre>
+        <p>
+          Tutaj jako <code class="code-inline">Common Name</code> powinniśmy
+          podać pełną nazwę domenową pod, którą serwer działa w Internecie,
+          czyli FQDN. Wniosek zostanie zapisany w pliku
+          <em>/etc/ssl/serverreq.pem</em>.
+        </p>
+        <h5>Generowanie certyfikatu dla serwera</h5>
+        <p>
+          W celu wystawienia certyfikatu dla podmiotu (serwera) musismy 
+          podpisać jego wniosek. Aby to uczynić, należy wpisać poniższe 
+          polecenie.
+        </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl ca -notext -in serverreq.pem -out servercrt.pem
+</pre>
+        <p>
+          Zostaniemy zapytani o hasło do klucza prywatnego CA 
+          <em>cakey.pem</em>. Nie należy mylić go z hasłem klucza prywatnego
+           serwera.
+        </p>
+        <p>
+          Następnie <em>OpenSSL</em> pokaże szczegóły certyfikatu i zapyta, czy
+          chcemy go podpisać.
+        </p>
+<pre class="code-block">
+Signature ok
+Certificate Details:
+Serial Number: 5 (0x5)
+Validity
+Not Before: Sep 17 12:59:06 2007 GMT
+Not After : Sep 16 12:59:06 2008 GMT
+Subject:
+countryName = PL
+stateOrProvinceName = Slask
+organizationName = Moja Firma Sp. z o.o.
+organizationalUnitName =
+commonName = server.firma.pl
+X509v3 extensions:
+X509v3 Basic Constraints:
+CA:FALSE
+Netscape Comment:
+OpenSSL Generated Certificate
+X509v3 Subject Key Identifier:
+0E: CE: 3E: 06:C4:46:53:78: BO: 05: AB: 18:9B: BA: 90:79:9B: A l : A5 :C8
+X509v3 Authority Key Identifier:
+keyid:FC:B 8 :73:29:C 6 :E4:50:B 2 :3 E :C E :0A:78:8C:62:90:A 5 :62:3 C :87:IB
+DirName:/C-PL/ST=Slask/L-Gliwice/0=Moja Firma Sp. z o.o./
+CN=ca.fi rma.pl/emai 1 Address=admi n@firma.pl
+serial:97:1B:4E:CE:0B:5F:CE:E2
+Certificate is to be certified until Sep 16 12:59:06 2008 GMT (365 days)
+Sign the certificate? [y/n]: y
+1 out of 1 certificate requests certified, commit? [y/n]y
+Write out database with 1 new entries
+Data Base Updated
+</pre>
+        <p>
+          Odnośnie pracy z tak wygenerowanym certyfikatem jest jeszcze jeden
+          szczegół. Otóż każde uruchomienie aplikacji korzystającej z tego
+          certyfikatu będzie nas prosić hasło kluczy prywatnego, użytego do 
+          jego wygenerowania. Co nie jest zbyt pożądane w środowiskach 
+          serwerowych, jest natomiast rozwiązanie tego problemu. Otóż możemy 
+          przepisać klucz pomijając hasło.
+        </p>
+        <h5>Ściąganie hasła z klucza prywatnego serwera</h5>
+<pre class="code-block">
+# openssl rsa -in private/serverkey.pem -out private/serverkey.pem_bezhasla
+</pre>
+        <p>
+          Nie zaleca się ściągania haseł z certyfikatów klientów, ze względu na
+          możliwość kradzieży komputera, co umożliwi dostęp do VPN.
+        </p>
+        <h5>Unieważnianie certyfikatów</h5>
+        <p>
+          Powodów unieważnienia certyfikatów może być wiele. Jednak jeśli już
+          zachodzi taka potrzeba. Możemy użyć parametry 
+          <code class="code-inline">revoke</code> programu <em>OpenSSL</em>.
+        </p>
+<pre class="code-block">
+root@srv:/etc/ssl/# openssl ca -revoke jkowalskicert.pem
+</pre>
+        <p>
+          <em>OpenSSL</em> zapyta o hasło klucza CA i po podaniu prawidłowego 
+          unieważni certyfikat:
+        </p>
+<pre class="code-block">
+Using configuration from /usr/1ib/ssl/openssl.cnf
+Enter pass phrase for /etc/ssl/private/cakey.pem:
+DEBUG[load_index]: unique_subject = "yes"
+Revoking Certificate 04.
+Data Base Updated
+</pre>
+        <p>
+          Po unieważnieniu certyfikatu należy wygenerować jeszcze 
+          <strong>listę CRL</strong>, w której zapisane są unieważnione
+          certyfikaty.
+        </p>
+        <h5>Generowanie listy CRL (Listy unieważnionych certyfikatów)</h5>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl ca -gencrl -out crl.pem
+</pre>
+        <p>
+          Ważne, aby przenieść plik <em>crl.pem</em> do miejsca, które 
+          wskazaliśmy jako <code class="code-inline">crlDistributionPoint</code>
+          w pliku konfiguracyjnym <em>OpenSSL</em>.
+        </p>
+        <h5>Sprawdzanie ważności certyfikatu</h5>
+        <p>
+          Aby sprawdzić datę ważności certyfikatu oraz wyświetlić szczegółowe
+          informacje dla kogo został wystawiony możemy użyć polecenia:
+        </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl x509 -noout -text -i <plik certyfikatu>
+</pre>
+        <h5>Różne formaty certyfikatów</h5>
+        <p>
+          Niestety wśród certyfikatów nie ma jednego standardu i różni 
+          producenci preferują różne formaty. Niemniej za pomocą programu 
+          <em>OpenSSL</em> możemy je przekonwertować z jednego formatu na inny.
+          Klucze są najczęściej zapisywane w formie PEM lub DER (binarny). Dla 
+          certyfikatów używane są PEM, DER, PKCS12. Aplikacje bazujące na 
+          <em>OpenSSL</em>, czyli wszystkie unixowe, używają na ogół formatu 
+          PEM (Base64). Rozszerzenia dla formatu PEM to: <em>*.crt</em> 
+          <em>*.pem</em>, w systemach Windows <em>*.cer</em>
+      </p>
+      <p>
+        Aby przekonwertować certyfikat z jednej postaci na drugą, musimy
+        przekazać programowi <em>OpenSSL</em> odpowiednie parametry.
+      </p>
+      <table>
+        <tr>
+          <th>Format wejściowy</th>
+          <th>Format wyjściowy</th>
+          <th>Składnia <em>OpenSSL</em></th>
+        </tr>
+        <tr>
+          <td>PEM (cert)</td>
+          <td>DER (cert)</td>
+          <td>
+            <code class="code-inline">openssl x509 -in cert.pem -out cert.der 
+            -outform DER</code>
+          </td>
+        </tr>
+        <tr>
+          <td>DER (cert)</td>
+          <td>PEM (cert)</td>
+          <td>
+            <code class="code-inline">openssl x509 -in cert.der -inform DER 
+            -out cert.pem -outform PEM</code>
+          </td>
+        </tr>
+        <tr>
+          <td>PEM (key)</td>
+          <td>DER (key)</td>
+          <td>
+            <code class="code-inline">openssl rsa -in input.key -inform PEM 
+            -out output.key -outform DER</code>
+          </td>
+        </tr>
+        <tr>
+          <td>DER (key)</td>
+          <td>PEM (key)</td>
+          <td>
+            <code class="code-inline">openssl rsa -in input.key -inform DER 
+            -out output.key -outform PEM
+            </code>
+          </td>
+        </tr>
+        <tr>
+          <td>PEM (key,cert)</td>
+          <td>PKCS #12</td>
+          <td>
+            <code class="code-inline">openssl pkcs12 -export -out cert.p12 
+            -inkey userkey.pem -in usercert.pem</code>
+          </td>
+        </tr>
+        <tr>
+          <td>PKCS #12</td>
+          <td>PEM (cert)</td>
+          <td>
+            <code class="code-inline">openssl pkcs12 -clcerts -nokeys –in 
+            cert.p12 -out usercert.pem</code>
+          </td>
+        </tr>
+        <tr>
+          <td>PKCS #12</td>
+          <td>PEM (key)</td>
+          <td>
+            <code class="code-inline">openssl pkcs12 -nocerts -in cert.p12 –out 
+            userkey.pem</code>
+          </td>
+        </tr>
+      </table>
+      <p>
+        Aby wyświetlić informację o certyfikacie, np. informacje podane
+        podczas tworzenia wniosku, należy uruchomić program <em>OpenSSL</em> z
+        następującymi parametrami:
+      </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl x509 -in servercert.pem -subject –noout
+subject= /C=PL/ST=Slask/O=Helion/CN=server1
+</pre>
+      <p>
+        Jeśli dodamy parametr <code class="code-inline">-issuer</code>, 
+        <em>OpenSSL</em> zwróci także informację o wystawcy (CA):
+      </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl x509 -in servercert.pem -issuer -subject –noout
+subject= /C=PL/ST=Slask/O=Helion/CN=server1
+issuer= /C=PL/ST=Slask/L=Gliwice/O=Helion/CN=CA
+</pre>
+      <p>
+        Jeżeli certyfikat jest w formie binarnej (DER), do powyższej składni
+        należy dodać parametr <code class="code-inline">-inform DER</code>.
+      </p>
+      <h4>Kompilacja OpenSSL ze źródeł</h4>
+      <p>
+        Jeśli z jakichś powodów musimy skompilować <em>OpenSSL</em>, poniżej w 
+        punktach zamieszczono opis, jak to zrobić.
+      </p>
+      <ol>
+        <li>
+          Pobieramy ze strony http://www.openssl.org/source/ źródła
+          najnowszej wersji pakietu i zapisz w katalogu <em>/usr/src/</em>,
+        </li>
+        <li>
+          Porównujemy wartość MD5 pliku pobranego z sieci (polecenie 
+          <em>md5sum</em>) z wartością udostępnioną na stronie openssl.org,
+        </li>
+        <li>
+          Rozpakowujemy zawartość archiwum poleceniem
+<pre class="code-block">
+$ tar zxf openssl-nr_wersji.tar.gz
+</pre>
+        </li>
+        <li>
+          Przechodzimy do katalogu <em>openssl-nr_wersji.</em>
+        </li>
+        <li>
+          Przed przystąpieniem do kompilacji musimy ustalić, w którym katalogu 
+          program ma zostać zainstalowany oraz z jakimi dodatkowymi opcjami, 
+          podając je jako parametry skryptu 
+          <code class="code-inline">./config</code>. W poniższym przykładzie 
+          skompilujemy program z obsługą biblioteki <em>zlib</em>, a wynikowy 
+          program zostanie zainstalowany w katalogu <em>/usr/local/openssl</em>.
+          Wpisujemy polecenie:
+<pre class="code-block">
+# ./config --prefix=/usr/local zlib
+</pre>
+        </li>
+        <li>
+          Jeśli skrypt <code class="code-inline">./config</code> nie zgłosi
+          błędu, możemy przejść do właściwej kompilacji programu. W tym celu
+          wpisujemy polecenie
+<pre class="code-block">
+# make
+</pre>
+        </li>
+        <li>
+          Proces kompilacji może potrwać kilka minut, po jego zakończeniu 
+          możemy przejść do ostatniego kroku — instalacji skompilowanych
+          plików we właściwych katalogach. Aby zakończyć instalację, wpisujemy 
+          polecenie:
+<pre class="code-block">
+# make install
+</pre>
+        </li>
+      </ol>
+      <h4>Nakładki graficzne na SSL</h4>
+      <p>
+        Aby nie męczyć się ze skomplikowanymi poleceniami <em>OpenSSL</em>, 
+        można zainstalować sobie jedną z nakładek graficznych dostępnych także 
+        dla systemu Windows.
+      </p>
+      <ul>
+        <li>
+          <em>XCA</em> - Dzięki tej nakładce możemy utworzyć własny urząd
+          certyfikacji (Root CA), także generować klucze dla użytkowników i
+          wystawiać im certyfikaty. Dostępna jest dla większości systemów,
+          w tym BSD.
+        </li>
+        <li>
+          <em>My Certificate Wizard</em> - Drugą nakładka co prawda nie jest
+          przeznaczona dla administratorów. Tylko dla zwykłych użytkowników,
+          służy ona bowiem do generowania kluczy prywatnych oraz wniosków o
+          wydanie certyfikatu (pliki CSR). Program jest nieco stary. Jego
+          ostatnia stabilna wersja pochodzi z 2004, a strona twórcy ostatni
+          raz była aktualizowana w 2008 roku.
+        </li>
+      </ul>
+      <h3 id="tunel">Tunelowanie portów</h3>
+      <p>
+        <strong>Tunel</strong>, <strong>Tunele</strong> - właść.
+        <strong>Tunelowanie portów</strong>, technika pozwalając na przesłanie
+        jednego połączenia wewnątrz drugiego (tunelu). Najczęstszym 
+        zastosowanie tuneli jest szyfrowanie połączeń, które nie zostały 
+        przystosowane do korzystania z SSL czy TLS, kompresja danych czy 
+        obejście blokad portów.
+      </p>
+      <p>
+        Tunelowania używa się też jako prostszej alternatywy dla sieci VPN.
+        Jednak diametralna różnica między tunelami a siecią VPN jest taka, że
+        przez VPN operując na warstwie 3 (IP) wprowadzają własną adresacje
+        modyfikując tabele routingu tak, aby cały ruch niezależnie od aplikacji
+        czy protokołu przechodził przez szyfrowany kanał.
+      </p>
+      <p>
+        Duża zaletą tuneli jest to, że działają one warstwie użytkownika to
+        znaczy, że nie potrzeba uprawnień administratora aby zestawić tunel.
+      </p>
+      <p>
+        W praktyce tunele wyglądają tak, że użytkownik za pomocą specjalnej
+        aplikacji zestawia szyfrowane połączenie, stanowiąc tunel. W momencie
+        zestawienia tunelu otwierany jest nowy port na interfejsie pętli
+        zwrotnej (<em>127.0.0.1</em>) komputera klienta. Aplikacja na
+        komputerze użytkownika (np. program pocztowy) zamiast łaczyć się
+        bezpośrednio z IP serwera łączy się ze swoim adresem <em>127.0.0.1</em>,
+        wysyłając dane, które program obsługujący tunel pobiera, następnie
+        szyfruje i przesyła przez Internet na drugą stronę tunelu. Po drugiej
+        stronie połączenia program tunelujący odbiera dane odszyfrowuje i
+        przekazuje - po interfejsie pętli (<em>127.0.0.1</em>) - do właściwej
+        aplikacji (np. serwera POP3).
+      </p>
+      <p>
+        Oczywiście tunele, nie są alternatywą dla obsługi przez daemony SSL
+        czy TLS, główną różnicą jest tutaj ruch między aplikacją daemona, czy
+        klienta a programem tunelującym. Nie stanowi to jak zagrożenia, do
+        momentu zarażenia systemu złośliwym oprogramowaniem.
+      </p>
+      <p>
+        Wśród administratorów najpopularniejszymi programami do tworzenie
+        tuneli są <strong><em>Stunnel</em></strong> oraz <strong>SSH</strong>, oba
+        posiadają wersje na UNIX-y oraz na MS Windows.
+      </p>
+      <h4><em>Stunnel</em></h4>
+      <p>
+        <strong><em>Stunnel</em></strong> - rozprowadzany na licencji GNU/GPL program
+        do tworzenia szyfrowanych połączeń TCP. Program do uwierzytelnienia
+        wykorzystuje certyfikaty SSL/TLS <em>X.509</em>.
+      </p>
+      <p>
+      <strong>Dostępność programu w różnych systemach operacyjnych: </strong>
+      </p>
+      <ul>
+        <li><strong>Linux</strong> : REPOzytorium(Alpine, Arch, Cent OS, Debian,
+             Fedora, Mageia, OpenMandriva, OpenSUSE(leap), Ubuntu, Slackware)
+        </li>
+        <li><strong>*BSD</strong> : FreeBSD(REPO), NetBSD(REPO), 
+            OpenBSD(PORTS)</li>
+        <li><strong>macOS</strong> : brew install stunnel</li>
+        <li><strong>Windows</strong> : 
+            https://www.stunnel.org/downloads/stunnel-5.56-win64-installer.exe
+        </li>
+      </ul>
+      <p>
+        Oczywiście program można skompilować samodzielnie potrzebne biblioteki:
+        <em>libssl</em>, <em>libssl-dev</em>, <em>zlib</em>. Podczas
+        <code class="code-inline">./configure</code> podajemy
+        <code class="code-inline">--prefix=/usr/local/stunnel</code>, z 
+        docelowym miejscem instalacji. Jeśli <code class="code-inline">
+        ./configure</code> nie zgłosi błędu wykonujemy kolejno: 
+        <code class="code-inline">make</code> oraz 
+        <code class="code-inline">make install</code>.
+      </p>
+      <p>
+        Konfiguracja składa się z jednego pliku konfiguracyjnego oraz plików
+        certyfikatów. Do jego działania potrzebujemy CA (urządu certyfikacji)
+        oraz klucz i certyfikat dla serwera (najlepiej bez hasła).
+      </p>
+      <p>
+        Program <em>Stunnel</em> oczekuje klucza prywatnego oraz certyfikatu w jednym
+        pliku - podawanym w dyrektywie <code class="code-inline">cert</code>
+        pliku konfiguracyjnego. Musimy przygotować taki plik, uważając na jego
+        format. Na początku umieszczamy klucz serwera, następnie pustą linijkę
+        odstępu, a po niej certyfikat.
+      </p>
+<pre class="code-block">
+root@ca:/etc/ssl# cat private/serverkey_bezhasla.pem &gt; private/server.pem
+root@ca:/etc/ssl# echo " " &gt;&gt; private/server.pem
+root@ca:/etc/ssl# cat servercert.pem &gt;&gt; private/server.pem
+</pre>
+      <p>
+        Bardzo ważna jest pusta linijka przerwy pomiędzy kluczem a certyfikatem.
+      </p>
+      <p>
+        Tak przygotowane pliki <em>server.pem</em> wraz z certyfikatem wystawcy
+        CA (plik <em>cacert.pem</em>) musimy przegrać na właściwy serwer 
+        używając bezpiecznego połączenia, np. program SCP/SFTP lub fizycznego 
+        sprawdzonego nośnika np. pendrive'a. Pliki zapisujemy na serwerze w 
+        katalogu <em>/etc/stunnel</em>.
+      </p>
+      <p>
+        Należy pamiętać, aby na docelowej maszynie nadać odpowiednie 
+        uprawnienia do pliku <em>server.pem</em> tak, aby tylko <em>root</em> 
+        mógł go przeczytać. Do tego posłużą dwa poniższe polecenia:
+      </p>
+<pre class="code-block">
+root@srv:~# chown root:root /etc/stunnel/server.pem
+root@srv:~# chmod 600 /etc/stunnel/server.pem
+</pre>
+      <p>
+        Czy będą na potrzebne certyfikaty dla klientów? To zależy od aplikacji,
+        czy posiada ona wewnętrzne metody uwierzytelniania użytkowników. Jeśli
+        usługa jest ogólnodostępna tak jak np. IRC, warto rozważyć wdrożenie
+        certyfikatów dla klientów, o ile chcemy utajnić nasz serwer IRC.
+        Wystawianie dla tuneli certyfikatów klienta ma sens w jeszcze jednym
+        przypadku, mianowicie chodzi o ograniczenie dostępu do konkretnych 
+        rzeczy - tylko konkretne osoby mogą korzystać z konkretnych zasobów. 
+        Jeśli już decydujemy się na uwierzytelnianie użytkowników, to należy 
+        pamiętać aby w <em>Common Name</em> podać nazwę jednoznacznie 
+        identyfikująca np. login korporacyjny. Decyzje o uwierzytelnieniu 
+        użytkowników, należy podjąć samodzielnie, warto pod jedno za lub 
+        przeciw wziąć liczbę użytkowników.
+     </p>
+     <h5>stunnel.conf</h5>
+     <p>
+      Plik konfiguracyjny składa się z sekcji globalnej oraz przynajmniej 
+      jednej dotyczącej danego tunelu (instancji/usługi). Puste linie są
+      ignorowane, podobnie jak komentarze zaczynające się od średnika
+      (<strong>;</strong>) lub krzyżyka (<strong>#</strong>).
+    </p>
+    <p>
+      <strong>Wykaz najważniejszych opcji globalnych</strong>
+    </p>
+    <ul>
+      <li><code class="code-inline">chroot = katalog</code> (tylko Unix) -
+          określa katalog, w którym uwięziony zostanie proces programu po
+          inicjalizacji. Ścieżki podane w opcjach <code class="code-inline">
+          CApath</code>, <code class="code-inline">CRLpath</code>, 
+          <code class="code-inline">pid</code>,
+          <code class="code-inline">exec</code> muszą być określone względem
+          tego katalogu. Owo uwięzienie sprawia, że nawet w przypadku 
+          znalezienia poważnego błędu w aplikacji, umożliwiającego wywołanie 
+          powłoki systemu Unix, napastnik zostanie "uwięziony" wewnątrz 
+          katalogu <em>/var/run/stunnel</em>. Nie będzie mógł po za ten katalog
+          wyjść, a więc nie będzie miał dostępu do żadnych innych plików 
+          serwera. <code class="code-inline">chroot</code> jest typową metodą 
+          zabezpieczania programów w środowisku uniksowym,</li>
+      <li><code class="code-inline">compression = zlib | rle</code> -  wybór
+          algorytmu kompresji przesyłanych danych. Domyślna opcja to brak 
+          kompresji. Możemy skorzystać z prostego algorytmu <em>RLE</em> lub z 
+          bardziej wydajnej biblioteki <em>zlib</em>. W tym drugim przypadku 
+          biblioteka <em>OpenSSL</em> musi być skompilowana z obsługą kompresji
+          <code class="code-inline">zlib</code>,</li>
+      <li><code class="code-inline">debug = wartość</code> - określa poziom
+          szczegółowości logowania w skali od 1 do 7, odpowiadający poziomom
+          daemona <code class="code-inline">syslog</code>,</li>
+      <li><code>output = plik</code> - użycie tej opcji spowoduje logowanie
+          informacji do wskazanego pliku zamiast do daemona
+          <code class="code-inline">syslog</code>,</li>
+      <li><code class="code-inline">setuid = uid</code> (tylko Unix) - 
+          identyfikator użytkownika, na którego prawach będzie działał <em>Stunnel</em>.
+          Program po uruchomieni zrzuca uprawnienia administratora i działa 
+          jako wskazany tutaj użytkownik,</li>
+      <li><code class="code-inline">setgid = gid</code> (tylko Unix) - opcja
+          jak powyżej tylko dotycząca grupy.</li>
+    </ul>
+    <p>
+      <strong>Opcje dotyczące sekcji usług</strong>
+    </p>
+    <ul>
+      <li><code class="code-inline">accept = [adres:]port</code> - nasłuchuje
+          na podanym adresie i porcie. Jeśli nie zostanie jawnie podany adres
+          IP, <em>Stunnel</em> będzie nasłuchiwał na wszystkich adresach IP dostępnych
+          w systemie,</li>
+      <li><code class="code-inline">connect = [adres:]port</code> - połacz
+          się ze zdalnym serwerem na podany port. Domyślnie <em>localhost</em>,
+      </li>
+      <li><code class="code-inline">cert = server.pem</code> - plik z kluczem
+          prywatnym i certyfikatem,</li>
+      <li><code class="code-inline">ciphers = lista_algorytmów</code> - zawiera
+          listę dozwolonych algorytmów SSL. Przydatna jeśli druga strona nie
+          wspiera jakiegoś szyfru,</li>
+      <li><code class="code-inline">client = yes | no </code>  - ustala, czy
+          sekcja jest klientem czy serwerem. Domyślna wartość:
+          <code class="code-inline">no</code> - tryb serwerowy,</li>
+      <li><code class="code-inline">CRLfile = plik_CRL</code> - plik z listą
+          odwołanych certyfikatów (CRL). Używana, gdy załączona jest opcja
+          <code class="code-inline">verify</code>,</li>
+      <li><code class="code-inline">ident = nazwa_użytkownika</code> - 
+          weryfikuj nazwę zdalnego użytkownika korzystając z protokołu IDENT,
+      </li>
+      <li><code class="code-inline">verify = poziom</code> - domyślnie
+          <code class="code-inline">0</code> - nie weryfikuj certyfikatu 
+          (klienta). Dyrektywa ta może przyjmować następujące wartości:
+          <ul>
+            <li>poziom <code class="code-inline">1</code> -  weryfikuj, jeżeli
+                został przedstawiony,</li>
+            <li>poziom <code class="code-inline">2</code> - weryfikuj 
+                certyfikat przez lokalne CA,</li>
+            <li>poziom <code class="code-inline">3</code> - weryfikuj z 
+                lokalnie zainstalowanym certyfikatem drugiej strony.</li>
+          </ul>
+          Załączenie opcji <code class="code-inline">verify</code> po stronie
+          serwera jest koniecznie jeśli dostęp do tunelu mają mieć wyłącznie
+          uwierzytelnieni użytkownicy (z wystawionymi certyfikatami przez
+          nasze CA).</li>
+      <li><code class="code-inline">retry = yes | no (tylko Unix)</code> - 
+          połącz ponownie sekcję <code class="code-inline">connect+exec</code> 
+          po rozłączeniu.</li>
+    </ul>
+    <h5>Przykład 1</h5>
+    <p>
+      Przykład opisuje stworzenie tunelu TCP umożliwiającego bezpieczne
+      ściąganie poczty przez protokół POP3.
+    </p>
+    <p>
+      Jak wiadomo protokół POP3 w swej pierwotnej postaci przesyła wszystkie
+      dane, łącznie z hasłem, jawnym tekstem. Naszym celem będzie 
+      przepuszczenie sesji połączenia POP3 przez szyfrowany tunel SSL, tak aby 
+      nikt nie był w stanie odczytać ani treści poczty ani hasła.
+    </p>
+    <p>
+      Ze względu na to, że POP3 uwierzytelnia klientów, certyfikaty dla
+      użytkowników tunelu nie będą potrzebne.  Podstawowym celem tunelu jest
+      zapewnienie szyfrowania transmisji. Uwierzytelnienie serwera będzie
+      dobrym pomysłem, bo daje pewność, że łączą się z właściwym serwerem,
+      a nie z podstawionym przez intruza w wyniku zmiany routingu. Przykład
+      można wykonać wg. poniższych punktów.
+    </p>
+    <ol>
+      <li>Instalujemy najwygodniejszym dla nas sposobem <em>Stunnel</em> w naszym 
+          systemie,</li>
+      <li>Generujemy na komputerze przeznaczony do CA, klucz i certyfikat dla 
+          serwera, po czym łączymy ze sobą oba pliku w plik <em>server.pem</em>,
+          pamiętając o pustej linijce przerwy.</li>
+      <li>Przegrywamy na serwer docelowy przygotowany plik <em>server.pem</em>
+          oraz <em>cacert.pem</em> - certyfikat CA. Pamiętając o zmianie 
+          uprawnień dla pliku <em>server.pem</em>.</li>
+      <li>Tworzymy plik <em>/etc/stunnel/stunnel.conf</em> z zawartością
+          pokazaną w poniżej:
+<pre class="code-block">
+# stunnel.conf po stronie serwera
+# opcje globalne
+chroot = /var/run/stunnel ; ścieżka do chroota
+pid = /stunnel.pid
+setuid = stunnel   ; zrzuć uprawnienia do użytkownika stunnel
+setgid = stunnel   ; jw. dla grupy
+debug = 3
+output = /var/log/stunnel.log
+
+# sekcja związana z sekcją pop3
+[pop3s]            ; początek sekcji pop3
+accept  = 995      ; oczekuj połączeń na porcie 995
+connect = 110      ; przekazuj dane do portu 110 localhosta
+cert = /etc/stunnel/server.pem   ; plik PEM z kluczem prywatnym i certyfikatem
+CAfile = /etc/stunnel/cacert.pem ; certyfikat CA
+verify = 0         ; nie sprawdzamy certyfikatów użytkowników
+</pre>
+          Czytając ten plik konfiguracyjny wraz z komentarzami można zrozumieć
+          jak będzie działał program <em>Stunnel</em>.  Najważniejszą rzeczą jak trzeba
+          by tutaj zaznaczyć, jest że POP3 nasłuchuje na pętli zwrotnej
+          (<em>127.0.0.1</em>) na portcie 110. Jeśli instalując jakąś usługę
+          już wiemy że będziemy używać tunelu do realizowania połączenia między
+          jej daemonem a klientem, to w konfiguracji należy ustawić jako adres
+          nasłuchiwania <em>127.0.0.1</em>. Klienci łączą się na standardowym
+          porcie 995 (standardowy port pop3s) z tunelem, ten przekazuje dane
+          wewnątrz serwera na port 110 pętli zwrotnej do daemona POP3.</li>
+      <li>Uruchamiamy tunel na serwerze:
+<pre class="code-block">
+# stunnel /etc/stunnel/stunnel.conf
+</pre>
+      </li>
+      <li>Instalujemy na komputerze klienta <em>Stunnel</em>.</li>
+      <li>Przenosimy plik z certyfikatem CA - <em>cacert.pem</em> - na komputer
+           klienta.</li>
+      <li>Tworzy plik konfiguracyjny klienta pokazany poniżej:
+<pre class="code-block">
+debug = 3
+output = stunnel.txt ; loguj do pliku
+[pop3s] ; początek sekcji połączenia POP3S
+accept = 127.0.0.1:110 ; słuchaj na porcie 110 interfejsu pętli zwrotnej
+connect = 85.198.209.251:995 ; połącz się ze zdalnym serwerem na port 995
+client = yes ; jestem klientem
+CAfile = certs.pem ; certyfikat CA potrzebny do uwierzytelnienia serwera
+verify = 2 ; weryfikuj certyfikat serwera
+</pre>
+          Warto zaznaczyć że współczesne programy pocztowe obsługują SSL/TLS
+          same w sobie, dlatego punkty 6-8 są zbędne. Jednak aby program nie
+          zgłaszał błedu w połączeniu należy dodać certyfikat naszego CA do
+          zaufanych wystawców, a po stronie serwera natomiast należy wyłączyć
+          opcje weryfikacji klienta. (<code class="code-inline">verify = 0
+          </code>), ponieważ programy pocztowe nie przedstawiają swojego 
+          certyfikatu (a przynajmniej nie wszystkie da się do tego zmusić).
+      </li>
+    </ol>
+    <h5>Przykład 2</h5>
+    <p>
+      Przykład przedstawia stworzenie tunelu TCP umożliwiającego bezpieczny
+      dostęp do aplikacji bazodanowej wewnątrz sieci LAN.
+    </p>
+    <p>
+      Zadanie to możemy rozwiązać za pomocą programu <em>Stunnel</em>, przy czym w tym
+      przypadku program będzie działał na routerze, a nie bezpośrednio na
+      serwerze bazodanowym. Przyda nam się tutaj opcja uwierzytelniania
+      klientów, a także załączenie kompresji.
+    </p>
+    <p>
+      Zadanie wykonujemy wg. poniższych punktów.
+    </p>
+    <ol>
+      <li>Zainstalujemy program <em>Stunnel</em> na routerze.</li>
+      <li>Generujemy na osobnym komputerze (CA) klucz i certyfikaty dla serwera
+          i użytkowników. Pamiętajmy, aby nie ściągać haseł z kluczy dla
+          użytkowników.</li>
+      <li>Przenosimy przygotowany plik <em>server.pem</em> oraz certyfikat CA
+          (plik <em>cacert.pem</em>) na router. Ustawiamy uprawnienia tak aby 
+          tylko <em>root</em> był właścicielem i tylko on miał prawo odczytu.
+      </li>
+      <li>Ustalamy, na jakim porcie i jakim adresie działa baza danych.</li>
+      <li>Przygotowujemy plik konfiguracyjny po stronie routera</li>
+      <li>Odblokowujemy na firewallu możliwość łączenia się z portem,
+          na którym słucha program <em>Stunnel</em>.</li>
+      <li>Przenosimy klucz i certyfikat (w formie <em>client.pem</em>) oraz
+          certyfikat CA (<em>cacert.pem</em>) na komputer użytkownika. 
+          Pozostawiamy kopie certyfikatów użytkowników na komputerze CA.</li>
+      <li>Przygotowujemy plik konfiguracyjny klienta i testujemy połączenie.
+      </li>
+    </ol>
+    <p>
+      Jeśli jest to możliwe to dobrze by było, żeby <em>Stunnel</em> od strony Internetu
+      nasłuchiwał na jakimś wysokim porcie, z którym nie jest skojarzona żadna
+      usługa.
+    </p>
+    <p>
+      Poniżej przedstawiono plik konfiguracyjny routera:
+    </p>
+<pre class="code-block">
+# plik konfiguracyjny programu Stunnel po stronie routera
+# opcje globalne
+chroot = /var/run/stunnel ; ścieżka do chroota
+pid = /stunnel.pid
+setuid = stunnel   ; zrzuć uprawnienia do użytkownika stunnel
+setgid = stunnel   ; jw. dla grupy
+debug = 3
+output = /var/log/stunnel.log
+
+# sekcja związana z dostępem do serwera SQL
+[sqls]               ; początek sekcji SQL
+accept  = 11298      ; oczekuj połączeń na tym porcie
+connect = 192.168.20.6: 3050   ; przekazuj do portu 3050 hosta 192.168.20.6
+cert = /etc/stunnel/server.pem
+CAfile = /etc/stunnel/cacert.pem
+verify = 2
+</pre>
+    <p>
+      Jeśli na naszym routerze domyślną polityką jest <em>blokuj</em>, to w 
+      następnej kolejności należy odblokować port na którym słucha 
+      <em>Stunnel</em>.
+    </p>
+    <p>
+      Do uruchomienia tunelu pozostała jeszcze konfiguracja klienta. W tym
+      celu należy zainstalować program <em>Stunnel</em> oraz przegrać 
+      przygotowane wcześniej certyfikaty <em>client.pem</em> oraz 
+      <em>cacert.pem</em>. Konfiguracja klienta jest przestawiona poniżej.
+    </p>
+<pre class="code-block">
+debug = 3
+output = stunnel.txt ; loguj do pliku
+[sqls]
+accept = 127.0.0.1: 3050       ; słuchaj na porcie 110 interfejsu pętli zwrotnej
+connect = 85.198.209.251:11298 ; połącz się z serwerem na port 11298
+client = yes       ; jestem klientem
+CAfile = certs.pem ; plik z certyfikatem CA, ewentualnie certyfikatem serwera
+cert = client.pem  ; plik z kluczem i certyfikatem użytkownika
+verify = 2   ; weryfikuj certyfikat serwera przez CA
+</pre>
+    <p>
+      Ostatnią rzeczą jaką należy zrobić jest zmiana adresu IP serwera bazy
+      danych aplikacji, która ma korzystać z tej bazy na adres pętli zwrotnej.
+      Do testowania działania tunelu przydaje się Telnet - po połączeniu się
+      z portem lokalnego interfejsu, powinien odpowiedzieć serwer bazy danych.
+    </p>
+    <h4>SSH</h4>
+    <p>
+      <strong>SSH</strong> - protokół sieciowy umożliwiający bezpieczne
+      (szyfrowane) połączenie z powłoką/terminalem (interfejsem tekstowym
+      komputera).
+    </p>
+    <p>
+      Generalnie SSH, służy nie tylko do pracy za pomocą zdalnej powłoki na
+      odległych serwerach, za pomocą poleceń możemy wygenerować klucze RSA,
+      których później możemy użyć do logowania bez hasła, lub jednego
+      odrębnego hasła dla wszystkich innych serwerów czy bezpiecznego
+      transferu plików jak i również zestawić szyfrowany tunel. Jedyne czego
+      potrzebujemy to konta na serwerze oraz takich możliwości (są
+      ogólnodostępne serwery oferujące konta powłoki, jednak
+      opcje tunelowania są tam niedostępne - <em>przyp. red. 2021</em>).
+    </p>
+    <p>
+      W niniejszym punkcie zostanie przedstawionych kilka praktycznych
+      przykładów dla tunelowania SSH.
+    </p>
+    <h5>Przykład 1</h5>
+    <p>
+      Podstawowym przykładem będzie zestawienie tunelu SSH pomiędzy lokalnym
+      portem TCP/12345 a portem TCP/445 odległej maszyny. Przy użyciu unixowego
+      klienta <code class="code-inline">ssh</code> składnia polecenia będzie
+      następująca:
+    </p>
+<pre class="code-block">
+jkowalski@srv10:~$ ssh admin@123.10.12.11 -L 12345:127.0.0.1:445
+</pre>
+    <p>
+      Liczba podana po <code class="code-inline">-L</code> określa, który
+      lokalny port klienta ma zostać użyty dla potrzeb tunelu.
+      <code class="code-inline">127.0.0.1:445</code> mówi nam, że zdalna strona
+      - serwer SSH, ma połączyć się z adresem 
+      <code class="code-inline">127.0.0.1</code>
+      na port TCP/<code class="code-inline">445</code>. Czyli w tym przypadku 
+      koniec tunelu stanowić będzie lokalny interfejs zdalnego serwera i 
+      działająca tam SAMBA.
+    </p>
+    <p>
+      Po podaniu hasła użytkownika zdalnego, tunel zostanie utworzony. W
+      systemach unixowych uruchomienie usługi na porcie poniżej 1024 wymaga
+      uprawnień administratora (<em>root</em>) o czym warto pamiętać. Nie ma
+      to miejsca w systemach Windows.
+    </p>
+    <p>
+      Czasami może się zdarzyć, że chcemy zestawić tunel na określony czas,
+      a także żeby proces przeszedł w tło. Dla przykładu możemy zestawić
+      tunel trwający 10 minut.
+    </p>
+<pre class="code-block">
+$ ssh -f -n -L 12345:127.0.0.1:445 admin@123.10.12.11 sleep 600
+</pre>
+    <p>
+      Opcja <code class="code-inline">-f</code> powoduje przeniesienie na tło
+      wykonania polecenia <em>/bin/sleep</em>, z kolei opcja
+      <code class="code-inline">-n</code> jest często używana z opcją
+      <code class="code-inline">-f</code>, powoduje ona przekierowanie pliku
+      <em>/dev/null</em> na standardowego wejścia dla procesu uruchomionego
+      w tle. Opcja <code class="code-inline">-n</code> zostanie
+      zignorowana gdy <code class="code-inline">ssh</code> będzie prosił o 
+      hasło.
+    </p>
+    <h5>Utworzenie tunelu z portami 1:1</h5>
+    <p>
+      Przydatne wtedy, gdy aplikacja ma już zdefiniowane odgórnie porty.
+    </p>
+<pre class="code-block">
+xf0r3m@KAT2:~$ ssh xf0r3m@dl.morketsmerke.net -L 445:127.0.0.1:445
+</pre>
+    <h5>Przykład 2 - SSH jako Socks Proxy</h5>
+    <p>
+      Tunele SSH można wykorzystać do zestawiania końców tunelu z różnymi
+      hostami, do tej port hosta na końcu tunelu był stały. Twórcy SSH
+      zaimplementowali coś takiego jak tunele dynamiczne. Jeśli pakiet zostanie
+      przekazany na przykład przez jakieś ustawienie proxy na port, na którym 
+      jest uruchomiony tunel dynamiczny, serwer zdalny zestawi koniec tunelu
+      pomiędzy sobą a hostem docelowym na danym porcie zwartym w pakiecie.
+      Można użyć tej techniki do omijania blokad portów.
+    </p>
+<pre class="code-block">
+xf0r3m@KAT2:~$ ssh xf0r3m@dl.morketsmerke.net -D 8080
+</pre>
+    <h5>Przykład 3 - tunele z przekazywaniem zdalnym</h5>
+    <p>
+      SSH pozwala na jeszcze jeden rodzaj tuneli. Mianowicie tunel z
+      przekazywaniem zdalnym. Polega on na tym że nasz serwer, który z jakiś
+      powodów nie może być normalnie wypuszczony do Internetu, tworzy
+      specjalny rodzaj tunelu, który otwiera port na serwerze. Otwarcie tego
+      portu pozwoli na połączenie się potencjalnego klienta z problematycznym
+      serwerem, warunkiem jest zestawienie kolejnego tunelu, tym razem takie 
+      jak wcześniej (lokalnego), który przekieruje dane z aplikcji na port 
+      otwarty na serwerze, a ten z kolei na nasz serwer. Jeśli jesteśmy 
+      administratorem serwera SSH, możemy ustawić go tak aby zdalny port 
+      nasłuchiwał na wszystkich adresach na serwerze, co analogicznie 
+      uwidacznia go z poziomu internetu (nie koniecznie, może być jeszcze 
+      wymagany port forwarding na routerze/bramie), służy do tego opcja 
+      <code class="code-inline">GatewayPorts</code>, która domyślnie ustawiona
+      jest na <code class="code-inline">no</code> ze względów bezpieczeństwa,
+      niweluje nam potrzebę zestawiania lokalnego przekazywania (klasycznego 
+      tunelu SSH). Warunek jest prosty. Czy otwarty przez zdalne przekazywanie 
+      serwera ma być ogólnodostępny w internecie. Jeśli tak to (i oczywiście 
+      mamy do tego odpowiednie uprawnienia) możemy przestawić tę opcję na
+      <code class="code-inline">yes</code>. Jeśli nie to pozostaje nam
+      zestawić tylko tunel pomiędzy lokalnym portem a otwartym zdalnym portem.
+    </p>
+<pre class="code-block">
+#port zdalny
+xf0r3m@KAT2:~$ ssh xf0r3m@dl.morketsmerke.net -R 11111:127.0.0.1:3389
+</pre>
+<pre class="code-block">
+#port lokalny
+xf0r3m@KAT2:~$ ssh xf0r3m@dl.morketsmerke.net -L 13389:127.0.0.1:11111
+</pre>
+    <p>
+      Podobno jeśli używamy XP wersji Professional to nie powinniśmy
+      przekierowywać lokalnego tunelu na 3389, ponieważ może na nim działać
+      lokalny serwer usług terminalowych (sic!).
+    </p>
+    <p>
+      Po zestawieniu tych tuneli powinniśmy móc się połączyć, za pomocą
+      klienta RDP, na lokalnie przekierowanym porcie czyli TCP/13389.
+    </p>
+    <h4>Tunel UDP po SSH</h4>
+    <p>
+      W przykładach na powyższych stronach, tunelowane były inne połączenia
+      TCP. To tutaj zostanie przedstawiony pomysł na tunelowanie UDP przez 
+      połączenie SSH (TCP). Generalnie do tunelowanie UDP bardziej nadają się 
+      sieci VPN, jednak przestawiony sposób działa dobrze i może przydać do 
+      prostych zastosowań.
+    </p>
+    <p>
+      Załóżmy, że musimy połączyć się z usługa UDP na porcie 7777, jednak nasz
+      komputer jest podłączony do sieci, która blokuje połączenia UDP na tym
+      porcie.
+    </p>
+    <p>
+      W tym celu musimy zestawić połączenie TCP naszego komputera z serwerem
+      pośredniczącym SSH na interesujących nas portach. W tym celu na naszym
+      komputerze wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+xf0r3m@srv01:~$ ssh -L 7777:localhost:7777 xf0r3m@srv02.morketsmerke.net
+</pre>
+    <p>
+      Teraz na serwerze SSH musimy utworzyć "przekaźnik" danych, który dane
+      odczytane z TCP 7777 prześle do portu 7777 UDP do serwera. Wykorzystamy
+      do tego kolejkę FIFO oraz program Netcat. Na serwerze pośredniczącym
+      wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+root@srv02:~# mkfifo /tmp/fifo
+</pre>
+    <p>
+      Kolejnym krokiem będzie uruchomienie programu Netcat, który będzie
+      słuchał na porcie TCP 7777 serwera (pobierał dane z tunelu) a następnie
+      już bezpośrednio będzie przekazywał je do serwera:
+    </p>
+<pre class="code-block">
+xf0r3m@srv02:~$ nc -l -p 7777 < /tmp/fifo | nc -u 123.10.12.11 7777 > /tmp/fifo
+</pre>
+    <p>
+      W pierwszej części <code>nc</code> nasłuchuje na adresie pętli zwrotnej
+      na porcie 7777, pobierając dane z tunelu a następnie przekaże je do
+      potokiem to kolejnej instancji nc, która wyśle je do serwera,
+      natomiast odpowiedzi przekaże z powrotem do kolejki, a te trafią tunelem
+      do naszego komputera.
+    </p>
+    <p>
+      Teraz wracamy do naszego komputera i tam tworzymy nową kolejkę FIFO.:
+    </p>
+<pre class="code-block">
+xf0r3m@srv01:~# mkfifo /tmp/fifo
+</pre>
+    <p>
+      Następnie uruchamiamy program Netcat z odpowiedni parametrami:
+    </p>
+<pre class="code-block">
+xf0r3m@srv01:~#nc -l -u -p 7777 < /tmp/fifo | nc localhost 7777 > /tmp/fifo
+</pre>
+    <p>
+      NC uruchamia port 7777 UDP, to z nim będzie się łączyć nasza aplikacja,
+      dane wyjściowe przekazywane są do tunelu gdzie przekazywane są do serwera
+      odpowiedzi są przekazywane do kolejki, a następnie jako dane wejściowe
+      (pobrane z kolejki FIFO) do aplikacji.
+    </p>
+    <p>
+      Powinniśmy teraz móc się połączyć. Jeśli jest z czymś problem to warto
+      upewnić się czy do kolejki trafią dane, na wolnej konsoli możemy
+      wyświetlić jej zawartość poleceniem (na obu maszynach):
+    </p>
+<pre class="code-block">
+$ tail -f /tmp/fifo
+</pre>
+    <h3 id="openvpn">OpenVPN</h3>
+    <p>
+      <strong>OpenVPN</strong> - to działający w oparciu o protokół SSL/TLS
+      program do zestawiania wirtualnych sieci prywatnych.
+    <p>
+    <p>
+      Do najważniejszych cech można zaliczyć m.in.:
+    </p>
+    <ul>
+      <li>prosta instalacja i konfiguracja,</li>
+      <li>działa w warstwie użytkownika,</li>
+      <li>wykorzystuje dobrze znany i sprawdzony protokół SSL,</li>
+      <li>dostępny jest na licencji GPL w wersji 2,</li>
+      <li>działa z większością systemów operacyjnych nawet z Windows Mobile,</li>
+      <li>działa bezproblemowo w sieciach za NAT-em.</li>
+    </ul>
+    <h4>Instalacja</h4>
+    <p>
+      Instalacja programu <em>OpenVPN</em> różni się w zależności od 
+      zainstalowanego systemu operacyjnego. W systemach Linux możemy 
+      zainstalować program, używając właściwego dla swojej dystrybucji 
+      narzędzia do zarządzania pakietami, lub też pobrać źródła programu 
+      OpenVPN i skompilować je samodzielnie. W przypadku systemu FreeBSD zaleca
+      się użycie systemu portów. Dla systemów MS Windows (2000, XP, Vista) 
+      dostępny jest pakiet instalacyjny, który oprócz właściwego programu 
+      zainstaluje też sterownik wirtualnego interfejsu TAP.
+    </p>
+    <p>
+      Poniżej przedstawione zostanie instalacja w systemie GNU/Linux Debian
+      z wykorzystaniem <code class="code-inline">apt-get</code> a także
+      kompilacje ze źródeł.
+    </p>
+    <h5>Instalacja w systemie GNU/Linux Debian</h5>
+    <p>
+      Będąc zalogowanym jako root wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+root@srv01:~# apt-get install openvpn
+</pre>.
+    <p>
+      Program <code class="code-inline">apt-get</code> ściągnie z sieci paczkę
+      z programem <em>OpenVPN</em> i zainstaluje plik w odpowiednich katalogach.
+      Skrypt instalacyjny zapyta także, czy utworzyć plik urządzenia 
+      <em>/dev/net/tun</em>. Na te pytania należy odpowiedzieć twierdząco, 
+      urządzenie jest potrzebne do działania VPN. Skrypt instalacyjny Debiana 
+      zapyta także o to czy w przypadku aktualizacji programu <em>OpenVPN</em> 
+      powinien wyłączyć usługę przed aktualizacją, czy też robić to po 
+      aktualizacji. Odpowiedź na to pytanie jest istotna w przypadku gdy dostęp
+      do konsoli serwera mamy tylko przez nasz tunel VPN - wówczas należy 
+      odpowiedzieć <strong>NIE</strong> (nie zatrzymuj usługi przed 
+      aktualizacją). W przeciwnym razie stracilibyśmy łączność z serwerem.
+      W przypadku "paczek" Debianowych program zostanie 
+      zainstalowany w katalogu <em>/usr/sbin</em>, a pliki konfiguracyjny 
+      powinien znajdować się w <em>/etc/openvpn</em>.
+    </p>
+    <h5>Instalacja przez kompilację źródeł programu (Linux)</h5>
+    <p>
+      Opis instalacji ze źródeł jest uniwersalny dla większości systemów 
+      *niksowych. Przed kompilacją upewnij się, czy masz zainstalowane w
+      systemie tzw. narzędzia deweloperskie ( np. dla dystrybucji opartych na 
+      Debianie jest to pakiet pod nazwą <em>build-essentials</em>) tj.
+      kompilator języka C++ (pakiet g++) i program <em>make</em>. Jako że 
+      <em>OpenVPN</em> działa w oparciu o protokół SSL, potrzebna będzie także
+      zainstalowana biblioteka <em>openssl</em> wraz z nagłówkami (pakiety
+      <em>libssl</em>, <em>libssl-dev</em>). Dystrybucje, w których instalacja
+      oprogramowania na ogół polega na kompilacji źródeł, powinny mieć
+      wszystkie potrzebne biblioteki już zainstalowane.
+    </p>
+    <p>
+      Przed kompilacją programu <em>OpenVPN</em> upewnij się że masz 
+      zainstalowaną w systemie bibliotekę LZO (wraz z nagłówkami) - 
+      odpowiedzialną za kompresje danych. Wprawdzie można skompilować 
+      <em>OpenVPN</em> bez tej biblioteki, jednakże pozbawimy się możliwości 
+      używania kompresji w połączeniach VPN. Aby sprawdzić czy mamy 
+      zainstalowane pliki nagłówkowe biblioteki LZO wykonujemy poniższe 
+      polecenie.
+    </p>
+<pre class="code-block">
+srv:~# find /usr/ -type -f -name 'lzo1x.h'
+</pre>
+    <p>
+      Jeśli nie znaleziono pliku <em>lzo1x.h</em>, to musimy jeszcze 
+      skompilować i zainstalować bibliotekę LZO. W tym celu wykonujemy
+      poniższe czynności.
+    </p>
+    <ol>
+      <li>Pobieramy kod źródłowy biblioteki LZO ze strony
+          <a href="http://www.oberhumer.com/opensource/lzo/#download">
+          http://www.oberhumer.com/opensource/lzo/#download</a>. Musimy pobrać
+          pełną wersję, nie wybierajmy wersji Mini-LZO, która nie zawiera
+          potrzebnych plików nagłówkowych. Rozpakowujemy kod w jakiś katalog
+          tymczasowy np. <em>/usr/src/lzo-2.10</em>.
+      </li>
+      <li>Wpisujemy polecenie:
+<pre class="code-block">
+# ./configure &amp;&amp; make &amp;&amp; make install
+</pre>
+      </li>
+    </ol>
+    <p>
+      Jeśli mamy zainstalowane w systemie podstawowe narzędzia deweloperskie,
+      biblioteka powinna skompilować się bez problemów. W wyniku instalacji
+      (polecenia <code class="code-inline">make install</code>) powinny
+      powstać pliki nagłówkowe biblioteki LZO - w katalogu
+      <em>/usr/local/include/lzo</em>. Teraz możemy przejść do kompilacji
+      programu <em>OpenVPN</em>.
+    </p>
+    <ol>
+      <li>Pobieramy źródła stabilnej wersji programu <em>OpenVPN</em> ze strony
+         głównej projektu <a href="https://openvpn.net/community-downloads/">
+            https://openvpn.net/community-downloads/</a>.
+      </li>
+      <li>Rozpakowujemy plik w katalogu <em>/usr/src/</em>. W tym celu 
+          wpisujemy polecenie:
+<pre class="code-block">
+# unzip openvpn-&lt;numer_wersji&gt;.zip
+</pre></li>
+      <li>Przechodzimy do katalogu <em>openvpn-&lt;numer_wersji&gt;</em> i
+          wpisujemy polecenie:
+<pre class="code-block">
+# ./configure
+</code></li>
+      <li>Możemy zapoznać się z listą dostępnych opcji wpisując polecenie
+<pre class="code-block">
+# ./configure --help | more
+</pre>,
+          jednakże w większości przypadków domyślne opcje konfiguracyjne są
+          wystarczające.</li>
+      <li>Jeśli podczas działania skryptu 
+          <code class="code-inline">./configure</code> nie zostaną zgłoszone 
+          błędy, możemy uruchomić właściwą kompilacje programu w tym celu 
+          wpisujemy polecenie:
+<pre class="code-inline">
+# make
+</pre>
+          Kompilacja nie trwa długo, na szybkim komputerze po około minucie
+          program <code class="code-inline">make</code> zakończy działanie.</li>
+      <li>Ostatnim krokiem jest instalacja skompilowanych plików we właściwych
+          katalogach. W tym celu wpisujemy polecenie:
+<pre class="code-block">
+# make install
+</pre>
+          Program powinien zainstalować się w katalogu <em>/usr/local/bin</em>
+      </li>
+    </ol>
+    <p>
+      <em>OpenVPN</em> potrzebuje też do działania wirtualnego interfejsu 
+      sieciowego <em>TUN/TAP</em>, którego sterownik musi być wkompilowany w 
+      jądro systemu, bądź mieć postać modułów (Linux). Jeśli nie kompilowaliśmy
+      jądra swojego systemu samodzielnie, to najprawdopodobniej odpowiedni 
+      sterownik mamy już w systemie (popularne dystrybucje dodają go w postaci 
+      modułów). Aby się o tym przekonać wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+# modprobe tun
+</pre>
+     <p>
+      Jeśli program <code class="code-inline">modprobe</code> nie zgłosi błędu,
+      możemy wpisać komendę <code class="code-inline">dmesg</code>, aby 
+      sprawdzić, czy moduł jądra został załadowany do pamięci. Szukajmy napisu 
+      zawierającego "<em>TUN/TAP</em>". Gdy program 
+      <code class="code-inline">modprobe</code> zgłosi
+      następujący błąd: 
+      <code class="code-inline">Can't locate module tun</code>,
+      oznacza to, że albo sterownik interfejsu <em>TUN/TAP</em> został 
+      wkompilowany w jądro, albo też sterownika nie ma ani w jądrze, ani w 
+      postaci modułu. Aby sprawdzić to, wpisujemy polecenie: 
+      <code class="code-inline">dmesg | grep -i tun</code>. Powinniśmy
+      zobaczyć komunikat świadczący o obecności sterownika <em>TUN/TAP</em>, w 
+      przeciwnym razie jądro nie obsługuje tego sterownika i będzie trzeba je 
+      przekompilować.
+    </p>
+    <p>
+      <strong>
+        <em>(od Redaktora strony: Tutaj ze względu na to, że książka została
+            wydana 10 lat temu. Ta część zostanie zakończona. Rekompilacja 
+            jądra przedstawiona w tym miejscu w książce była kompatybilna z 
+            jądrem 2.6, w momencie pisania jest 5.5.10, wiele rzeczy z tym 
+            związane mogło zostać zmienione, natomiast nie umiejętna 
+            rekompilacja jądrą może unieruchomić system, ta część zostanie 
+            pominięta)
+        </em>
+      </strong>
+    </p>
+    <p>
+      Ostatnim etapem instalacji programu <em>OpenVPN</em> jest stworzenie 
+      pliku urządzenia interfejsu <em>TUN</em> oraz modyfikacja skryptów 
+      startowych. Wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+# mknod /dev/net/tun c 10 200
+</pre>
+    <p>
+      Jeśli instalowaliśmy <em>OpenVPN</em> z paczki, jest wielce prawdopodobne,
+      że plik już istnieje, więc wywołanie tego polecenia zwróci błąd o tym że, 
+      pliki istnieje. Nie należy się nim przejmować. W przypadku gdy sterownik 
+      <em>TUN</em> jest w postaci modułu, upewnijmy się czy jest on dopisany w 
+      pliku odpowiedzialnym za ładowanie modułów przy starcie systemu. Niestety
+      nie ma tutaj spójności pomiędzy systemami. Poniżej znajdują się ścieżki 
+      dla najpopularniejszych dystrybucji:
+    </p>
+    <ul>
+      <li><em>/etc/modules</em> - dystrybucja Debian i wszystkie bazujące na 
+          niej,</li>
+      <li><em>/etc/rc.modules</em> - dystrybucja Slackware,</li>
+      <li><em>/etc/modprobe.conf</em> - dystrybucja RedHat, Fedora, Aurox, 
+          o inne bazujące na RHEL.</li>
+    </ul>
+    <p>
+      Jako, że do działania sieci VPN na pewno będzie potrzebne przekazywanie
+      pakietów (ang. <em>forwarding</em>) dopisujemy do pliku 
+      <em>/etc/sysctl.conf</em> linijkę: 
+      <code class="code-inline">net.ivp4.ip_forward = 1</code>.
+    </p>
+    <p>
+      Ze względów bezpieczeństwa serwera na potrzeby działania programu 
+      <em>OpenVPN</em> powinieneś stworzyć osobne konto bez możliwości 
+      logowania się i bez możliwości uruchomienia powłoki. Program 
+      <em>OpenVPN</em> zaraz po uruchomieniu się zrzuci uprawnienia użytkownika
+      <em>root</em> na to specjalne konto.
+    </p>
+    <p>
+      Zakładamy konto <em>OpenVPN</em> oraz grupę o takiej samej nazwie. W tym 
+      celu wykonujemy poniższe polecenia.
+    </p>
+    <ol>
+      <li><code class="code-inline">groupadd openvpn</code></li>
+      <li><code class="code-inline">usermod -g openvpn -d /usr/local/etc/openvpn
+           -s /bin/false -f 1 openvpn</code></li>
+      <li><code class="code-inline">mkdir /user/local/etc/openvpn</code></li>
+      <li><code class="code-inline">chown openvpn:openvpn /usr/local/etc/openvpn
+          </code></li>
+    </ol>
+    <p>
+      W powyższym przykładzie konfiguracje programu <em>OpenVPN</em> będziemy 
+      przechowywali w katalogu <em>/usr/local/etc/openvpn</em>. Możemy ją 
+      zmienić oczywiście dostosowując je do własnych potrzeb.
+    </p>
+    <h4>Konfiguracja OpenVPN</h4>
+    <p>
+      Konfiguracja programu <em>OpenVPN</em> polega na stworzeniu jednego pliku
+      konfiguracyjnego oraz ewentualnym przygotowaniu klucz i certyfikatów SSL
+      dla serwera i klientów. Liczba opcji konfiguracyjnych sukcesywnie rosła,
+      osiągając już całkiem pokaźne rozmiary. Jednak w typowych konfiguracjach
+      używać będziemy używać tylko podstawowych opcji. Nim przejdziemy do
+      praktycznych przykładów, zostaną opisane najważniejsze właściwości
+      programu <em>OpenVPN</em>.
+    </p>
+    <p>
+      <em>OpenVPN</em> może działać w jednym z dwóch podstawowych typów:
+    </p>
+    <ul>
+      <li><strong>Tryb routera</strong> - używany w przypadku konfiguracji
+          typu brama + wielu klientów lub brama-brama. Dobrym przykładem jest
+          tutaj zdalny dostęp do zasobów firmy przez mobilnych pracowników.</li>
+      <li><strong>Tryb bridge'a</strong> - używany najczęściej w przypadku
+          łączenia dwóch lub większej liczby sieci. W tym przypadku między
+          sieciami przekazywany jest cały ruch łącznie z <em>broadcastami</em>. 
+          Przykładem wykorzystania tego trybu jest stworzenie tuneli VPN 
+          pomiędzy oddziałem firmy a centralą, tak aby działał między nimi 
+          protokół IPX.</li>
+    </ul>
+    <p>
+      Trybu bridge'a powinniśmy używać tylko w gdy jest naprawdę konieczne. We
+      wszystkich pozostałych lepszym rozwiązaniem jest tryb routera. Przede
+      wszystkim dla tego że nie przesyła pakietów <em>broadcast</em>. Po drugie
+      w przypadku routera każdy z klientów ma osobną podsieć IP, dzięki czemu 
+      możemy prosto i skutecznie definiować, który użytkownik do czego ma 
+      dostęp na firewallu (np. <em>iptables</em>).
+    </p>
+    <p>
+      Drugą istotną kwestią, którą musismy rozważyć, jest sposób 
+      uwierzytelniania klientów. Tutaj także mamy dwie możliwości:
+    </p>
+    <ul>
+      <li>Uwierzytelnianie przez współdzielony stały klucz znany obu stronom.
+          Rozwiązanie proste w konfiguracji, nie nadaje się dla wielu 
+          użytkowników. Znakomicie sprawdza się jednak w przypadku łączenia 
+          podsieci, np. oddziału firmy z centralą,</li>
+      <li>Uwierzytelnianie przez certyfikaty SSL X.509, znane z poprzedniego
+          rozdziału. To rozwiązanie znakomicie nadaje się do tworzenia zdalnego
+          dostępu dla pracowników. Dzięki własnościom protokołu SSL/PKI możemy
+          wystawiać użytkownikom certyfikat na określony czas, w razie potrzeby
+          unieważnić je, nadawać dostęp na podstawie właściciela certyfikatu 
+          itp.</li>
+    </ul>
+    <p>
+      Jeśli mamy wybrać metodę to uwierzytelnianie po przez certyfikaty X.509
+      należy zastosować wszędzie tam, gdzie mamy do czynienia z czynnikiem
+      ludzkim (odchodzący pracownicy, nieznani użytkownicy). Rozwiązanie z
+      kluczem współdzielonym wystarcza w przypadku łączenia ze sobą routerów.
+    </p>
+    <p>
+      UDP czy TCP - który protokół transportowy wybrać dla potrzeb tunelu?
+      <em>OpenVPN</em> może działać z wykorzystaniem zarówno protokół UDP, jak 
+      i TCP. Autorzy <em>OpenVPN</em> zalecają używanie protokołu UDP, co może 
+      na pierwszy rzut oka wydawać się dziwne, ponieważ UDP nie zapewnia 
+      mechanizmów kontroli przesyłu ani mechanizmów potwierdzeń. Powodem jest 
+      wydajność transmisji. Chodzi tutaj o znany problem, jak pojawia się w 
+      przypadku przesyłania transmisji TCP zawartej (tunelowanej, 
+      enkapsulowanej) w ramach innej sesji TCP - co miałoby miejsce w przypadku
+      uruchomienia tunelu po TCP. Mechanizm retransmisji sprawdza się bardzo 
+      dobrze na zawodnych łączach internetowych, natomiast gdy ten sam zgubiony
+      pakiet próbują retransmitować dwa protokoły TCP, prowadzi to do zapchania
+      łącza. Wyobraźmy sobie sytuacje, w której pierwsza warstwa transportowa 
+      (ta, po której działa tunel) zaczyna gubić pakiety. W czasie, w którym 
+      warstwa niższa czeka na retransmisje, warstwa wyższa TCP (ta, która 
+      "przenosi" właściwie dane użytkownika wewnątrz tunelu) nie dostaje 
+      potwierdzeń od hosta docelowego i sama zaczyna retransmitować brakujące 
+      segmenty - zatykając tym samym i tak przytkaną już warstwę niższą. To 
+      zjawisko nazywa się efektem meltdown lub TCP meltdown.
+    </p>
+    <p>
+      W praktyce dużo zależy od tego, jakie dane będą przesyłane przez tunel
+      VPN, oraz od jakości połączenia. W przypadku dobrego łącza i małego
+      obciążenia różnica może być pomijalna. Jeśli zamierzamy uruchomić bramę
+      dostępować dla pracowników mobilnych, musimy pod uwagę, że "nietypowe"
+      porty UDP mogą być blokowane w takich miejscach jak hotel czy publiczny 
+      hotspot itp. Ostatecznie nic nie stoi na przeszkodzie aby uruchomić dwa 
+      osobne tunele, jeden działający na TCP, drugi na UDP.
+    </p>
+    <h4>Praktyczny przykład - zdalny dostęp do zasobów dla pracowników firmy</h4>
+    <p>
+      Możemy rozważyć następujący przypadek. Dostępu do zasobów sieci LAN, tj.
+      dysków udostępnionych na serwerze Windows 2003, bazy danych <em>MySQL</em>
+      oraz aplikacji intranetowej, potrzebuje grupa handlowców. Brama 
+      internetowa w firmie działa na Linuksie, użytkownicy mają na laptopach 
+      system MS Windows XP. Klasa adresowa wewnątrz sieci firmowej to
+      <code class="code-inline">192.168.10.0/24</code>.
+    </p>
+    <p>
+      Jako, że mamy tu do czynienia z czynnikiem ludzkim na pewno zastosujemy
+      uwierzytelnianie użytkowników przez certyfikaty SSL. Zanim jeszcze
+      przejdziemy do konfiguracji programu <em>OpenVPN</em>, należy przygotować
+      klucze i certyfikaty SSL dla serwera (bramy) i użytkowników.
+    </p>
+    <h5>Generowanie certyfikatów SSL</h5>
+    <p>
+      Aby móc skonfigurować niezbędne będzie utworzenie urzędu certyfikacji
+      oraz certyfikatów zarówno dla serwera jak i dla poszczególnych 
+      użytkowników, zostało zobrazowane w sekcji poświęconej SSL:
+      <a href="#ssl">Generowanie certyfikatów SSL</a>
+    </p>
+    <h5>Konfiguracja po stronie serwera</h5>
+    <p>
+      Konfiguracje serwera rozpoczynamy od przegrania na nasz serwer 
+      <em>OpenVPN</em> do katalogu z konfiguracją, certyfikatu; klucza 
+      prywatnego serwera oraz certyfikatu wystawcy CA. Następnie po stronie 
+      serwera musimy wygenerować plik pomocniczy z parametrami algorytmu 
+      kryptograficznego Diffiego-Hellmana. Algorytm ten umożliwia uzgodnienie 
+      stronom wspólnego klucza do szyfrowania symetrycznego, który będzie znany
+      tylko im. Do tego celu potrzebne są wylosowane dwie liczby pierwsze 
+      zawarte w pliku DH. Obecnie za bezpieczne uznaje się aby klucz użyty w 
+      protokole DH był długości 1024 bitów. Do celu użyjemy biblioteki 
+      <em>OpenSSL</em>. Wpisujemy polecenie podane poniżej,
+    </p>
+<pre class="code-block">
+openssl dhparam -out dh1024.pem 1024
+</pre>
+    <p>
+      Operacja może potrwać nawet kilka minut - w zależności o szybkości
+      procesora. Podczas generowania klucza (1024-bitowej liczby pierwszej)
+      na ekranie zobaczymy kropki. Przygotowany plik dh1024.pem przegrywamy do
+      katalogu konfiguracyjnego programu <em>OpenVPN</em>. Teraz możemy przejść
+      do edycji po stronie serwera. Przykładowy plik został podany poniżej.
+    </p>
+<pre class="code-block">
+dev tun                        ; rodzaj interfejsu — dla routera zawsze TUN
+local 85.198.209.251           ; adres, na którym będzie działał VPN
+proto udp                      ; tunel będzie działał na porcie UDP
+port 17003                     ; używany port
+user openvpn                   ; zrzuć uprawnienia na wskazanego użytkownika
+group openvpn                  ; jw. dla grupy
+ca cacert.pem                  ; plik certyfikatu CA
+cert servercert.pem            ; certyfikat serwera
+key serverkey.pem_bezhasla     ; plik z kluczem prywatnym serwera
+dh dh1024.pem                  ; plik z parametrami protokołu Diffiego-Hellmana
+server 10.8.0.0 255.255.255.0  ; klasa adresowa, z której przydzielane będą adresy IP klientom
+ifconfig-pool-persist ipp.txt  ; zawiera informacje o przydzielonych adresach IP
+client-config-dir ccd          ; katalog z plikami specyficznych ustawień użytkowników
+keepalive 10 120               ;
+comp-lzo                       ; algorytm kompresji
+</pre>
+    <p>
+      Spośród tego pliku konfiguracyjnego szerszego omówienia wymagają dwie 
+      opcje. 
+      <code class="code-inline">ifconfig-pool-persist &lt;nazwa pliku&gt;</code>
+      w pliku wskazanym w tej dyrektywie <em>OpenVPN</em> zapisuje nazwy 
+      użytkowników oraz adresy IP, jakie zostały przydzielone klientom z puli 
+      adresów określonej dyrektywą <code class="code-inline">server</code>. 
+      Nazwa użytkownika to zawartość pola Common Name z certyfikatu klienta. 
+      Adres IP zapisane są w postaci podsieci o masce /30
+      (<em>255.255.255.252</em>). Dzięki plikowi 
+      <code class="code-inline">ifconfig-pool-persist</code> klient
+      może otrzymać to samo IP po ponownym podłączeniu. 
+      Z plikiem <em>ipp.txt</em> związana jest pewna nieścisłość która zostanie
+      wyjaśniona przy okazji opisu bardziej złożonej konfiguracji. Kolejną 
+      dyrektywą wartą omówienia jest 
+      <code class="code-inline">client-config-dir &lt;nazwa katalogu&gt;</code>,
+      opcja ta wskazuje katalog, w którym znajdują się konfiguracje
+      poszczególnych użytkowników. Twórcy <em>OpenVPN</em> przewidzieli 
+      możliwość dostosowywania konfiguracji do konkretnych użytkowników. W 
+      momencie zestawiania połączenia VPN program sprawdza, czy istnieje plik
+      konfiguracyjny użytkownika w katalogu <em>ccd</em> i jeśli tak, 
+      przetwarza zapisane w nim opcje. Pliki w katalogu <em>ccd</em> muszą mieć
+      nazwy zgodne z polem <code>Common Name</code> certyfikatu klienta. 
+      Między innymi dlatego pole <code>Common Name</code> certyfikatu SSL jest 
+      dla programu <em>OpenVPN</em> takie ważne. Najczęściej poprzez CCD 
+      przekazujemy użytkownikowi adres IP, adresy serwerów DNS, informacje o 
+      routingu.
+    </p>
+    <h5>Uruchomienie usługi serwera</h5>
+    <p>
+      Mając przygotowany plik konfiguracyjny, możemy uruchomić proces serwera.
+      W tym celu wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+/usr/sbin/openvpn --config /usr/local/etc/openvpn/server.conf
+</pre>
+    <p>
+      Dostosowując oczywiście ścieżki dostęp do według własnej konfiguracji.
+      Jeśli mamy skonfigurowaną zaporę sieciową na domyślne blokowanie musimy
+      odblokować ją na porcie jaki podaliśmy dla usługi <em>OpenVPN</em>.
+    </p>
+    <h5>Konfiguracja klienta</h5>
+    <p>
+      Aby przetestować nasze pierwsze połączenia VPN, musimy jeszcze
+      skonfigurować ustawienia po stronie użytkownika. Zakładając, że pliki z
+      kluczem prywatnym oraz certyfikatem użytkownika mamy już przygotowane.
+      Należy przegrać je na komputer użytkownika nazywając odpowiednio
+      <em>user.key</em> i <em>user.crt</em>. Przegrać musimy też certyfikat 
+      urzędu CA - plik <em>cacert.pem</em>, aby było wygodnie pisać plik
+      konfiguracyjny i darować sobie pisanie ścieżek do certyfikatów umieścimy
+      je w tym samym katalogu co plik konfiguracyjny. Poniżej znajduje się
+      przykładowy plik konfiguracyjny dla klienta.
+    </p>
+<pre class="code-block">
+dev tun                    ; interfejs typu TUN (router)
+client                     ; tryb klienta
+remote 85.198.209.251      ; adres zdalnego serwera
+proto udp                  ; użyty protokół transportowy
+port 17003                 ; port, z którym się połączy
+nobind                     ; nie otwieraj portu po stronie klienta
+ca cacert.pem              ; plik z certyfikatem CA
+cert user.crt              ; plik z certyfikatem użytkownika
+key user.key               ; plik z kluczem prywatnym użytkownika
+comp-lzo                   ; załączona kompresja
+verb 3                     ; poziom komunikatów
+</pre>
+    <p>
+      Podczas zestawiania połączenia program kliencki czy na Windows czy to na
+      Linux będzie wyświetlać komunikaty, z nich możemy wywnioskować czy
+      połączenie zostało zestawione czy też nie. Jeśli wydaje nam się, że tak
+      to dla pewności możemy spingować adres interfejsu <em>TUN</em> na 
+      serwerze. W razie problemów przydatnym staje się program <em>tcpdump</em>
+      lub <em>Wireshark</em>. Jednak, że adres przydzielony przez serwer w 
+      sieci VPN nie daje nam jeszcze możliwości komunikacji z hostami w sieci 
+      LAN w siedzibie firmy. Aby móc wykorzystać zasoby z siedziby firmy, 
+      należy ustawić trasę w systemie aby ruch skierowany na adresy w sieci 
+      firmowej przechodził przez interfejs <em>TUN</em> (wirtualny interfejs 
+      sieci VPN).
+    </p>
+    <p>
+      Ustawienia trasy czy też statycznych adresów serwerów DNS, możemy ustawić
+      tak, aby były one przekazywane przy połączeniu. Polecenie
+      <code class="code-inline">push</code> może zostać umieszczone w pliku
+      konfiguracyjnym wtedy mamy do czynienia z konfiguracją globalną, lub w
+      katalogu <em>ccd</em> w plikach konfiguracyjnych użytkowników. Składnia
+      polecenia <code class="code-inline">push</code> dla
+      <code class="code-inline">route</code>:
+    </p>
+<pre class="code-inline">
+push "route 192.168.10.20 255.255.255.255"
+</pre>
+    <p>
+      Zwróćmy uwagę na to, że nie ma adresu bramy. Otóż <em>OpenVPN</em> sam 
+      dobierze sobie adres bramy odpowiedni dla tunelu klienta.
+    </p>
+    <h4>Bardziej złożona konfiguracja z wieloma użytkownikami</h4>
+    <p>
+      Załóżmy, że do sieci firmowej zdalny dostęp przez VPN powinna mieć spora
+      liczba pracowników - np. trzydziestu. Jako że osoby te należą do różnych
+      działów, uprawnienia do zasobów wewnętrznych muszą różnić się.
+      Pomijając dalsze uwierzytelnienia w warstwie aplikacji (hasło do bazy
+      danych itd.), powinniśmy tak skonfigurować zdalny dostęp, aby
+      pracownik "widział" jedynie to, co powinien, a nie całą sieć wewnętrzną.
+      Nie wątpliwie najprościej ten cel zrealizować przez blokadę na
+      firewallu. Tutaj świetnie sprawdzi się <em>iptables</em>.
+    </p>
+    <p>
+      W pierwszej kolejności wygenerujemy klucze wraz certyfikatami dla wszystkich
+      użytkowników, następnie powinniśmy gdzieś sobie rozpisać kto do czego
+      powinien mieć dostęp. Należy pamiętać, aby użytkownik zdalny miał dostęp
+      <strong><u>TYLKO!</u></strong> do niezbędnych zasobów. Jeśli nie ma
+      konieczności to nie powinien on również mieć dostępu do Internetu przez
+      sieć VPN. Są w sumie trzy takie zasady, dzięki którym będziemy realizować
+      naszą konfiguracje. Otóż:
+    </p>
+    <ol>
+      <li>
+        Każdemu z użytkowników, <em>OpenVPN</em> powinien przydzielać zawsze to
+        samo IP, na podstawie którego będziemy przyznawać dostęp tylko do 
+        określonych zasobów w sieci LAN (serwerów, usług).</li>
+      <li>
+        Poprzez mechanizm CCD (<em>client-config dir</em>) będziemy przekazywać
+        użytkownikom ich konfiguracje (modyfikacja tabeli routingu, zmiana
+        serwerów DNS itp.).</li>
+      <li>
+        Informacje o adresach IP oraz dostępnie do serwerów wewnętrznych
+        będzie zapisywali w plikach konfiguracyjnych <em>OpenVPN</em> oraz w 
+        postaci reguł <em>iptables</em>.</li>
+    </ol>
+    <h5>Przypisywanie stałych adresów IP użytkownikom</h5>
+    <p>
+      Za przydzielanie użytkownikom stałych adresów IP odpowiada dyrektywa
+      <code class="code-inline">ifconfig-push</code>, którą umieścimy w plikach
+      ustawień użytkowników - w katalogu <em>ccd</em>. Składnia instrukcji
+      <code class"code-inline">ifconfig-push</code> jest następująca:
+    </p>
+<pre class="code-block">
+ifconfig-push &lt;adres_klienta&gt; &lt;adres_serwera&gt;
+</pre>
+    <p>
+      Na przykład:
+    </p>
+<pre class="code-block">
+ifconfig-push 10.8.0.10 10.8.0.9
+</pre>
+    <h5>Pliki ustawień użytkowników w katalogu ccd</h5>
+    <p>
+      Poprzez pliki konfiguracyjne w katalogu <em>ccd</em> możemy przekazać
+      różne parametry, poniżej znajduje się klika przykładów.
+    </p>
+    <ul>
+      <li><code class="code-inline">push "route &lt;adres&gt; &lt;maska&gt;"</code>
+          - dodaje wpis do tablicy routingu klienta.</li>
+      <li><code class="code-inline">
+          push "dhcp-option DNS &lt;adres_IP_serwera_DNS&gt;</code>
+          - ustawia nowy DNS w konfiguracji klienta.</li>
+      <li><code class="code-inline">
+          push "dhcp-option DOMAIN &lt;nazwa_domeny&gt;</code>
+          - ustawia sufiks domeny w konfiguracji DNS klienta.</li>
+      <li><code class="code-inline">push "redirect-gateway"</code> - ustawienie
+          tej opcji spowoduje przekierowanie całego ruchu klienta (domyślna 
+          trasa)</li>
+    </ul>
+    <p>
+      Skorzystanie z ostatniej opcji 
+      (<code class="code-inline">redirect-gateway</code>) będzie wymagało 
+      utworzenia regułek NAT-u, aby 
+      użytkownik mógł "wychodzić na świat" z adresu firmowego routera.
+    </p>
+    <p>
+      Korzystając z ww. opcji, utworzymy dla każdego z użytkowników odpowiedni
+      plik w katalogu <em>ccd</em>. Będziemy przekazywali adres IP oraz wpisy
+      dodające trasy w tabeli routingu.
+    </p>
+    <h5>Logowanie zdarzeń do pliku</h5>
+    <p>
+      Jeśli planujemy produkcyjnie wdrożyć program <em>OpenVPN</em> z większą 
+      liczbą użytkowników, warto mieć możliwość szybkiego i łatwego sprawdzenia
+      informacji takich jak: kto, kiedy i skąd połączył się z VPN. Informacje
+      tego typu warto archiwizować jako ewentualny "dowód w sprawie". Może też
+      wrzucić je do bazy SQL dla łatwiejszej obróbki i generowania statystyk.
+      Do tego celu możemy wykorzystać opcję serwera <em>OpenVPN</em>
+      <code class="code-inline">learn-address</code>. Opcja ta - jeśli jest
+      załączona - wywoła skrypt podany jako parametr podczas zdarzeń takich
+      jak podłączenie się klienta, zmiana adresu IP czy rozłączenie.
+      Składnia opcji jest następująca:
+    </p>
+<pre class="code-block">
+learn-address &lt;skrypt&gt;
+</pre>
+    <p>
+      OpenVPN przekaże do skryptu parametry takie, jak:
+    </p>
+    <ol>
+      <li>parametr: <code class="code-inline">akcja</code>
+          (<code class="code-inline">add,delete,update</code>) - w zależności 
+          od tego co miało miejsce,</li>
+      <li>parametr: adres IP klienta (przydzielony w ramach tunelu),</li>
+      <li>parametr: nazwa <code class="code-inline">Common Name</code> 
+          użytkownika.</li>
+    </ol>
+    <p>
+      Niestety żaden skrypt nie jest dołączony do <em>OpenVPN</em>. Musimy 
+      napisać go samodzielnie.
+    </p>
+    <h4>Unieważnianie certyfikatów</h4>
+    <p>
+      Przy większej liczbie użytkowników prędzej czy później zajdzie potrzeba
+      zablokowania dostępu do VPN któremuś z nich. Powody mogą być różne,
+      najczęstsze to odjeście z pracy lub kradzież laptopa.
+    </p>
+    <p>
+      Załóżmy, że chcemy unieważnić certyfikat użytkownika <em>jkowalski</em>.
+      W pierwszej kolejności musimy korzystając z programu <em>OpenSSL</em>, 
+      unieważnić certyfikat. Logujemy się na komputer CA, i przechodzimy do 
+      katalogu <em>/etc/ssl</em>, a następnie wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl ca -revoke jkowalskicert.pem
+</pre>
+    <p>
+      OpenSSL zapyta o hasło klucza CA i po podaniu prawidłowego unieważni
+      certyfikat. Po unieważnieniu certyfikatu dostaniemy informacje zwrotną,
+      że baza została zaktualizowana. Możemy teraz podejrzeć zawartość pliku
+      <em>index.txt</em> - przy użytkowniku <em>jkowalski</em> zobaczymy
+      znacznik <em>R</em> (ang. <em>revoked</em>).
+    </p>
+    <p>
+      Musimy jeszcze wygenerować listę CRL, w której zapisane są wszystkie
+      unieważnione certyfikaty.
+    </p>
+<pre class="code-block">
+root@ca:/etc/ssl# openssl ca -gencrl -out crl.pem
+</pre>
+    <p>
+      Teraz należy wygenerowany plik <em>crl.pem</em>, przegrać na serwer do
+      katalogu z konfiguracją <em>OpenVPN</em>. Następnie do pisać do pliku
+      konfiguracyjnego:
+    </p>
+<pre class="code-block">
+crl-verify crl.pem
+</pre>
+    <p>
+      Restartujemy usługę (zatrzymujemy i uruchamiamy ponownie) 
+      <em>OpenVPN</em>. Teraz możemy przetestować czy <em>jkowalski</em> 
+      rzeczywiście nie ma już dostępu do VPN, zestawiając połączenie jako on. 
+      Nie dostaniemy żadnego komunikatu, po stronie klienta. Połączenie po 
+      prostu się nie zestawia.
+    </p>
+    <h4>Łączenie oddziałów firmy</h4>
+    <p>
+      Rozważmy przypadek, w którym musimy połączyć siedzibę firmy z nowo
+      powstałym oddziałem w innym mieście.
+    </p>
+    <p>
+      Sposób pierwszy, podobny w działaniu do poprzedniego przypadku, tunel
+      VPN działający w trybie routera. W tym przypadku komputery w siedzibie A
+      i siedzibie B będą w innych klasach adresowych i do komunikacji między
+      sobą będą używały bram. Rozwiązanie dobre bo separuje podsieć
+      przepuszczając tylko wymagany ruch. Niestety nie zawsze się to sprawdza,
+      gdyż, jak wiemy routery nie przekazują pakietów wysyłanych na
+      adres rozgłoszeniowy sieci (ang. <em>broadcast</em>), a niektóre 
+      protokoły używają tego adresu do poprawnego działania.
+    </p>
+    <p>
+      W związku z powyższym omówimy też drugie rozwiązanie - oparte na mostach
+      sieciowych. W tym przypadku tunel VPN będzie przezroczysty dla warstwy
+      sieci, dzięki czemu komputery będą się widziały tak, jakby oddziały były
+      połączone siecią Ethernet. Wówczas komputery w oddziałach A i B będą w
+      tej samej klasie adresowej i do komunikacji nie będą używały bram.
+    </p>
+    <p>
+      Generalnie zalecam używanie trybu routera wszędzie tam gdzie to tylko
+      możliwe. Rozwiązanie "mostkowe" przepuszcza przez tunel cały ruch
+      warstwy sieci, w tym także zapytania ARP, co oczywiście wpływa na
+      obciążenie łącza VPN.
+    </p>
+    <h5>Przykład rozwiązania z routerem</h5>
+    <p>
+      Rozważmy przypadek. Siedzibę firmy A musimy połączyć tunelem z oddziałem 
+      B. Klasa używana w sieci wewnętrznej w siedzibie A to
+      <code class="code-inline">192.168.20.0/24</code>. Komputery w oddziale B
+      powinny mieć dostęp do trzech serwerów z sieci w siedzibie A:
+      <code class="code-inline">192.168.20.3, 192.168.20.4, 192.168.20.5</code>.
+      Dodatkowo komputery z oddziału B powinny mieć dostęp do Internetu przez
+      łącze z siedziby A. Routery po obu stronach działają na Linuksie.
+    </p>
+    <p>
+      Na interfejsach tunelu użyjemy klasy 
+      <code class="code-inline">10.3.0.0/30</code>. Dla potrzeb
+      sieci wewnętrznej w oddziale B wykorzystamy klasę
+      <code class="code-inline">192.168.30.0/24</code>.
+    </p>
+    <ol>
+      <li>Instalujmy program <em>OpenVPN</em> na obu routerach opisany w 
+          początkowych sekcjach tego artykułu.</li>
+      <li>Generujemy współdzielony klucz na serwerze. W tym celu wpisujemy 
+          polecenie:
+<pre class="code-block">
+openvpn --genkey --secret secret.key
+</pre>
+          W omawianym przypadku jako metodę uwierzytelnienia zastosujemy 
+          współdzielony klucz (ang. <em>pre-shared key</em> - PSK) - ponieważ
+          jest tylko jeden klient, nie ma potrzeby generowania certyfikatów.
+      </li>
+      <li>Przegrywamy plik <em>secret.key</em> na drugi router, używając
+          bezpiecznej transmisji danych - najlepiej połączenia SCP lub SFTP:
+<pre class="code-block">
+scp secret.key root@router.siedzibab.pl:/etc/openvpn
+</pre>
+      </li>
+      <li>Przygotowujemy plik konfiguracyjny dla serwera (brama w siedzibie A)
+<pre class="code-block">
+dev tun                         ; rodzaj interfejsu — dla routera zawsze TUN
+local 85.98.29.251              ; adres routera, na którym „słucha” OpenVPN
+proto udp                       ; tunel będzie działał na porcie UDP
+port 17003                      ; używany port
+ifconfig 10.3.0.1 10.3.0.2      ; adres serwera, adres klienta
+secret /etc/openvpn/secret.key  ; ścieżka do współdzielonego klucza (PSK)
+user openvpn                    ; zrzuć uprawnienia na wskazanego użytkownika
+group openvpn                   ; jw. dla grupy
+keepalive 10 120
+comp-lzo                        ; algorytm kompresji
+verb 3                          ; poziom szczegółowości logowania
+</pre>
+      </li>
+      <li>Przygotowujemy plik konfiguracyjny dla klienta (brama w siedzibie B)
+<pre class="code-block">
+dev tun                         ; rodzaj interfejsu — dla routera zawsze TUN
+remote 85.98.29.251             ; adres drugiej strony — routera w siedzibie A
+proto udp                       ; tunel będzie działał na porcie UDP
+port 17003                      ; używany port
+ifconfig 10.3.0.2 10.3.0.1      ; adres klienta, adres serwera
+secret /etc/openvpn/secret.key  ; ścieżka do współdzielonego klucza (PSK)
+user openvpn                    ; zrzuć uprawnienia na wskazanego użytkownika
+group openvpn                   ; jw. dla grupy
+keepalive 10 120
+comp-lzo                        ; algorytm kompresji
+verb 3                          ; poziom szczegółowości logowania
+</pre>
+          Zauważ brak słowa kluczowego <code class="code-inline">client</code> 
+          w pliku konfiguracyjnym klienta. Nie jest to błąd. Opcja
+          <code class="code-inline">client</code> jest synonimem opcji
+          <code class="code-inline">tls-client</code>, a w tym przypadku nie 
+          używamy uwierzytelnienia TLS.
+      </li>
+      <li>Upewniamy się, czy na obu routerach załączone jest przekazywania
+          pakietów.
+<pre class="code-block">
+cat /proc/sys/net/ipv4/ip_forward
+</pre>
+          Polecenie powinno na obu routerach zwrócić 1, jeśli zwraca 0. To
+          należy wykonać polecenie:
+<pre class="code-block">
+echo 1 &gt; /proc/sys/net/ipv4/ip_forward
+</pre>
+          oraz dopisać do linijkę skryptów startowych systemu 
+          (<em>sysctl.conf</em>)</li>
+      <li>Jeżeli domyślną polityką bezpieczeństwa na serwerze (bramie w
+          siedzibie A) jest <em>blokuj</em>, to musimy otworzyć port 17003. W 
+          tym celu wpisujemy polecenie:
+<pre class="code-block">
+iptables -I INPUT -i ethX -p udp -d IP_routera --dport 17003 -j ACCEPT
+</pre>
+          Gdzie <code class="code-inline">ethX</code> jest nazwą interfejsu
+          łączącego router z Internetem, <code class="code-inline">IP_routera</code>
+          adres IP, pod którym router jest dostępny w Internecie. Pamiętajmy 
+          aby zapisać nasze reguły firewalla.</li>
+      <li>Jeżeli komputery oddziale B mają mieć dostęp do Internetu przez tunel
+          VPN, to na routerze w siedzibie B musimy zmienić domyślną bramę.
+          Powinna wskazywać adres IP tunelu VPN routera w siedzibie A. Obecnej
+          bramy (przydzielonej przez ISP dla siedziby B użyjemy tylko do 
+          komunikacji z routerem w siedzibie A. Na routerze w siedzibie B 
+          wpisujemy polecenie:
+          <strong><u>Uwaga!</u></strong>Jeśli pracujemy zdalnie na routerze
+          ważna jest tutaj kolejność działania. Gdybyśmy zaczęli od usunięcia
+          domyślnej bramy na routerze w oddziale, skutkowało by to utratą
+          komunikacji z nim!
+<pre class="code-block">
+rtr-officeB:~# ip route add &lt;IP_rtr_w_office_A&gt;/32 via &lt;Brama_ISP_w_office_B&gt;
+</pre>
+          Jeśli w naszym systemie brakuje polecenia 
+          <code class="code-inline">ip</code>, to należy użyć starszego 
+          polecenia:
+<pre class="code-block">
+rtr-officeB:~# route add -host &lt;IP_rtr_w_office_A&gt; gw &lt;Brama_ISP_w_office_B&gt;
+</pre>
+          Następnie usuwamy istniejącą domyślną trasę:
+<pre class="code-block">
+rtr-officeB:~# ip route delete default
+lub
+rtr-officeB:~# route delete default
+</pre>
+      </li>
+      <li>Pora na zestawienie tunelu i sprawdzenie czy strony widzą się na
+          wzajem po adresach ustawionych w plikach konfiguracyjnych w
+          dyrektywie <code class="code-inline">ifconfig</code>:
+<pre class="code-block">
+# openvpn --config &lt;ścieżka do pliku konfiguracyjny&gt;
+</pre></li>
+      <li>Jeśli mamy wzajemną widoczność, musimy ustawić bramę domyślną na
+          routerze w biurze B:
+<pre class="code-block">
+rtr-officeB:~# ip route add default via &lt;ip_tun_w_office_A&gt;
+lub
+rtr-officeB:~# route add default gw &lt;ip_tun_w_office_A&gt;
+</pre>
+          Od tej chwili cały ruch z oddziału B będzie przechodził przez łącze
+          VPN.</li>
+      <li>Pozostało jeszcze skonfigurować reguły firewalla na routerze w
+          siedzibie A. Musimy określić na co zezwalamy komputerom z sieci
+          "oddziałowej" <code class="code-inline">192.168.30.0/24</code>. Jako,
+          że domyślną polityką może być <em>blokuj</em>, każdy dostep trzeba
+          jawnie zadeklarować. Zgodnie z założeniami komputery z siedziby B
+          powinny mieć dostęp do odpowiednich serwerów. Na routerze w siedzibie
+          A wpisujemy poniższe polecenia:
+<pre class="code-block">
+iptables -I FORWARD -i tun0 -p ip -s 192.168.30.0/24 -d 192.168.20.3 -j ACCEPT
+iptables -I FORWARD -i tun0 -p ip -s 192.168.30.0/24 -d 192.168.20.4 -j ACCEPT
+iptables -I FORWARD -i tun0 -p ip -s 192.168.30.0/24 -d 192.168.20.5 -j ACCEPT
+</pre>
+          Aby zapewnić komputerom z oddziału B połączenie z Internetem, musimy
+          jeszcze stworzyć jakąś regułę NAT. Przykładowa może wyglądać
+          następująco:
+<pre class="code-block">
+iptables -t nat -A POSTROUTING -o ethX -s 192.168.30.0/24 -j SNAT --to &lt;ADRES NAT&gt;
+</pre>
+          <code class="code-inline">ethX</code> oznacza interfejs, przez 
+          których łączymy się z Internetem. 
+          <code class="code-inline">ADRES NAT</code> jest to adres na jaki 
+          zachodzić ma translacja adresów, przeważnie adres interfejsu, przez 
+          który łączymy się z Internetem.
+      </li>
+    </ol>
+    <h5>Tunel VPN z mostkowaniem</h5>
+    <p>
+      W niniejszym przykładzie rozważymy przypadek połączenia oddziału firmy z
+      centralą "przezroczystym" tunelem VPN. Założenie jest takie aby przez
+      tunel przekazywane były pakiety rozgłoszeniowe. Klasa adresowa używana w
+      obu podsieciach to <code>192.168.20.0/24</code>. Most zbudujemy z dwóch
+      interfejsów: karty sieciowej eth1 łączącej router z siecią LAN oraz
+      wirtualnego interfejsu TAP. Oprócz programu <em>OpenVPN</em> będziemy 
+      potrzebowali wkompilowanego w jądro systemu (bądź w postaci modułu) 
+      sterownika mostów sieciowych oraz programu do administracji mostem.
+      Do zarządzania mostem służy pakiet <em>bridge-utils</em>, który na ogół
+      nie wchodzi w skład popularnych dystrybucji i będzie trzeba go
+      doinstalować. W przypadku dystrybucji opartych o GNU/Linux Debian:
+    </p>
+<pre class="code-block">
+# apt-get install bridge-utils
+</pre>
+    <ol>
+      <li><u>Przygotowanie środowiska</u>
+          <ol>
+            <li>Instalujemy program <em>OpenVPN</em> na obu routerach opisany
+                na początku sekcji sposób,</li>
+            <li>Generujemy współdzielony klucz na serwerze. W tym celu
+                wpisujemy polecenie:
+<pre class="code-block">
+# openvpn --genkey --secret secret.key
+</pre>
+                W omawianym przypadku jako metodę uwierzytelnienia zastosujemy
+                współdzielony klucz (ang. <em>pre-shared key</em> - PSK) -
+                ponieważ jest tylko jeden klient, nie ma potrzeby generowania
+                certyfikatów,</li>
+            <li>Przegrywamy plik <em>secret.key</em> na drugi router, używając
+                bezpiecznej transmisji danych - najlepiej połączeniem SCP/SFTP:
+<pre class="code-block">
+# scp secret.key root@router.siedzibab.pl:/etc/openvpn
+</pre>
+            </li>
+            <li>Przygotowujemy plik konfiguracyjny dla serwera (brama w
+                siedzibie A)
+<pre class="code-block">
+dev tap                                 ; rodzaj interfejsu — dla bridge zawsze TAP
+local 85.98.29.251                      ; adres routera, na którym „słucha” OpenVPN
+proto udp                               ; tunel będzie działał na porcie UDP
+port 17003                              ; używany port
+ifconfig 192,168.20.0 255.255.255.0     ; adres serwera, adres klienta
+secret /etc/openvpn/secret.key          ; ścieżka do współdzielonego klucza (PSK)
+user openvpn                            ; zrzuć uprawnienia na wskazanego użytkownika
+group openvpn                           ; jw. dla grupy
+keepalive 10 120
+comp-lzo                                ; algorytm kompresji
+verb 3                                  ; poziom szczegółowości logowania
+</pre>
+            </li>
+            <li>Przygotowujemy plik konfiguracyjny dla klienta (brama w 
+                siedzibie B)
+<pre class="code-block">
+dev tap                                  ; rodzaj interfejsu — dla bridge zawsze TAP
+remote 85.98.29.251                      ; adres drugiej strony — routera w siedzibie A
+proto udp                                ; tunel będzie działał na porcie UDP
+port 17003                               ; używany port
+ifconfig 192,168.20.0 255.255.255.0      ; adres klienta, adres serwera
+secret /etc/openvpn/secret.key           ; ścieżka do współdzielonego klucza (PSK)
+user openvpn                             ; zrzuć uprawnienia na wskazanego użytkownika
+group openvpn                            ; jw. dla grupy
+keepalive 10 120
+comp-lzo                                 ; algorytm kompresji
+verb 3                                   ; poziom szczegółowości logowania
+</pre>
+                Zwróćmy uwagę na brak słowa kluczowego 
+                <code class="code-inline">client</code> w pliku konfiguracyjnym
+                klienta. Nie jest to błąd. Opcja 
+                <code class="code-inline">client</code> jest synonimem opcji
+                <code class="code-inline">tls-client</code>, a w tym przypadku
+                nie używamy uwierzytelnienia TLS.</li>
+            <li>Jeżeli domyślną polityką bezpieczeństwa na serwerze (bramie w
+                siedzibie A) jest <em>blokuj</em>, to musimy otworzyć port 
+                UDP/17003. W tym celu wpisujemy polecenie:
+<pre class="code-block">
+# iptables -I INPUT -i ethX -p udp -d IP_routera --dport 17003 -j ACCEPT
+</pre>
+                Gdzie <code class="code-inline">ethX</code> jest nazwą 
+                interfejsu łączącego router z Internetem, 
+                <code class="code-inline">IP_routera</code> adres IP, pod 
+                którym router jest dostępny w Internecie. Pamiętajmy aby 
+                zapisać nasze reguły firewala.</li>
+            <li>Uruchamiamy program <em>OpenVPN</em> i sprawdzamy czy istnieje 
+                on liście procesów (w obu sidzibach).
+<pre class="code-block">
+# openvpn --config &lt;plik konfiguracyjny&gt;
+</pre>
+            </li>
+            <li> Tworzymy na obu routerach most używając programu 
+                 <code class="code-inline">brctl</code>. W tym celu wpisujemy
+                 podane poniżej polecenia zachowując kolejność na obu 
+                 komputerach.
+<pre class="code-block">
+# brctl addbr br0                         # tworzy interfejs dla bridge'a
+# brctl addif br0 eth1                    # dodaje do bridge'a interfejs eth1
+# brctl addif br0 tap0                    # dodaje do bridge'a interfejs tap0
+# ifconfig eth1 0.0.0.0 promisc up        # przestawia karty eth1 i tap0
+# ifconfig tap0 0.0.0.0 promisc up        # w tryb nasłuchiwania (promiscuous mode)
+</pre>
+                Szczególną uwagę warto zwrócić na komendę
+                <code class="code-inline">brcrl addif br0 eth1</code>, a
+                konkretnie na interfejs eth1 podany jako parametr. Powinien to
+                być interfejs łączący router z siecią lokalną, a nie Internetem.
+                Pomyłka w tym miejscu będzie skutkować utratą komunikacji z
+                serwerem (jeśli pracujemy zdalnie). Następną rzeczą, na którą 
+                warto zwrócić uwagę jest to, że na interfejsie
+                <code class="code-inline">eth1</code> nie przydzielamy adresu 
+                IP! Interfejsy mostu są przezroczyste dla warstwy sieciowej i 
+                nie posiadają adresów IP. Aby nasz router miał przydzielony 
+                adres z klasy lokalnej, musimy skonfigurować go na interfejsie
+                <code class="code-inline">br0</code>. Nadajmy więc routerom
+                adresy z puli lokalnej. Przypisujemy IP
+                <code class="code-inline">192.168.20.1</code> routerowi po
+                stronie siedziby A.
+<pre class="code-block">
+# ifconfig br0 192.168.20.1 up
+</pre>
+                Routerowi w oddziale B przypiszemy adres IP 192.168.20.200.
+<pre class="code-block">
+# ifconfig br0 192.168.20.200 up
+</pre>
+                Jeśli wszystko poszło pomyślnie to strony powinny się 
+                "pingować".
+            </li>
+          </ol>
+          Zauważmy że adres <code>192.168.20.1</code> przydzielony na interfejsie
+          <code class="code-inline">br0</code> routera w siedzibie A pełni też
+          funkcje bramy domyślnej dla komputerów w swoim LAN-ie (komputerów w
+          siedzibie A)! W związku z powyższym wszystkie reguły firewalla, które
+          dotyczyłyby interfejsu <code class="code-inline">eth1</code>, teraz
+          dotyczą interfejsu <code class="code-inline">br0</code>. Most nie
+          potrzebuje załączonego przekazywania pakietów, natomiast
+          w związku z faktem że serwer w siedzibie A, pełni funkcje mostu i
+          routera, przekazywanie musi być załączone. Upewnijmy się, czy plik
+          <em>/proc/sys/net/ipv4/ip_forward</em> ma zawartość 1.
+<pre class="code-block">
+# cat /proc/sys/net/ipv4/ip_forward
+</pre>
+          Jeśli nie to mu ją wpisujemy:
+<pre class="code-block">
+# echo 1 &gt; /proc/sys/net/ipv4/ip_forward
+</pre>
+      </li>
+      <li><u>Debugowanie</u>
+          <p>
+            Nie wykluczone, że za pierwszym razem wszystko nie zadziała od razu.
+            Zostanie tutaj przedstawione kilka kroków, które przydają się 
+            podczas debugowania.
+          </p>
+          <ol>
+            <li>Sprawdzamy czy tunel w ogóle się zestawił - przeglądamy logi
+                programu <em>OpenVPN</em>. Sprawdzamy, czy program widnieje na 
+                liście procesów - za pomocą polecenia
+<pre class="code-block">
+# ps aux | grep vpn
+</pre>
+            </li>
+            <li>Sprawdzamy, czy interfejs br0 powstał po obu stronach tunelu.
+                Wpisujemy polecenie:
+<pre class="code-block">
+# ifconfig | grep br0
+</pre>
+            </li>
+            <li>Używając polecenia 
+                <code class="code-inline">brctl show br0</code>,
+                sprawdzamy, czy oba interfejsy 
+                (<code class="code-inline">tap0</code>
+                i <code class="code-inline">eth1</code>) widnieją na liście
+                interfejsów członkowskich na moście br0. Jeśli któregoś z nich
+                brakuje - dodajemy go, za pomocą polecenia:
+<pre class="code-block">
+# brctl addif &lt;interfejs&gt;
+</pre>
+            </li>
+            <li>Upewniamy się czy wszystkie interfejsy tworzące most działają w
+             trybie <em>promiscuos</em> (nasłuchiwania). Wpisujemy polecenia:
+<pre class="code-block">
+# ifconfig eth1 promisc
+# ifconfig tap0 promisc
+</pre>
+            </li>
+            <li>Możemy użyć programu <em>tcpdump</em>, do przeglądania 
+                pakietów pojawiających się na obu stronach mostu.</li>
+            <li>Możemy podglądać na bierząco jak most uczy się adresów MAC.
+                Listę adresów sprawdzamy poleceniem:
+<pre class="code-block">
+brctl showmacs br0
+</pre>
+            </li>
+            <li>Jeśli w dalszym ciągu nic nie działa, czasem dobrym 
+                rozwiązaniem jest zresetowanie komputerów i rozpoczęcie 
+                wszystkiego od nowa</li>
+            <li>Jeśli pracujemy zdalnie na odległym serwerze, dobrym 
+            rozwiązaniem będzie napisanie skryptu, który będzie pingował 
+            wybrany serwer co 20 min. W przypadku braku odpowiedzi, skrypt 
+            powinien zresetować serwer.</li>
+          </ol>
+      </li>
+    </ol>
+    <h3 id="ipsec">IPSec</h3>
+    <p>
+      <strong>IPSec</strong> (ang. <em>IP Security</em> - bezpieczeństwo w IP) -
+      to zestaw protokołów kryptograficznych opracowanych przez grupę IETF w
+      odpowiedzi na zapotrzebowanie rynku IT na bezpieczną komunikację sieciową
+      przez Internet.
+    </p>
+    <p>
+      Podstawowym założeniem przy projektowaniu IPSec było zapewnienie
+      integralności i poufności przesyłanych danych niezależnie od używanych
+      protokołów warstw wyższy modelu OSI (TCP/UDP itd.). Zapewnienie
+      integralności przesyłanych danych, czyli możliwości wykrycia tego, czy
+      pakiet nie został zmodyfikowany, osiągnięto poprzez stosowanie skrótów
+      kryptograficznych zamiast zwykłych sum kontrolnych w protokole IP, (które
+      można przeliczyć po modyfikacji pakietu). Poufność z kolei, zapewnia
+      szyfrowanie danych kluczem symetrycznym (np. DES, 3DES, AES). Przy czym
+      IPSec nie narzuca wyboru algorytmu szyfrowania, dzięki czemu protokół
+      jest bardzo uniwersalny. W razie złamania w przyszłości, któregoś z
+      obecnie używanych algorytmów wystarczy jego zamiana bez potrzeby
+      przebudowy całego protokołu.
+    </p>
+    <p>
+      IPSec może być wykorzystywany w jednym z dwóch trybów. Pierwszy to tryb
+      transportowy, w którym nagłówek IPSec wstawiany jest pomiędzy oryginalny
+      nagłówek IP a nagłówek warstwy transportowej. Tryb transportowy używany
+      jest pomiędzy dwoma hostami komunikującymi się przez IPSec. Drugim
+      rodzajem połączeń IPSec jest tryb tunelowy, w którym cały pierwotny
+      pakiet IP enkapsulowany jest wewnątrz nagłówka IPSec. Tryb tunelowy na
+      ogół wykorzystywany jest do łączenia całych sieci korporacyjnych z
+      wykorzystaniem bram VPN. W tym przypadku komputery w sieciach 
+      wewnętrznych "nie wiedzą" w ogóle o fakcie, że pakiety po opuszczeniu 
+      routera opakowane są w nagłówki IPSec i w zaszyfrowanej formie wędrują 
+      przez Internet. Brama VPN po drugiej stronie wyodrębnia pierwotne pakiety
+      IP i przesyła do właściwego hosta wewnątrz sieci lokalnej. Warto zauważyć,
+      że w trybie tunelowania w razie ewentualnego podsłuchu transmisji osoba 
+      podsłuchująca nie jest wstanie dowiedzieć się nawet, pomiędzy jakimi 
+      hostami wymieniane są dane. Adresy źródłowy i docelowy nagłówka IPSec 
+      zawierają adresy bram VPN, a nie rzeczywistych hostów.
+    </p>
+    <p>
+      Dwa podstawowe protokoły wchodzące w skład IPSec to AH i ESP. Protokół
+      AH (ang. <em>Authentication Header</em>) zapewnia integralność danych,
+      ale nie zapewnia poufności. Nie jest możliwy spoofing czy inna 
+      modyfikacja pakietu ponieważ suma kontrolna została zabezpieczona 
+      kryptograficznie (funkcją skrótu - metoda HMAC) przy użyciu tajnego 
+      klucza znanego tylko nadawcy i odbiorcy.
+    </p>
+    <p>
+      Przed właściwą komunikacją zabezpieczoną protokołem AH (lub ESP) strony
+      nawiązują logiczne połączenie w warstwie sieci, tworząc tzw. skojarzenie
+      bezpieczeństwa SA (ang. <em>Security Association</em>). SA charakteryzują
+      następujące elementy:
+    </p>
+    <ul>
+      <li>idetyfikator używanego protokołu bezpieczeństwa (AH lub ESP),</li>
+      <li>źródłowy i docelowy adres IP połączenia,</li>
+      <li>32-bitowa liczba będąca identyfikacją połączenia, określana mianem
+          SPI (ang. <em>Security Parameter Index</em>).</li>
+    </ul>
+    <p>
+      Skojarzenie bezpieczeństwa SA jest jednokierunkowe, dlatego do
+      bezpiecznej komunikacji dwustronnej potrzebne są dwa niezależne kanały
+      SA, po jednym w każdnym kierunku. Zauważmy jednak, że w pewnych
+      okolicznościach wystarczy zabezpieczenie tylko jednej strony (np.
+      odpowiedzi serwera DNS), stąd koncepcja "jednokierunkowości" połączeń
+      jest uzasadniona.
+    </p>
+    <p>
+      Z protokołem AH związane jest także pojęcie SN - <em>serial number</em>,
+      którego celem jest zabezpieczenie transmisji przez atakiem polegającym
+      na wielokrotnym przesyłaniu tego samego pakietu do odbiorcy przez hosta,
+      który podsłuchał pakiet (ang. <em>reply attack</em>). Na początku
+      komunikacji strony ustawiają wartość SN na <em>0</em>, a następnie
+      inkrementują ją wraz z każdym wysłanym pakietem. Dzięki temu odbiorca
+      może wykryć, że odebrany właśnie pakiet to kopia już wcześniej
+      otrzymanego.
+    </p>
+    <p>
+      Protokół ESP (ang. <em>Encapsulated Security Payload</em>) pierwotnie
+      zapewniał wyłącznie szyfrowanie transmisji przy użyciu któregoś z
+      szyfrów blokowych (DES, 3DES, AES). Dlatego dla zapewnienia integralności
+      i poufności danych wykorzystywano oba protokoły - AH i ESP - jednocześnie.
+    </p>
+    <p>
+      Obecnie jednak ESP zapewnia także sprawdzenia integralności danych
+      (zasada działania bardzo podobna do AH - suma kontrolna zabezpieczona
+      kryptograficznie), dlatego protokół AH wychodzi z użycia. W przypadku
+      gdy szyfrowanie transmisji nie jest konieczne, w ESP istnieje możliwość
+      zastosowania algorytmu NULL zamiast któregoś z algorytmów
+      kryptograficznych. Istotną różnicą między protokołami ESP i AH jest fakt,
+      że w przypadku ESP ochrona integralności nie obejmuje nagłówka IP (tego
+      widzianego przez pośredniczące routery), dzięki czemu protokół IPSec/ESP
+      może przechodzić przez połączenia za NAT-em.
+    </p>
+    <p>
+      Za automatyczną negocjację parametrów połączenia tj. uwierzytelnianie,
+      ustalenie relacji SA oraz późniejsze uzgadniania kluczy kryptograficznych
+      odpowiada osobny protokół wymiany kluczy - IKE
+      (ang. <em>Internet Key Exchange</em>), także wchodzący w skład IPSec .
+      Przy czym samo uwierzytelnienie może być przeprowadzone różnymi metodami
+      - współdzielony klucz, podpisy RSA, certyfikaty X.509 lub Kerberos.
+    </p>
+    <p>
+      Protokół IKE działa w dwóch fazach. Pierwsza faza - ISAKMP (ang. 
+      <em>Internet Security Association and Key Management Protocol</em>), 
+      odpowiada za przeprowadzenie uwierzytelnienia, utworzenie kanału ISAKMP 
+      SA i zarządzanie nim. Druga faza - Oakley, odpowiada za uzgadnianie klucz
+      (wg. algorytmu DH) i związków SA w trakcie połączenia.
+    </p>
+    <p>
+      ISAKMP może zostać przeprowadzona w trybie głównym (ang. 
+      <em>main mode</em>)
+      lub w tzw. trybie agresywnym (ang. <em>aggresive mode</em>). W trybie
+      głównym wymieniane są 3 dwukierunkowe komunikaty (komunikat-odpowiedź -
+      razem 6). W trybie agresywnym natomiast przesyłane są jedynie 3 
+      komunikaty.
+      Tryb agresywny jest szybszy, natomiast ma pewną słabość, którą w pewnych
+      okolicznościach można wykorzystać do odgadnięcia klucz PSK. Otóż w trybie
+      agresywnym cześć informacji przesyłana jest przez ustanowieniem
+      bezpiecznego kanału. W przypadku uwierzytelnienia przez PSK i użycia 
+      trybu
+      agresywnego osoba podsłuchująca transmisję jest w stanie podejrzeć hash
+      współdzielonego klucza, a następnie próbować odnaleźć klucz metodą
+      słownikową/siłową. Znając PSK, atakujący może zestawić tunel VPN, 
+      podszywając się pod pracownika firmy, którego połączenie wcześniej 
+      podsłuchał. Oprócz rozkodowania PSK możliwy jest w tym przypadku atak 
+      typu man-in-the-middle.
+    </p>
+    <p>
+      Z powyższego wynika, że powinniśmy unikać trybu agresywnego w połączeniu
+      z uwierzytelnianiem PSK. Ogólnie nie powinniśmy używać uwierzytelnienia
+      przez PSK dla tuneli zdalnych pracowników, gdzie IP drugiej strony tunelu
+      nie jest znane (możliwość siłowego odgadnięcia hasła).
+    </p>
+    <p>
+      Faza druga (Oakley) przebiega zawsze w trybie <em>quick mode</em>. Jako
+      że jest to faza druga, nie przeprowadza ona własnych metod 
+      uwierzytelnienia i umożliwia szybkie (stąd nazwa) zestawienie relacji 
+      IPSec SA.
+    </p>
+    <p>
+      Z drugą fazą związane jest także opcjonalne pojęcie PFS (ang. <em>Perfect
+      Forward Secrecy</em>) - poufność doskonała. Przez pojęcie to rozumie się
+      sposób wymiany kluczy sesyjnych w trakcie połączenia IPSec. Załączenie
+      PFS, zapewnia że materiał klucza głównego może być używany do 
+      wygenerowania tylko jednego klucza sesji. Przed utworzeniem nowego klucza
+      sesji jest przeprowadzana wymiana kluczy (algorytm Diffiego-Hellmana) w 
+      celu wygenerowania nowego materiału klucza głównego. Dzięki zastosowaniu 
+      PFS uzyskanie przez atakującego pojedynczego klucza pozwala mu na 
+      odczytanie tylko wiadomości zaszyfrowanych tym kluczem. Niestety, 
+      załączenie PFS wiąże się ze spadkiem wydajności (i wzrostem obciążenia 
+      procesora). Dodatkowo nie wszystkie implementacje obsługują tę właściwość.
+    </p>
+    <p>
+      Każda ze stron przechowuje informacje o nawiązanych skojarzeniach SA w
+      tzw. bazie SAD (ang. <em>Security Association Database</em>).
+    </p>
+    <p>
+      Do terminologi związanej z IPSec musimy jeszcze dołożyć pojęcia SPD -
+      <em>Security Policy Database</em>. SPD to baza odpowiadająca przyjętej
+      polityce bezpieczeństwa. Baza SPD jest używana dla pakietów wychodzących.
+      System sprawdza przed wysłaniem, czy dla określonego hosta docelowego
+      (sieci docelowej) istnieje jakiś wpis określający, czy protokół IPSec ma
+      zostać użyty. Jeżeli tak, przeglądana jest baza SAD w poszukiwaniu
+      skojarzenia SA odpowiedzialnego za komunikacje w określonym hostem
+      docelowym.
+    </p>
+    <h4>IPSec a translacja adresów (maskarada)</h4>
+    <p>
+      <strong>NAT</strong> (ang. <em>Network Address Transtalation</em>) to 
+      translacja adresów popularnie zwana maskaradą. Najkrócej mówiąc polega 
+      ona ukrywaniu hosta wewnętrznego poprzez zamianę adresu źródłowego w 
+      nagłówku pakietu IP - na adres routera. W tym przypadku NAT (a w zasadzie
+      PAT - <em>Port Address Translation</em>) stara się zachować port 
+      źródłowy, który został wybrany przez hosta źródłowego; dopiero gdy ten 
+      port jest zajęty przez inne połączenie NAT, zostanie zamieniony na inny. 
+      Router pełniący rolę NAT-u przechowuje wszystkie bieżące połączenia w 
+      specjalnej tabeli NAT, dzięki czemu wie, do którego hosta przekierować 
+      ma odpowiedzi przychodzące na dany port. Mechanizm ten doskonale sprawdza
+      się w przypadku połączeń TCP/UDP, gdzie bezproblemowo możemy przekierować
+      połączenie przychodzące na port 1234 do portu 5673 komputera wewnątrz 
+      sieci (za maskaradą).
+    </p>
+    <p>
+      W przypadku połączeń IPSec sprawa nie wygląda tak prosto z dwóch powodów.
+      Po pierwsze w przypadku protokołu AH nie jest możliwa zmiana adresu
+      źródłowego w nagłówku pakietu IP, gdyż cały nagłówek zabezpieczony jest
+      przed zmianą - do nagłówka dodawany jest skrót kryptograficzny utworzony
+      z sumy kontrolnej pakietu oraz tajnego hasła. Jakakolwiek modyfikacja
+      nagłówka pakietu uznana będzie za naruszenie integralności danych (router,
+      nie znając hasła nie będzie w stanie wygenerować odpowiedniego skrótu).
+      Na to nic nie poradzimy. Dla protokołu AH nie jest możliwa translacja
+      adresów.
+    </p>
+    <p>
+      W przypadku protokołu ESP sprawa wygląda lepiej, gdyż, ochronie 
+      integralności nie podlega "zewnętrzny" nagłówek IP, tak więc możliwa jest
+      zamiana źródłowego adresu IP. Pojawia się jednak niestety problem z 
+      wieloma klientami znajdującymi się za tym samym routerem (maskaradą). 
+      Protokół ESP nie wykorzystuje portów, jak ma to miejsce w protokołach TCP
+      i UDP, dlatego nie można w prosty sposób odróżnić połączeń IPSec 
+      inicjowanych z różnych hostów wewnątrz sieci.
+    </p>
+    <p>
+      Rozwiązanie powyższego problemu jest tzw. <strong>NAT-Traversal</strong>.
+      Mechanizm ten polega na enkapsulacji protokołu ESP wewnątrz połączenia
+      UDP (najczęściej port 4500)
+    </p>
+    <p>
+      Jak widać działanie protokołu IPSec (zespołu protokołów) jest dość 
+      złożone. Przedstawiono tutaj najistotniejsze elementy, tak aby poza 
+      posiadaniem wiedzy praktycznej, warto posiadać wiedzę teoretyczną, która 
+      to pomoże zrozumieć nam gdzie zrobiliśmy błąd, jeśli coś nie zadziała lub
+      nagle przestanie. Na szczęście konfiguracja połączenia IPSec z 
+      automatyczną wymianą kluczy (IKE) nie jest wcale taka trudna, co zostanie
+      zobrazowane.
+    </p>
+    <h4>Najważniejsze pojęcia związane z IPSec</h4>
+    <ul>
+      <li><strong>Protokół ESP (ang. <em>Encapsulated Security Payload</em>)</strong>
+          - podstawowy składnik IPSec. Pierwotnie zapewniał wyłączenie poufność,
+            tj. szyfrowanie transmisji przy użyciu któregoś z szyfrów blokowych
+            (DES, 3DES, AES). Obecnie jednak ESP zapewnia także sprawdzenie
+            integralności danych. ESP w przeciwieństwie do AH nie zabezpiecza
+            nagłówka IP pierwotnego pakietu,</li>
+      <li><strong>Protokół AH (ang. Authentication Header)</strong> - jeden z
+          protokołów wchodzących w skład IPSec. Jego zadaniem jest zapewnienie
+          integralności przesyłanych danych (funkcja skrótu HMAC). Protokół AH
+          nie zapewnia poufności. Wychodzi on obecnie z użycia, ponieważ ESP
+          zapewnia tę samą funkcjonalność oraz szyfrowanie,</li>
+      <li><strong>Protokół ISAKMP (ang. <em>Internet Security Association and
+          Key Management Protocol</em>)</strong> - odpowiada za negocjacje
+          parametrów IPSec, przeprowadzenie uwierzytelnienia, tworzenia kanału
+          SA i zarządzanie nim. Do działania wykorzystuje port 500 UDP,</li>
+      <li><strong>Związek SA (ang. <em>Security Association</em>) </strong>-
+          inaczej relacja SA, jednokierunkowy, logiczny kanał komunikacyjny
+          zestawiany w komunikacji IPSec. Do dwustronnej komunikacji IPSec
+          potrzebne są dwa kanały SA. Skojarzenie SA identyfikowane jest przez
+          32-bitową liczbę zwaną SPI (ang. <em>Security Parametr Index</em>),</li>
+      <li><strong>SPI (ang. <em>Security Parametr Index</em>)</strong> -
+          32-bitowa liczba, będąca identyfikatorem skojarzenia SA w komunikacji
+          IPSec,</li>
+      <li><strong>Baza SAD</strong> - każda ze stron tunelu IPSec przechowuje
+          informacje o nawiązanych relacjach SA w tzw. bazie SAD,</li>
+      <li><strong>DH (<em>Diffie-Hellman</em>) </strong>- algorytm uzgadniania
+          klucza, w którym dwie strony na podstawie wymienionych liczb 
+          uzgadniają liczbę wynikową - klucz. Osoba podsłuchująca transmisje 
+          nie jest w stanie na podstawie tego co usłyszała, wyliczyć klucza,</li>
+      <li><strong>Grupa DH</strong> - informacja mówiąca o wielkości liczb
+          używanych w obliczeniach w algorytmie Diffiego-Hellmana. DH1:768bitów,
+          DH2:1024bity, DH5:1536 bitów. Grupa pierwsza obecnie uważna jest za
+          słabą,</li>
+      <li><strong>Hash</strong> - inaczej funkcja skrótu. Dla dowolnie długiego
+          ciągu wejściowego wyliczany jest skrót o stałej długości. Do
+          najczęściej używanych funkcji należą MD5 i SHA-1, SHA-2. Funkcje 
+          skrótu wykorzystywane są do tworzenia sygnatur (np. cyfrowe 
+          zabezpieczenie sumy kontrolnej pakietu lub pliku),</li>
+      <li><strong>HMAC (ang. <em>keyed-Hash Message Authentication Code</em>)
+          </strong> - zabezpieczona hasłem funkcja skrótu. Dzięki temu oprócz 
+          ochrony integralności zapewniona jest też autentyczność pochodzenia. 
+          Osoba zabezpieczająca dokument podaje hasło i na podstawie hasła oraz
+          dokumentu tworzony jest skrót. Osoba sprawdzająca znając hasło, jest
+          w stanie potwierdzić autentyczność,</li>
+      <li><strong>SHA (SHA-1, SHA-2)</strong> - funkcje skrótu służące to
+          tworzenia sygnatur,</li>
+      <li><strong>MD5</strong> - funkcja skrótu, w wyniku której powstaje
+          128-bitowy hash,</li>
+      <li><strong>DES (ang. <em>Data Encryption Standard</em>)</strong> -
+          algorytm szyfrowania symetrycznego. Ze względu na słabość klucza -
+          56 bitów - obecnie wyszedł z użycia. Jego następcy to 3DES oraz AES,</li>
+      <li><strong>AES (ang. <em>Adavanced Encryption Standard</em>) </strong>
+          - silny szyfr blokowy, możliwe długości klucza to 128, 192, 256 bitów.
+          Powstał w wyniku konkursu na następcę DES. Obecnie często
+          wykorzystywany w kryptografii. m.in w IPSec,</li>
+      <li><strong>RSA</strong> - jeden z algorytmów kryptografii asymetrycznej,
+          stosowany m.in. w podpisach cyfrowych,</li>
+      <li><strong>Transform-set</strong> - w terminologii Cisco zbiór 
+          parametrów związanych z połączeniem IPSec. Do parametrów metrów tych 
+          należą m.in.: rozdzaj protokołu IPSec (ESP, AH) używany protokół 
+          szyfrowania (3DES, AES), używana funkcja skrótu (SHA, MD5) itp,</li>
+      <li><strong>Crypto-map</strong> - w terminologii Cisco to ustawienie,
+          które wiąże niejako wszystkie parametry tunelu w całość. Zawiera 
+          nazwę <em>transform-seta</em> (parametry IPSec), adres IP zdalnego 
+          routera oraz numer listy dostępu, kontrolującej jaki ruch zostanie 
+          przesłany tunelem VPN.</li>
+    </ul>
+    <p>
+      W niniejszym artykule zostanie omówione przygotowanie systemu do 
+      działania z protokołem IPSec.
+    </p>
+    <h4 id="ipsec_linux">IPSec - przygotowanie środowiska w systemie Linux</h4>
+    <p>
+      Z punktu wiedzenia systemu operacyjnego połączenia IPSec można podzielić 
+      na dwie części:
+    </p>
+    <ol>
+      <li>Część odpowiedzialną za zarządzanie pakietami (protokół AH/ESP) - tj.
+          enkapsulację pakietów IP w pakiety IPSec, zabezpieczenie sum 
+          kontrolnych itd. Z racji tego, że operacje te muszą być wydajne, ich
+          obsługą zajmują się moduły jądra systemu.</li>
+      <li>Część odpowiedzialną za zestawienie połączenia i późniejszą wymianę 
+          kluczy (protokół IKE). Obsługę tych funkcji zajmuje się program 
+          (daemon) działający w warstwie użytkownika - w systemie Linux to 
+          demon Pluto (wchodzący w skład OpenSWAN).</li>
+    </ol>
+    <p>
+      Obecnie każde współczesne jądro Linuxa ma już wbudowane moduły dla 
+      protokołu IPSec. Nie potrzeby przeprowadzania żadnych modyfikacji. 
+    </p>
+    <h4>Instalacja programu OpenSWAN</h4>
+    <p>
+      <strong>OpenSWAN</strong> to implementacja protokołu IPSec w systemie 
+      Linux rozwijana 
+      przez grupę developerów, którzy wcześniej pracowali nad projektem 
+      <em>FreeSWAN</em>. W trakcie prac doszło do konfliktu i część deweloperów 
+      rozpoczęła pracę nad <em>OpenSWAN</em>.
+    </p>
+    <p>
+      Jeżeli używana przez nas dystrybucja wspiera automatyczną instalację 
+      pakietów, możesz zainstalować program <em>OpenSWAN</em> z gotowych paczek.
+      W przypadku Debian możesz zastosować pakiet używając programu 
+      <em>apt</em>.
+    </p>
+    <p>
+      Opcjonalnym składnikiem, który należałoby zainstalować jest serwer L2TP -
+      najlepiej <em>xl2tpd</em>. Dlaczego opcjonalnym? Gdyż nie wszystkie 
+      rozwiązania IPSec używają tunelowania L2TP. Niemniej implementacja IPSec 
+      firmy Microsoft wbudowana w każdy z systemów Windows wymaga do działania 
+      właśnie protokołu L2TP. Jeśli zamierzamy łączyć z bramą VPN, używając 
+      wbudowanych w Windows mechanizmów IPSec, musimy zainstalować demon L2TP.
+    </p>
+    <p>
+      Protokół L2TP umożliwia przesłanie ramek połączenia PPP przez przez 
+      protokół IP (Internet), które to połączenie normalnie realizowane jest 
+      tylko w bezpośrednim połączeniu punkt-punkt (modemy, linie szeregowe 
+      itd.). Samo połączenie PPP operuje w warstwie drugiej modelu OSI i służy 
+      do enkapsulacji protokołów warstwy wyższej (IP, IPX itd.), zapewniając 
+      jednocześnie uwierzytelnienie oraz kompresję. Połączenie protokołu L2TP 
+      z PPP umożliwia tunelowanie protokołu IP w ramach innego połączenia IP, 
+      dlatego często wykorzystywane jest w sieciach VPN. Wykorzystanie protokołu
+      PPP daje także dodatkowe możliwości, jak np. przydzielanie adresów IP
+      tunelowi, przekazywanie parametrów sieciowych, takich jak DNS, WINS itp.
+    </p>
+    <p>
+      Naturalnie aby tunelowanie połączenia PPP przez protokół L2TP mogło 
+      działać, potrzebny jest także demon PPP. Jako że nie jest już instalowany
+      domyślnie w popularnych dystrybucjach możemy go zainstalować z 
+      repozytorium dystrybucji, dla Debiana możemy skorzystać z polecenia 
+      <em>apt</em>
+    </p>
+    <h4>Praktyczny przykład - brama IPSec/VPN dla użytkowników mobilnych</h4>
+    <p>
+      W tej sekcji stworzymy bramę VPN dla użytkowników mobilnych łączących 
+      się zdalnie z siedzibą firmy. Użytkownicy używają na laptopach systemu 
+      Microsoft Windows i wbudowanego weń "klienta" IPSec. Analogicznie jak dla
+      przykładu z bramą OpenVPN, użytkownicy powinni mieć dostęp do kilku 
+      serwerów w sieci LAN. Adresy IP użytkowników mobilnych nie są znane i
+      mogą oni się łączyć z różnych miejsc, także zza maskarady (połączenia 
+      GPRS, hotspot itd.). Po stronie bramy VPN wykorzystamy system Linux oraz
+      oprogramowanie <em>OpenSWAN</em>.
+    </p>
+    <h5>Konfiguracja bramy IPSec (Linux)</h5>
+    <p>
+      Konfigurację zaczniemy od przygotowania demona L2TP. Tworzymy plik 
+      konfiguracyjny <code>/etc/l2tp/l2tpd.conf</code>. Zawartość pliku 
+      <em>l2tpd.conf</em> powinna wyglądać następująco:
+    </p>
+<pre class="code-block">
+[global]
+ listen-addr = 85.98.29.251                   ;adres internetowy bramy
+ port = 1701                                  ;port — zostawiamy domyślny
+[lns default]
+ip range = 192.168.10.198-192.168.10.250      ;pula IP dla klientów
+local ip = 85.98.29.251                       ;IP lokalny połączenia PPP
+require chap = yes                            ;wymagamy uwierzytelniania CHAP
+;refuse pap = yes
+require authentication = yes
+name = ipsec
+ppp debug = yes
+pppoptfile = /etc/ppp/options.l2tpd           ;pozostały
+length bit = yes
+</pre>
+    <p>
+      Zwrócić należy uwagę na wymóg uwierzytelniania dotyczy tutaj połączenia 
+      PPP a nie L2TP. Demon L2TP nie możliwości przeprowadzenia swojego
+      uwierzytelniania, ale nie jest to w tym przypadku potrzebne. 
+    </p>
+    <p>
+      Teraz tworzymy plik z opcjami programu <em>pppd</em> - 
+      <em>/etc/ppp/options.l2tpd</em>. Przykładową konfigurację
+      przedstawiono poniżej.
+    </p>
+<pre class="code-block">
+ipcp-accept-local             ; pppd zaakceptuje lokalny adres połączenia
+ipcp-accept-remote            ; jw. dla adresu drugiej strony
+require-mschap-v2             ; wymagamy uwierzytelniania MSCHAP wersji drugiej
+auth
+proxyarp
+idle 1800
+mtu 500
+mru 500
+# eof
+</pre>
+    <p>
+      Następnie konfigurujemy plik z danymi uwierzytelniającymi dla PPP - 
+      <em>/etc/ppp/chap-secrets</em>
+    </p>
+<pre class="code-block">
+# Secrets for authentication using CHAP
+# client        server  secret                  IP addresses
+user      *    "test"
+</pre>
+    <p>
+      gdzie <code class="code-inline">user</code> to nazwa użytkownika a 
+      <code class="code-inline">"test"</code> - hasło.
+    </p>
+    <p>
+      W sytuacji gdyby PPP było jedynym uwierzytelnieniem, moglibyśmy wpisać do
+      pliku <em>chap-secrets</em> wszystkich użytkowników. Nie ma to jednak 
+      sensu, gdyż podstawowym uwierzytelnieniem będą certyfikaty X.509. Niemniej
+      konfiguracje PPP można wykorzystać do przypisywania stałych adresów IP 
+      dla poszczególnych klientów, np.:
+    </p> 
+<pre class="code-block">
+jacek * "test12" 192.168.10.220
+michal * "test13" 192.168.10.221
+</pre>
+    <p>
+      Ostatni element przygotowania bramy IPSec to właściwa konfiguracja 
+      programu <em>OpenSWAN</em>, która sprowadza się w najprostszym przypadku 
+      do edycji dwóch plików - <em>ipsec.conf</em> oraz <em>ipsec.secrets</em>.
+      Poniżej został przedstawiony plik <em>ipsec.conf</em> W tym przypadku 
+      metodą uwierzytelnienia jest klucz współdzielony a klientami mogą być 
+      użytkownicy Windowsa znajdujący się za NAT-em.
+    </p>
+
+<pre class="code-block">
+version 2.0
+config setup
+        interfaces=%defaultroute
+        plutodebug=none
+        forwardcontrol=yes
+        nat_traversal=yes
+virtual_private=%v4:10.0.0.0/8,%v4:172.16.0.0/12,%v4:192.168.0.0/16,%v4:!192.168.10.0/24
+conn roadwarrior-l2tp
+        leftprotoport=17/1701
+        rightprotoport=17/1701
+        also=roadwarrior
+conn roadwarrior
+        auth=esp
+        authby=secret
+        compress=yes
+        keyexchange=ike
+        keyingtries=3
+        pfs=no
+        rekey=yes
+        left=%defaultroute
+        right=%any
+        rightsubnet=vhost:%no,%priv
+        auto=add
+#Disable Opportunistic Encryption
+include /etc/ipsec.d/examples/no_oe.conf
+</pre>
+    <p>
+      Twórcy programu <em>OpenSWAN</em> przyjęli konwencję, aby stron 
+      połączenia nie nazywać w klasyczny sposób: "serwer" i "klient" (lub też 
+      "źródło" i "cel"), tylko "strona lewa" (ang. <em>left</em>) i 
+      "strona prawa" (ang. <em>right</em>). Ma to swoje uzasadnieniem, ponieważ
+      tak naprawdę i tak zestawiane są dwa nie zależne skojarzenia SA - dla 
+      każdego z kierunków transmisji. Poza tym nie zawsze jest jasne, która 
+      strona jest bardziej serwerem, a która bardziej klientem (przykład 
+      łączenia oddziałów firm). Przez "left" rozumie się lokalną konfigurację, 
+      a przez "right" odległą stronę. Zauważyć warto, że w przypadku połączenia
+      typu użytkownik mobilny-brama IPSec, patrząc od strony bramy IPSec, 
+      strona "right" najczęściej nie jest znana (nie znamy adresu IP, z którego
+      będzie łączyć się użytkownik). W przypadku łączenia dwóch bram IPSec 
+      (łączenie oddziałów firmy) strony "left" i "right" są na ogół ściśle
+      określone. W anglojęzycznej terminologii pracowników mobilnych, który
+      łączą się z rożnych miejsc kraju i świata, przyjęło nazwywać się 
+      <em>roadwarrior</em>.
+    </p>
+    <p>
+      Poniżej znajduje się analiza najważniejszych wpisów z pliku 
+      konfiguracyjnego. Plik jest podzielony na kilka sekcji. Podstawowe opcje
+      - tzw. globalne - są zwarte w sekcji <code class="code-inline">
+      config setup</code>.
+    </p>
+    <ul>
+      <li><code class="code-inline">version 2.0</code> - informuje program 
+          <em>OpenSWAN</em>, że 
+          składnia pliku będzie zgodna z <em>OpenSWAN</em>, a nie z 
+          przestarzałym FreeSWAN.</li>
+      <li><code class="code-inline">interfaces=%defaultroute</code> - oznacza 
+          interfejs, na którym ma działać IPSec. Wartość domyślna to 
+          <code class="code-inline">%defaultroute</code>, co oznacza, że 
+          zostanie użyty adres IP bramy domyślnej komputera. Na ogół 
+          <code class="code-inline">%defaultroute</code> jest poprawną 
+          wartością.</li>
+      <li><code class="code-inline">plutodebug=none</code> - definiuje poziom 
+          szczegółowości logów demona <em>pluto</em>. Inne możliwe wartości to:
+          <em>all, raw, krypt, parsing, emitting, control</em>. Najbardziej 
+          optymalną jest opcja <em>control</em>, gdy logi nie będą nam już 
+          potrzebne, to przełączamy na <code class="code-inline">none</code>.</li>
+      <li><code class="code-inline">forwardcontrol=yes|no</code> - sprawdza, 
+          czy załączone jest przekazywanie pakietów IP (ang. <em>IP 
+          forwarding</em>). Jeżeli nie, to je załącza. Po zakończeniu działania
+          tunelu przywraca poprzednią wartość.</li>
+      <li><code class="code-inline">nat_traversal=yes|no</code> - domyślnie: 
+          <code class="code-inline">no</code>. Ważna opcja, jeżeli spodziewasz 
+          się połączeń zza NAT-a (maskarady). Złączenie jej sprawi, że 
+          <em>OpenSWAN</em> będzie oczekiwał także połączeń na porcie UDP 4500,
+          po którym przenoszone są pakiety IPSec.</li>
+      <li><code class="code-inline">virtual_private</code> - określa podsieci 
+          (z zakresu "prywatnych" klas IP), z których mogą łączyć się klienci. 
+          Na ogół podaje się tutaj wszystkie pule IP zdefiniowane do użytku 
+          prywatnego, z wyjątkiem puli używanej w sieci firmowej, do której 
+          użytkownicy chcą mieć dostęp przez VPN.</li>
+    </ul>
+    <p>
+      Sekcja <code class="code-inline">conn roadwarrior-l2tp</code> - 
+      odpowiedzialna za połączenia L2TP (port UDP/1701). Jest ona potrzebna, 
+      jeśli oczekujemy połączeń od klientów wbudowanych w systemy Windows. 
+      Ważne jest, aby sekcja L2TP umieszczona była w pliku przed właściwą 
+      sekcją odpowiedzialną za połączenia klientów. 
+      (<code class="code-inline">conn roadwarrior</code>).
+    </p>
+    <ul>
+      <li><code class="code-inline">conn roadwarrior</code> - właściwa sekcja 
+          połączeń dla pracowników zdalnych.</li>
+      <li><code class="code-inline">auth=esp</code> - określa protokół IPSec. 
+          Możliwe opcje to <em>ah</em> lub <code class="code-inline">esp</code>.
+          Zalecaną metodą jest ESP, ponieważ obsługuje uwierzytelnienie i 
+          szyfrowanie.</li>
+      <li><code class="code-inline">authby=secret</code> - określa sposób 
+          uwierzytelnienia stron. Wartość <code class="code-inline">secret</code>
+          oznacza współdzielony klucz (PSK). W przypadku uwierzytelnienia z 
+          wykorzystaniem certyfikatów opcja powinna mieć wartość 
+          <em>rsasig</em></li>
+      <li><code class="code-inline">compress=yes</code> - możliwa kompresja 
+          danych.</li>
+      <li><code class="code-inline">keyexchange=ike</code> - wartość 
+          <code class="code-inline">ike</code> oznacza, że do uzgodnienia 
+          kluczy zostanie użyty protokół IKE (Internet Key Exchange). Użycie 
+          IKE jest zalecane, także przez twórców <em>OpenSWAN</em>.</li>
+      <li><code class="code-inline">keyingtries=3</code> - określa, ile prób 
+          negocjacji SA może nastąpić (maksymalnie).</li>
+      <li><code class="code-inline">pfs=yes|no</code> - włącza 
+          (<code class="code-inline">yes</code>) lub 
+          wyłącza (<code class="code-inline">no</code>) PFS.</li>
+      <li><code class="code-inline">rekey=yes</code> - określa, czy połączenie 
+          po wygaśnięciu powinno być renegocjowane. Możliwe wartości to 
+          <code class="code-inline">yes</code> lub 
+          <em>no</em>. Domyślnie <code class="code-inline">yes</code>.</li>
+      <li><code class="code-inline">right=%any</code> - określa adres drugiej 
+          strony. Słowo kluczowe <code class="code-inline">%any</code> oznacza, 
+          że adres IP nie jest znany (przypadek mobilnych pracowników).</li>
+      <li><code class="code-inline">rightsubnet=vhost:%no,%priv</code> - opcja 
+          <code class="code-inline">rightsubnet</code> określa podsieć drugiej 
+          strony. W przypadku połączeń typu <code>roadwarriors</code> z 
+          możliwym NAT-em oraz "nie NAT-em" powinna mieć wartość 
+          <code class="code-inline">vhost:%no,%priv</code> Przez NAT oraz 
+          "nie NAT" należy rozumieć że użytkownicy mogą łączyć się zza NAT-u 
+          lub też mieć "zewnętrzny" adres IP i obie konfiguracje będą działać 
+          jednocześnie.</li>
+      <li><code class="code-inline">auto=add</code> - opcja przyjmuje wartości: 
+          <em>start, add, ignore</em>(domyślna!) oraz <em>manual</em>. 
+          Znaczenie poszczególnych opcji jest następujące: 
+          <ul>
+            <li><em>start</em> - załaduj konfigurację i inicjuj połączenie z 
+                druga stroną. Wartość najczęściej używana w przypadku połączeń 
+                dwóch routerów lub jeśli strona jest klientem (ma inicjować 
+                połączenie z drugą stroną).</li>
+            <li><em>add</em> - załaduj konfiguracje i odpowiadaj na 
+                przychodzące połączenia (czekaj na połączenia od drugiej 
+                strony). Wartość używana dla konfiguracji typu 
+                <em>roadwarriors</em> - nie znamy ani czasu, ani adresu IP, z 
+                jakiego połączy się mobilny pracownik. Jedyne, co możemy zrobić
+                odpowiedzieć na jego połączenia.</li>
+            <li><em>ignore</em> - ignoruje sekcję tego połączenia. Uwaga: jest 
+                to wartość domyślna, dlatego musisz przypisać jakąś wartość 
+                sekcjom, które mają działać.</li>
+            <li><em>manual</em> - opcja używana przy ręcznej konfiguracji 
+                wymiany kluczy (zamiast użycia IKE). Opcja niepolecana.</li>
+          </ul></li>
+    </ul>
+    <p>
+      W ostatniej linijce pliku konfiguracyjnego widzimy dołączony plik:
+    </p>
+<pre class="code-block">
+#Disable Opportunistic Encryption
+include /etc/ipsec.d/examples/no_oe.conf
+</pre>
+    <p>
+      Dołączenie powyższego pliku wyłącza tzw. szyfrowanie oportunistyczne, 
+      które w tym przypadku nie jest potrzebne (strony uwierzytelniają się w 
+      inny sposób), a pozostawienie go załączonego skutkowałoby serią 
+      komunikatów w logach systemowych, mówiących o nie możliwości sprawdzenia 
+      informacji w DNS-ie. Idea szyfrowania oportunistycznego polega na 
+      możliwości uwierzytelnienia dowolnych hostów w internecie bez 
+      wcześniejszej wymiany tajnego klucza, (lub kluczy publicznych), 
+      Uwierzytelnienia hosta odbywa się tutaj na podstawie informacji 
+      pobranych z bezpiecznych serwerów DNS (ang. <em>Secure DNS</em>).
+    </p>
+    <p>
+      Ogólna uwaga odnośnie składni pliku <em>ipsec.conf</em>. Należy pamiętać 
+      aby pomiędzy sekcjami połączeń była jedna linijka przerwy. Nazwa sekcji 
+      nie powinna się zaczynać od spacji czy tabulacji. Opcje w ramach sekcji 
+      mogą zaczynać się od tabulacji.
+    </p>
+    <p>
+      Pozostał nam jeszcze do konfiguracji plik <em>/etc/ipsec.secrets</em>. W 
+      przypadku współdzielonego klucza oraz połączeń z nie znanych adresów IP 
+      składnia pliku jest następująca:
+    </p>
+<pre class="code-block">
+&lt;adres_ip_odpowiednik_%defaultroute&gt; %any: PSK "&lt;klucz_współdzielony&gt;"
+</pre>
+    <p>
+      Po zapisaniu pliku, należy zmienić uprawnienia, tak aby możliwość odczytu
+      pliku miał tylko użytkownik <em>root</em> (<code class="code-inline">
+      chmod 600</code>).
+    </p>
+    <h5>Uruchomienie tunelu</h5>
+    <p>
+      Aby uruchomić tunel (proces nasłuchiwania), wpisujemy poniższe polecenie:
+    </p>
+<pre class="code-block">
+# ipsec setup start
+</pre>
+    <h4>Konfiguracja klienta Windows</h4>
+    <p>
+       W tej sekcji zajmiemy się konfiguracją połączenia IPSec w systemach 
+       Windows, tak aby ich użytkownicy mogli się połączyć z naszą bramą 
+       Linuksową. Metodą uwierzytelnienia będzie klucz współdzielony oraz 
+       dodatkowe uwierzytelnianie w połączeniu PPP (MS-CHAP v2). Do połączenia 
+       będziemy używać wbudowanego w Windows klienta IPSec. W nowszych 
+       systemach Windows konfiguracja sprowadza się dodania nowego połączenia 
+       przy użyciu kreatora. Aby dodać nowe połączenie, wykonujemy poniższe 
+       czynności:
+    </p>
+    <ol>
+      <li>Wchodzimy do <em>Panelu sterowania</em> i wybieramy 
+          <em>Połączenia sieciowe</em>,</li>
+      <li>Uruchom <em>Kreatora nowego połączenia</em>. Kreator zapyta o rodzaj 
+          połączenia - wybieramy opcje "Połącz z siecią w miejscu pracy". 
+          Następnie klikamy przycisk <em>Dalej</em>,</li>
+      <li>W następnym kroku wybieramy opcje <em>Połączenie wirtualnej sieci 
+          prywatnej</em>, następnie klikamy przycisk <em>Dalej</em>,</li>
+      <li>Wpisujemy nazwę połączenia np. <code>ipsec1</code>,</li>
+      <li>Podajemy adres IP lub nazwę DNS bramy VPN</li>
+      <li>Kończymy pracę kreatora, klikając przycisk <em>Zakończ</em>.
+          Przed uruchomieniem naszego połączenia trzeba zmodyfikować dwie opcje. 
+          Wchodzimy we właściwości nowego połączenia - klikamy prawym 
+          przyciskiem myszy ikonę nowego połączenia i wybieramy z menu opcje 
+          <em>Właściwości</em>. Postępujemy wg. poniższych punktów,</li>
+      <li>Przechodzimy do zakładki <em>Zabezpieczenia</em> i wybieramy opcje 
+          <em>Ustawienia protokołu IPSec</em>,</li>
+      <li>Zaznaczamy opcje <em>Użyj klucza wstępnego do uwierzytelniania</em> 
+          oraz wpisujemy w polu <em>Klucz:</em> hasło podane w pliku 
+          <em>/etc/ipsec.secrets</em> na Linuksie. Zatwierdzamy przyciskiem 
+          <em>OK</em>,</li>
+      <li>Następnie przechodzimy do zakładki <em>Sieć</em> i zmieniamy wartość 
+          pola <em>Typ wirtualnej sieci prywatnej (VPN)</em> z 
+          <em>Automatyczny</em> na <em>Sieć VPN a protokołem L2TP IPSec</em>,</li>
+      <li>Zapisujemy zmiany.</li>
+    </ol>
+    <p>
+      W tej chwili możemy połączyć się z bramą IPSec. Klikamy dwukrotnie myszką
+      na ikonę połączenia VPN. W oknie dialogowym podajemy nazwę użytkownika i 
+      hasło, a następnie klikamy przycisk <em>Połącz</em>. Nazwa użytkownika i 
+      hasło to oczywiście dane uwierzytelniające połączenie PPP 
+      (patrz plik <em>/etc/ppp/chap-secrets</em> na Linuksie).
+    </p>
+    <h4>Debugowanie połączenia</h4>
+    <p>
+      Jeśli wykonaliśmy wszystkie kroki z poprzednich punktów połączenie 
+      powinno zadziałać od razu. W praktyce pewnie pojawią się jakieś 
+      komplikacje. W tej sekcji zostanie podanych kilka porad dotyczących tego,
+      jak znaleźć błąd.
+    </p>
+    <p>
+      W przypadku połączeń Windows-Linux (<em>OpenSWAN</em>) opartych na PSK 
+      błąd wystąpi prawdopodobnie gdzieś po stronie Linuksa. Konfiguracja 
+      Windowsa jest bowiem tak prosta, że trudno byłoby w niej coś zrobić źle.
+    </p>
+    <p>
+      Zaczynamy od przekierowania wszystkich logów systemowych do jednego pliku,
+      aby łatwiej było podglądać na bieżąco, co się dzieje. Dlaczego wszystkie 
+      do jednego pliku? Otóż dlatego że IPSec nie składa się z jednego demona, 
+      jest ich wiele, wiec wygodniej jest przeglądać jeden plik niż wiele. Aby 
+      przekierować wszystkie logi wpisujemy do pliku <em>/etc/syslog.conf</em> 
+      poniższą linijkę:
+<pre class="code-block">
+*.*    /var/log/all
+</pre>
+    <p>
+      Następnie przeładowujemy konfiguracje demona Syslog. Wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+killall -HUP syslogd
+</pre>
+    <p>
+      W środowisku produkcyjnym plik na serwerze może szybko przyrastać. Należy
+      pamiętać, aby po zakończonych testach usunąć wpis z konfiguracji Sysloga.
+      Łączymy sie z serwerem z innej konsoli, lub jeśli pracujemy lokalnie,
+      przełączamy się na drugą konsolę). Wpisujemy polecenie:
+    </p>
+<pre class="code-block">
+tail -f /var/log/all
+</pre>
+    <p> 
+      Na tej konsoli będziesz miał stały podgląd logów systemowych. Jeśli na 
+      serwerze działają inne usługi, które możemy wyłączyć (np. poczta, czy 
+      dhcp), zróbmy to - im mniej logów, tym łatwiej je przeglądać. Przełączamy
+      się na pierwszą konsolę i sprawdzamy następujące rzeczy:
+    </p>
+    <ol>
+      <li>Czy działa demon L2TP - wpisujemy polecenie: 
+<pre class="code-block">
+# ps -aux | grep "l2tp"
+</pre>
+          Powinniśmy zobaczyć proces. Jeśli nie działa - uruchamiamy go 
+          wpisując polecenie: 
+<pre class="code-block">
+# xl2tpd
+</pre> 
+          Sprawdzamy ponownie, czy widnieje na liście procesów. Jeżeli nie - 
+          sprawdzamy co mówią logi na drugiej konsoli.</li>
+      <li>Sprawdzamy poleceniem <code class="code-inline">netstat</code>, czy 
+          serwer nasłuchuje na portach 4500 (NAT Traversal), 500 (Pluto - IKE) 
+          oraz 1701 (L2TP). W tym celu wpisujemy polecenie: 
+<pre class="code-block">
+netstat -anp | grep udp
+</pre>
+          Powinniśmy zobaczyć nasłuchujące procesy powiązane z danymi portami.</li>
+      <li>Upewniamy się, czy firewall nie blokuje potrzebnych portów UDP oraz 
+          protokołu ESP. Najlepiej na czas testów w ogóle wyłączyć firewall, 
+          tzn. ustawiamy domyślną politykę zapory na <em>ACCEPT</em>.</li>
+      <li>Sprawdzamy, czy w systemie na pewno jest zainstalowany program 
+          <code class="code-inline">pppd</code> - wpisujemy polecenie: 
+<pre class="code-block">
+which pppd
+</pre>
+      </li>
+      <li>Upewnijmy się, że w pliku <em>ipsec.conf</em> widnieje wpis 
+          <code class="code-inline">pfs=no</code>, który oznacza, że PFS nie 
+          jest konieczne (możliwe gdy druga strona to obsługuje). Implementacja
+          Microsoftu nie obsługuje PFS, dlatego nie możemy go wymuszać.</li>
+    </ol>
+    <p>
+      Po stronie Windowsa debugowanie jest utrudnione z racji braku "sysloga". 
+      Można jedna zainstalować program <em>Wireshark</em> - bardzo dobry 
+      sniffer sieciowy - i analizować nim fazy połączenia. W przypadku Windows,
+      należy upewnić się że żaden program typu firewall nie blokuje połączenia 
+      zwłaszcza takie kombajny jak różne pakiety "Internet Security".
+    </p>
+    <h4>Konfiguracja z uwierzytelnianiem przez certyfikat</h4>
+    <p>
+      W tej sekcji utworzymy bramę IPSec dla mobilnych użytkowników, z tą tylko
+      różnicą, że do uwierzytelnienia użyjemy certyfikatów X.509, a nie klucza 
+      współdzielonego. Konfiguracja taka jest zdecydowanie bardziej zalecana 
+      przy zdalnym dostępie pracowników, gdyż umożliwia w razie potrzeby 
+      unieważnienie certyfikatu użytkownikowi.
+    </p>
+    <p>
+      Zakładamy tutaj że mamy już wygenerowane klucze i certyfikaty dla serwera
+      i użytkownika (na razie jeden użytkownik wystarczy).
+    </p>
+    <p>
+      Konfiguracja po stronie Linuksa (bramy VPN) znacząco się nie różni -  
+      więcej pracy będzie w systemie Windows.
+    </p>
+    <h5>Konfiguracja OpenSWAN z wykorzystaniem certyfikatów.</h5>
+    <p>
+      Po stronie Linuksa - w stosunku do konfiguracji z użyciem PSK - zmianie 
+      ulegają tylko pliki <em>ipsec.conf</em> oraz <em>ipsec.secrets</em>, 
+      pozostałe konfiguracje pozostają identyczne (demon L2TP, konfiguracja 
+      <em>pppd</em>).
+    </p>
+    <p>
+      Konfiguracje wykonujemy wg. następujących punktów:
+    </p>
+    <ol>
+      <li>Zapisujemy klucz prywatny serwera jako: 
+          <em>/etc/ipsec.d/private/serverkey.pem</em></li>
+      <li>Zapisujemy certyfikat serwera jako 
+          <em>/etc/ipsec.d/certs/servercrt.pem</em></li>
+      <li>Zapisujemy certyfikat CA jako 
+          <em>/etc/ipsec.d/cacerts/cacert.pem</em></li>
+      <li>Plik z listą unieważnionych certyfikatów (poźniejszy etap) powinien 
+          znajdować się w katalogu <em>/etc/ipsec.d/crls/</em>.</li>
+      <li>Dokonujemy zmian w pliku /etc/ipsec.secrets, tak aby miał 
+          następującą składnię:
+<pre class="code-block">
+: RSA serverkey.pem "&lt;hasło_klucza_prywatnego&gt;"
+</pre>
+          gdzie:
+          <ul>
+            <li><code class="code-inline">serverkey.pem</code> - to nazwa pliku 
+                z kluczem prywatnym, którego program <em>OpenSWAN</em> oczekuje
+                w katalogu <em>/etc/ipsec.d/private/</em>,</li>
+            <li><code class="code-inline">hasło_klucz_prywatnego</code> - to 
+                hasło do klucza prywatnego serwera. W przypadku gdy klucz nie 
+                jest zabezpieczony hasłem, można je pominąć. Wstawienie 
+                wartości <em>%prompt</em> spowoduje, że program <em>OpenSWAN</em>
+                przy starcie będzie pytał o hasło do klucza.</li>
+          </ul></li>
+      <li>Tworzymy plik konfiguracyjny <em>/etc/ipsec.conf</em>
+<pre class="code-block">
+version 2.0
+config setup
+        interfaces=%defaultroute
+        plutodebug=none
+        forwardcontrol=yes
+        nat_traversal=yes
+        virtual_private=%v4:10.0.0.0/8,%v4:172.16.0.0/12,%v4:192.168.0.0/16,%v4:!192.168.10.0/24
+conn roadwarrior-l2tp
+        leftprotoport=17/1701
+        rightprotoport=17/1701        
+        also=roadwarrior
+conn roadwarrior
+        auth=esp
+        authby=rsasig
+        compress=yes
+        keyexchange=ike
+        keyingtries=3
+        pfs=no
+        left=%defaultroute
+        leftcert=/etc/ipsec.d/certs/servercrt.pem
+        right=%any
+        rightrsasigkey=%cert
+        rightsubnet=vhost:%no,%priv
+        rightca=%same
+        auto=add
+#Disable Opportunistic Encryption
+include /etc/ipsec.d/examples/no_oe.conf
+</pre>
+          Opcja <code class="code-inline">rightrsasigkey=%cert</code> 
+          oznacza, że druga strona uwierzytelni się, przedstawiając swój 
+          certyfikat. Opcja <code class="code-inline">rightca=%same</code> 
+          oznacza, że certyfikat drugiej strony (klienta) musi być wystawiony 
+          przez to samo CA co certyfikat serwera, czyli przez CA, którego 
+          certyfikat znajduje się na serwerze w pliku:
+           <em>/etc/ipsec.d/cacert/cacert.pem</em>.</li>
+      <li>Uruchamiamy usługę IPSec, wpisując polecenie:
+<pre class="code-inline">
+ipsec setup start
+</pre></li>
+    </ol>
+    <h4>Import certyfikatów w systemie Windows</h4>
+    <p>
+      Zakładając, że wygenerowaliśmy już użytkownikom klucz oraz wystawiliśmy 
+      certyfikaty podpisane przez nasze CA. Powinniśmy mieć już pliki 
+      <em>user.key</em> i <em>user.crt</em>. Będziemy musieli przekonwertować 
+      nasze klucze i certyfikaty na format PKCS#12 używany w systemach Windows.
+      Konwersje zostały przedstawione podkoniec sekcji poświęconej 
+      <a href="#ssl">SSL</a>.
+    </p>
+    <p>
+      Przy imporcie certyfikatów należy powstrzymać się od instalowania 
+      certyfikatów w systemie Windows przez kliknięcie na plik. Ta metoda nie 
+      działa prawidłowo. Zamiast tego będziemy używać przystawki MMC.
+    </p>
+    <p>
+      Utworzymy przystawkę MMC, dzięki której będziemy mogli importować nasze 
+      klucze i certyfikaty. Naciskamy kombinację klawiszy (Win + r), w okienku 
+      uruchom pisujemy polecenie: <code>mmc</code> - uruchomi się konsola MMC.
+    </p>
+    <p>
+      Z menu <em>Plik</em> konsoli MMC wybieramy opcję 
+      <em>Dodaj/Usuń przystawkę...</em>. Pojawi się okno 
+      <em>Dodaj/Usuń przystawkę</em> - klikamy przycisk <em>Dodaj</em>.
+    </p>
+    <p>
+      Na liście dostępnych przystawek zaznaczamy <em>Certyfikaty</em>, a 
+      następnie klikamy <em>Dodaj</em> - uruchomi się kreator konfiguracji 
+      przystawki. Wybieramy <em>Konto komputera</em>, następnie 
+      klikamy <em>Dalej</em>. W następnym kroku wybieramy opcję 
+      <em>Komputer lokalny</em> oraz klikamy przycisk <em>Zakończ</em>.
+    </p>
+    <p>
+      Z menu <em>Plik</em> wybieramy opcję <em>Zapisz</em>, aby zapisać gotową 
+      przystawkę na dysku. Możemy ją nazwać dowolnie - np. 
+      <em>ipsec.mmc</em>.
+    </p>
+    <p>
+      Mając gotową przystawkę, możemy zaimportować certyfikat. W tym celu 
+      rozwiń przystawkę <em>Certyfikaty</em>, a następnie kliknij prawym 
+      przyciskiem myszy folder <em>Osobisty</em>. Z menu wybieramy 
+      <em>Wszystkie zadania</em> a następnie <em>Importuj...</em> - uruchomi 
+      się kreator importu certyfikatów.
+    </p>
+    <p>
+      W kreatorze dodawania certyfikatów wskazujemy przygotowany wcześniej plik
+      certyfikatu użytkownika. Kreator zapyta o hasło klucza prywatnego - 
+      podajemy je. Klikamy przycisk <em>Dalej</em>, następnie wybieramy opcje 
+      <em>Automatycznie wybierz magazyn certyfikatów na podstawie typu 
+      certyfikatu</em> (<strong>WAŻNE!</strong>) oraz ponownie klikamy 
+      <em>Dalej</em>.
+    </p>
+    <p>
+      Musimy jeszcze zainstalować certyfikat swojego CA w katalogu zaufanych 
+      urzędów certyfikacji. W tym celu klikamy prawym przyciskiem myszy katalog
+      <em>Zaufane główne urzędy certyfikacji</em>, a następnie z menu wybieramy
+      opcję <em>Wszystkie zadania/Importuj</em>.
+    </p>
+    <p>
+      Po wybraniu opcji <em>Importuj</em> uruchomi się kolejny kreator importu 
+      certyfikatów. Musimy wskazać plik z certyfikatem CA (<em>ca.crt</em>). 
+      Kreator importu certyfikatów oczekuje pliku z rozszerzeniem 
+      <em>*.crt</em>, a nie <em>*.pem</em>, dlatego przed importem musimy się 
+      upewnić czy plik ma takie rozszerzenie.
+    </p>
+    <p>
+      Klikamy przycisk <em>Dalej</em>, a następnie wybierz opcję <em>Umieść 
+      wszystkie certyfikaty w następującym magazynie - Zaufane główne urzędy 
+      certyfikacji</em>. Wychodzimy z konsoli zapisując zmiany.
+    </p>
+    <h5>Konfiguracja połączenia</h5>
+    <p>
+      Konfiguracja połączenia przeprowadzamy dokładnie w taki sam sposób, jak w
+      przykładzie z kluczem współdzielonym. Jedyna różnica polega na tym, aby w
+      zakładce <em>Zabezpieczenia</em> nie zaznaczymy opcji <em>Ustawienia 
+      protokołu IPSec/Użyj klucza wstępnego do uwierzytelniania</em>. 
+      Zapisujemy zmiany i próbujemy się połączyć.
+    </p>
+    <p>
+      Jeśli pojawi się błąd odnośnie certyfikatu, to należy upewnić się że 
+      poprawnie zaimportowaliśmy certyfikat CA w magazynie 
+      <em>Zaufane główne urzędy certyfikacji</em>. Najlepiej zrobić to jeszcze 
+      raz. 
+    </p>
+    <p>
+      Jeśli połączenie się zestawiło, spróbujmy spingować drugą stronę wtedy 
+      będzie mieli pewność.
+    </p>
+    <h4>Łączenie oddziałów firmy tunelem IPSec</h4>
+    <p>
+      W tej sekcji stworzymy tunel łączący siedzibę firmy A z oddziałem B. W 
+      obu lokalizacjach routery działają pod kontrolą Linuksa z instalowanym 
+      programem <em>OpenSWAN</em>. Celem tunelu jest zapewnienie bezpiecznej 
+      komunikacji w oddziałach.
+    </p>
+    <p>
+      Do uwierzytelnienia obu stron użyjemy tym razem kluczy RSA (klucz
+      prywatny i publiczny). Jeżeli routery mają stałe IP, możesz użyć nawet 
+      klucza współdzielonego (hasła), ale pamiętajmy, aby zablokować na 
+      firewallu możliwość łączenia się z protokołem IPSec ze wszystkich hostów 
+      wyjątkiem adresu IP "drugiej strony" (w przeciwnym razie ktoś będzie mógł
+      próbować odgadnąć hasło, np. przez atak typu <em>brute force</em>).
+    </p>
+    <p>
+      Ponieważ implementacja IPSec w Linuksie nie wymaga użycia protokołu PPP 
+      oraz L2TP, konfiguracja tutaj jest znacznie prostsza niż w przypadku 
+      połączenia z użytkownikami mobilnymi.
+    </p>
+    <p>
+      Tworzymy plik konfiguracyjny podany na listingu poniżej będzie to 
+      plik siedziby firmy A.
+    <p>
+<pre class="code-block">
+version 2.0
+config setup
+        interfaces=%defaultroute        
+        forwardcontrol=yes        
+        rp_filter=0        
+        nat_traversal=noconn
+linux-to-linux
+        auth=esp        
+        authby=rsasig        
+        pfs=yes        
+        left=91.192.0.186        
+        leftsubnet=192.168.20.0/24
+        leftrsasigkey=0sAQPuvae6KEw/yHijDjqHomCyLo8oO3H8wl3UExuTArCXtzc1DO5X2E8QFIu0grLofzIzgoCy8AkoFthFPJIyDF3zKVH9ppMS8XQQL2naWp+YOm2cROstRlAfyvC/jF7GvWlRIjxzHzCLCIJXihZmFZGN1ku/DExLx5TjzqG/bXQ9DQ==
+        right=91.192.0.185        
+        rightsubnet=192.168.30.0/24
+        rightrsasigkey=0sAQODH/CRwexspJ6mu/bThfQzs84IpaHBYNs5MeDpxbiLdacZjM22PqOvbVIqeQlYg4zHMAnB2EyUIgYHskJqyRmtmg6S5ELxnNHqvTE92KI5Bdicn458CowdqR2Jtc4tvD7OWHv/RFzmt6W1kIHPiILAOkR2mSvATgI/QhZtNN4oaw==        
+        auto=start
+include /etc/ipsec.d/examples/no_oe.conf
+</pre>
+    <p>
+    Znaczenie ważniejszych opcji jest następujące:
+    </p>
+    <ul>
+      <li><code class="code-inline">authby=rsasig</code> - uwierzytelnianie 
+          przez klucze RSA,</li>
+      <li><code class="code-inline">left=91.192.0.186</code> - adres IP routera
+          w siedzibie firmy A ("lewa strona" - lokalna routera),</li>
+      <li><code class="code-inline">leftsubnet=192.168.20.0/24</code> - sieć 
+          LAN za routerem w siedzibie firmy A,</li>
+      <li><code class="code-inline">leftrsasigkey=0sAQPuvae6KE...</code> - 
+          klucz publiczny "lewej strony" (routera w siedzibie A),
+      <li><code class="code-inline">right=91.192.0.185</code> - adres IP bramy 
+          odległej lokalizacji (oddziału B),</li>
+      <li><code class="code-inline">rightsubnet=192.168.30.0/24</code> - sieć 
+          LAN za routerem w oddziale B,</li>
+      <li><code class="code-inline">rightrsasigkey=0sAQODH/CRw...</code> - 
+          klucz publiczny prawej strony.</li>
+    </ul>
+    <p>
+      Warto zauważyć że PFS zostało włączone, nie trzeba tego robić jawnie, 
+      jest to opcja domyślna dla połączeń linux-linux. Ponieważ jest ona 
+      obsługiwana nie należy jej wyłączać.
+    </p>
+    <p>
+      Ze względu na to iż powyższy listing jest gotowcem pobranym z plików 
+      załączonych do pakietu <em>OpenSWAN</em>, aby użyć go w swoim przypadku 
+      należy zmienić wyżej wymienione opcje, prócz 
+      <code class="code-inline">authby</code>. Aby zmienić klucze musimy je 
+      wygenerować poleceniem pakietu <em>OpenSWAN</em>. Poniżej znajduje się 
+      lista czynności do wykonania, aby uruchomić tunel IPSec łączący oddziały 
+      firmy.
+    </p>
+    <ol>
+      <li>Na obu routerach wydajemy poniższe polecenie:
+<pre class="code-block">
+# ipsec rsasigkey 1024 &gt; /root/key.rsa
+</pre>
+      </li>
+      <li>Na obu routerach kopiujemy ciąg znaków zaczynający się 
+          od <code class="code-inline">#pubkey=...</code> i umieszczamy go w 
+          pliku <em>ipsec.conf</em> przy parametrze <code class="code-inline">
+          leftrsasigkey=</code>, po czym usuwamy skopiowany ciąg znaków z pliku 
+          klucza.</li>
+      <li>Kopiujemy ciąg umieszczony w <code class="code-inline">
+          leftrsasigkey</code> do pliku konfiguracyjnego w oddziale B, 
+          umieszczając go przy parametrze 
+          <code class="code-inline">rightrsasigkey=</code></li>
+      <li>Klucz przy parametrze <code>leftrsasigkey=</code> umieszczamy w pliku
+          konfiguracyjnym routera w siedzibie firmy A przy parametrze 
+          <code class="code-inline">rightrsasigkey=</code></li>
+      <li>Otwieramy do edycji plik <em>/etc/ipsec.secrets</em> i umieszczamy w
+           nim następujący wpis:
+<pre class="code-block">
+91.192.0.186 91.192.0.185: RSA {
+
+//część klucz prywatnego pobrana z pliku /root/key.rsa
+//począwszy od linii: Modulus do końca pliku
+
+}
+</pre>
+           gdzie 91.192.0.186 to w powyższym przykładzie adres IP 
+           "lewej strony" (IP lokalnego routera), a 91.192.0.185 to IP 
+           odległego routera. Na drugim routerze wpis wygląda odwrotnie. W 
+           sekcji pomiędzy nawiasami klamrowymi 
+           (<code class="code-inline">{...}</code>) powinien znaleźć się klucz 
+           prywatny RSA.</li>
+      <li>Uruchamiamy tunel po obu stronach, wpisując poniższe polecenie:
+<pre class="code-block">
+# ipsec setup start
+</pre>
+      </li>
+      <li>Sprawdzamy czy połączenie IPsec zostało zestawione. Wpisujemy 
+          polecenie: 
+<pre class="code-block">
+# ip xfrm state
+</pre>
+      </li>
+</ol>
+
+</div>
+<p style="margin: 15px; padding: 0; outline: 0;">
+2021; COPYLEFT; ALL RIGHT REVERSED;
+</p>
+</body>
+</html>

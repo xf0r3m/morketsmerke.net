@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+88                             88
+88                             88
+88                             88
+88,dPPYba,  ,adPPYba,  ,adPPYb,88
+88P'    "8a I8[    "" a8"    `Y88
+88       d8  `"Y8ba,  8b       88
+88b,   ,a8" aa    ]8I "8a,   ,d88
+8Y"Ybbd8"'  `"YbbdP"'  `"8bbdP"Y8
+</pre>
+
+		<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+			&#9760;&nbsp;<a href="https://morketsmerke.net/">morketsmerke</a>&nbsp;&#9760;
+		</p>
+<div style="margin-left: auto; margin-right: auto; width: 80%;">
+<h1 style="text-align: center;">OpenBSD jako bramka sieciowa</h1>
+<p>
+<strong>OpenBSD</strong> jest wersją systemu BSD, w której nacisk położono na silniejsze zabezpiecznia przez co świetnie sprawdza się jako system dla programowalnych urządzeń sieciowych. Jednak zdarzają się tacy hakerzy, którzy stosują go do codziennej pracy jako system ogólnego zastosowania. W Internetach można znależć wiele skonfigurowanych przez ludzi pulpitów oraz stricte poradników aby ten system mógł chociaż spróbować stać się systemem codziennego użytku, poki co my przy odrobinie chęci możemy zrobić z niego porządną bramę sieciową, z której sam korzystam w kilku sieciach. Warto dodać że ten system ma niewielkie wymagania systemowe patrząc na współczesny sprzęt. Dla architektury 32-bitowej 32 MB pamięci RAM oraz 600 MB wolnej przestrzeni na dysku to naprawdę nie wiele. Dla prawdziwego hakera wystarczył by komputer ze śmietnika, lub terminal z popularnego serwisu aukcyjnego za 20 zł.
+</p>
+<p>
+<strong>UWAGA! Wszystkie przedstawiowne tutaj polecenia są uruchamiane z poziomu użytkownika <em>root</em>.</strong>
+</p>
+<ol>
+<li>Instalacja systemu.<br />
+<p>
+Instalacja systemu OpenBSD została przedstawiona <a href="instalacja_OpenBSD.html">tutaj</a>. Jedyne co w tym wypadku możemy zmienić to ustawić intefejs podłączony do Internetu (w zależności od konfiguracji naszego ISP, warto pamiętać w jaki sposób został przydzielony nam adres IP. Będzie nam to potem potrzebne w regułach zapory dotyczących NAT-u) oraz interfejs sieci LAN, ze stałym adresem IP, będącym pierwszym adresem z puli (tak się przyjęło, chociaż ludzi na kursach CISCO uczono inaczej, że adresem bramy w sieci LAN pownien być ostatni adres z puli). W przypadku interfejsu podłączonego do Internetu ze stałym adresem, o adresy bramy, domenę oraz adresy DNS zostaniemy zapytani dopiero po zdefiniowaniu interfejsów sieci LAN. Co pokazano poniżej.
+</p>
+<pre class="code-block">
+#Interfejs WAN (podłączony do internetu)
+IPv4 address for em0 ? (or 'dhcp' or 'none') [dhcp] 157.190.112.10
+Netmask for em0 [255.255.255.0]
+</pre>
+<pre class="code-block">
+#Interfejs LAN
+IPv4 address for em1 ? (or 'dhcp' or 'none') [none] 192.168.0.1
+Netmask for em0 [255.255.255.0]
+</pre>
+<pre class="code-block">
+Default IPv4 route ? (IPv4 address or none) [none] 157.190.112.1
+DNS domain name (e.g. 'example.com') [my.domain] morketsmerke.net
+DNS nameservers? (IP address list or none) 157.190.112.1
+</pre>
+<p>
+Definiując interfejs WAN należy wpisać dane, które umożliwią nam połączenie z Internetem. Musimy mieć połączenie na naszej maszynie, aby zainstalować pakiet <em>dnsmasq</em>, który będzie niezbędny do obsługi DNS. Chyba że zrobimy z telefonu router i podłączymy go kablem USB, w OpenBSD działa to bez zarzutów.
+</p>
+</li>
+<li>Instalacja dnsmasq.<br />
+<p>
+Do osiągnięcia naszego celu, musimy zainstalować jeden program ponieważ reszta znajduje się już w systemie. Aby pobrać oprogramowanie z oficjalnego repozytorium wydajmy następujące polecenie:
+</p>
+<pre class="code-block">
+# pkg_add -a dnsmasq
+</pre>
+<p>
+Po zainstalowaniu daemona warto ustawić jego uruchamianie podczas startu systemu.
+</p>
+<pre class="code-block">
+# rcctl enable dnsmasq
+</pre>
+</li>
+<li>Konfiguracja DHCP<br />
+<p>
+W OpenBSD daemon DHCP jest preinstalowany a jego plik jest umieszczony bezpośrednio w katalogu <em>/etc</em>. Dla małej sieci nie potrzebujemy zbyt wielu opcji. Wystarczą te najbardziej podstawowe. Poniżej przedstawiono najprostszą do prawidłowego funkcjonowania sieci konfigurację DHCP. Otwieramy plik <em>/etc/dhcpd.conf</em>.
+</p>
+<pre class="code-block">
+subnet 192.168.0.0 netmask 255.255.255.0 {
+	range 192.168.0.100 192.168.0.200;
+	option routers 192.168.0.1;
+	option domain-name "morketsmerke.net";
+	option domain-name-servers 192.168.0.1;
+}
+</pre>
+<p>
+Jeśli nasza brama obsługuje więcej niż jedną sieć LAN, to powtarzamy deklaracje dla kolejnych podsieci.
+</p>
+</li>
+<li>Ustawienia interfejsów dla <em>dhcpd</em><br />
+<p>
+Do poprawnej pracy naszego serwera DHCP pozostaje jeszcze wskazać odpowiedenie interfejsy dla wpisanych w pliku konfiguracyjnym podsieci. Interfejsy wpisuje się w opcjach uruchomieniowych daemona w pliku <em>/etc/rc.conf.local</em>, te opcje odczytywane są podczas uruchamiania usług zaraz przed umożliwieniem użytkownikowi zalogowania do systemu. Wpis dla <em>dhcpd</em> ma następujący wzór:
+</p>
+<pre class="code-block">
+dhcpd_flags="interfejs1 interfejs2 ... interfejsN"
+</pre>
+<p>
+Warto dodać że przekaznie opcji uruchomieniowych (flag) do daemona jest równoznaczne z jego uruchomienie podczas startu, więc nie trzeba wydawać polecenia <code class="code-inline">rcctl enable dhcpd</code>.
+</p>
+</li>
+<li>Ustawienie interfejsu dla dnsmasq<br />
+<p>
+Jeśli ktoś ustawiał już <em>dnsmasq</em> na GNU/Linux to robi się to tutaj w ten sam sposób. W pliku konfiguracyjnym <em>/etc/dnsmasq.conf</em>, odnajdujemy opcję <code class="code-inline">#interface=</code>, usuwamy znajdujący się na początku znak komentarza i po znaku równości (<strong>=</strong>) podajemy nasz interfejs sieciowy, tak samo jak w przypadku wielu sieci LAN, kopiujemy opcje wraz z ustawionym kolejnym interfejsem.
+</p>
+<p>
+Teraz możemy użyć polecenia <code class="code-inline">netstat -ln | grep -e '^tcp' -e '^udp'</code> aby wyświetlić wszystkie otwarte porty TCP i UDP. Z wyników tego polecenia dowiemy się że dnsmasq nasłuchuje na wszystkich interfejsach a nie tylko na wskazanym, zostało to utworzone dla wygody w przypadku zmiany interfejsów lub ich adresów (w zależności od konfiguracji) nie trzeba zmieniać ustawień w pliku, a daemon nie odpowie na żądania, na które nie powinien. Jeśli jednak chcemy wymusić wyłączenie wyżej wspomnianej właściwości i respektowanie opcji <code class="code-inline">interface</code> to należy odblokować opecję <code class="code-inline">bind-interfaces</code>.
+</p>
+</li>
+<li>Ewnetualne wpisy w <em>/etc/hosts</em>*<br />
+<p>
+Za pomocą pliku <em>/etc/hosts</em>, możemy umieszczać nazwy domenowe na bramie dzięki temu uzyskamy odzworowanie nazw w naszej sieci lokalnej bez konfigurowania skomplikowanych systemów DNS takich jak <em>BIND9</em>. Oczywiście nie było by to możliwe bez dnsmasq. Wzór wpisu do plku <em>/etc/hosts</em> znajduje się poniżej.
+</p>
+<pre class="code-block">
+&lt;IP&gt;	&lt;FQDN&gt;	&lt;HOSTNAME&gt;
+</pre>
+<p>
+Dla przykładu wstawię tutaj jeden ze wpisów.
+</p>
+<pre class="code-block">
+192.168.0.2	serwer.morketsmerke.net	serwer
+</pre>
+</li>
+<li>Firewall oraz NAT<br />
+<p>
+Do prawidłowego funkcjonowania naszej bramy potrzebny jest system <strong>NAT</strong> (Network Address Translation). Funkcje NAT-u w UNIX-ach przeważnie są realizowane przez oprogramowanie Firewall-a. Zapory sieciowe (firewall-e) są konfigurowane za pomocą reguł, a do działania NAT-u, czy to w przypadku systemów *BSD, gdzie zapora realizowana jest za pomocą pakietu <strong>PF</strong> (Packet Filter) czy za pomocą pakietu <em>iptables</em> używanego na systemach GNU/Linux wystarczy jedna reguła.
+</p>
+<pre class="code-block">
+pass out on &lt;interfejs podłączony do Internetu&gt; from &lt;interfejs LAN z sufiksem :network&gt; to any nat-to
+(&lt;publiczny adres IP / intefejs podłaczony do Internetu&gt;)
+</pre>
+<p>
+Taka konfiguracja jest wystarczająca, jednak warto pamiętać o tym że prawdopodobnie mamy włączone SSH, które nasłuchuje na wszystkich portach, więc aby nie dać możliwości ataków odgadywania hasła przez boty, warto albo ustawić adres, na którym ma nasłuchiwać w konfiguracji SSH lub użyć polityki zarządzania ruchem sieciowym polegającej na odcięciu całego ruchu sieciowego od firewalla a następnie dopuszczenia tylko tego najważniejszego dla zastosowań biurowo-domowych wystarczy odciąć cały ruch i jawnie go zadeklarować za pomocą odpowienich reguł.
+Tutaj warto opisać jak działa PF. PF jak każdy inny daemon czyta swoją konfiguracje z pliku <em>/etc/pf.conf</em>, to właśnie w nim są przechowane reguły. Dostosowuje je do swojego wewnętrznego formatu, aby optymalnie przypasowywać pakiety do istniejących reguł na tej zasadzie właśnie działają zapory sieciowe, a cechą charkterystyczną PF jest zasada "ostatni wygrywa", czyli jeśli pakiet pasuje do wielu reguł to akcja (<code class="code-inline">pass</code> lub <code class="code-inline">block</code>) ostatniej pasującej do pakietu reguły zostanie na nim zastosowana. Wracając do naszego pliku, otwieramy go do edycji, najlepiej usunąć to co tam jest poza jakimiś początkowymi komentarzami jeśli istnieją oczywiście. Na samym początku zdefiniujemy sobie kilka zmiennych, tak w regułach PF można definiować zmienne.
+</p>
+<pre class="code-block">
+red="Interfejs podłączony do internetu";
+green="Interfejs sieci LAN";
+greennet="Interfejs sieci LAN:network";
+</pre>
+<p>
+Skąd te nazwy zmiennych, otóż kiedyś korzystała z nich dystrybucja <strong>IPCop</strong> - GNU/Linuxowa dystrybucja przeznaczona właśnie na bramki. Kolory oznaczały interfejsy przypisane do konkretnych rodzajów sieci:
+</p>
+<ul>
+<li>czerwony - sieć Internet/sieć rozległa WAN - brak zaufania dla danych pochodzących z tej sieci</li>
+<li>zielony - sieć LAN - sieć niefiltrowana przez ten firewall (komputery z tej sieci miały dostęp do wyszystkich pozostałych sieci), sieć największego zaufania.</li>
+<li>niebieski - sieć mniejszego zaufania niż w sieci LAN, sieć niebieska nie mogła się komunikować z siecią zieloną, stosowana dla wydzielenia odrębnej sieci LAN dla sieci bezprzewodowej</li>
+<li>pomarańczowy - sieć ograniczonego zaufania - DMZ, komputery z tej sieci nie mogły łączyć się z żadną z powyższych sieci poza czerwoną, ale sieci niebieska oraz zielona bez przeszkód mogły łączyć się hostami sieci pomarańczowej.</li>
+</ul>
+<p>
+Jest to dla mnie dość zrozumiała wizja konfiguracji sieci, dlatego też korzystam z niej po dziś dzień. W skrócie <code class="code-inline">red</code> oznacza Internet, <code class="code-inline">green</code> sieć LAN, <code class="code-inline">greennet</code> służy głównie wygodniejszemu zapisowi interfejsu LAN z przyrostkiem (sufiksem) <code class="code-inline">:network</code> (<code class="code-inline">em1:network</code>). Pod naszymi zmiennymi zapisujemy pierwszą regułę.
+</p>
+<pre class="code-block">
+block all
+</pre>
+<p>
+To prosta a zarazem bardzo skuteczna reguła, powoduje blokadę wszystkich pakietów, odcina bramkę od jakiejkolwiek sieci nawet LAN. I teraz możemy zatrzymać się na chwilę i pomyśleć, czyli co? Teraz będę musiał dla każdego połączenia definiować oddzielną regułę oraz regułę zezwalającą na otrzymanie odpowiedzi od odległego serwera? Otóż nie, tu jest właśnie duża różnica pomiędzy PF a iptables. Przy użyciu tych samych polityk w PF nie trzeba dopuszczać oddzielną regułą odpowiedzi z serwera, wystarczy reguła, która pozwoli hostom z sieci LAN na rozpoczęcie polączenia. W PF jest realizowane automatycznie po przypasowaniu pakietu rozpoczynającego połączenie. Tworzony jest tak jakby tunel, który pozwoli na swobodny przepływ odpowiedzi na przypasowane pakiety wychodzące. Poniżej znajdują się reguły, które spowodują już dopuszczenie ruchu do i z bramki.
+</p>
+<pre class="code-block">
+pass in on $green from $greennet to any
+</pre>
+<p>
+Ta reguła powoduje dopuszczenie ruchu wejściowego na intefejsie sieci LAN do dowolnego hosta, między innymi również do bramki.
+</p>
+<pre class="code-block">
+pass out on $red from $red to any
+</pre>
+<p>
+Z racji tego że wszystko było odcięte przez <code class="code-inline">block all</code> daliśmy możliwość komunikacja bramki z siecią LAN, chcąc niechcąc adres interfejsu sieci LAN również znajduje się wewnątrz tej sieci. Aby bramka mogła połączyć się z Internetem musimy wypuścić ruch wychodzący z interfejsu WAN do dowolnego hosta. Teraz pozostało nam dopisać ostatnią odpowiedzialną za NAT regułę.
+</p>
+<pre class="code-block">
+pass out on $red from $greennet to any nat-to ($red)
+</pre>
+<p>
+Ta reguła mówi nam aby wypuścić ruch na interfejsie <code class="code-inline">red</code> z sieci lokalnej (<code class="code-inline">greennet</code>) gdziekolwiek z ustawieniem <em>NAT</em>-u do adresu interfejsu podłączonego do Internetu. Ujęcie w nawias zmiennej <code class="code-inline">red</code>, mówi <em>PF</em>, aby stale monitorował interfejs pod kątem zmian adresu, aby nie trzeba było wczytywać ponownie reguł <em>PF</em>, przy każdej jego zmianie .
+</p>
+<p>
+Do wczytania reguł <em>PF</em> służy polecenie <code class="code-inline">pfctl</code>, które wydajemy z opcją <code class="code-inline">-f</code>, po którym wskazujemy plik z regułami. Jednak przed wczytaniem reguł warto wydać polecenie <code class="code-inline">pfctl</code> wraz z przełącznikami <code class="code-inline">-nf</code> spowoduje to sprawdzenie pliku reguł pod kątem błędów bez wczytywania go. Warto o tym pamiętać kiedy dokonujemy zmian w pliku reguł, a jeden błąd uziemia PF i firewall w ogóle się nie uruchamia i nagle w firmie zaczyna brakować dostepu do Internetu...
+</p>
+</li>
+<li>Przekazywanie pakietów<br />
+<p>
+Na UNIX-ach aby była możliwość przesłania pakietów z jednego łącza (interfejsu) na drugie należy umożliwić to z poziomu jądra systemu po przez zmianę jednej z jego opcji. Przekazywanie pakietów jest uruchamiane za pomocą polecenia <code class="code-inline">sysctl</code>, wraz z opcją <code class="code-inline">net.inet.ip.forwarding</code> ustawioną na 1.
+</p>
+<pre class="code-block">
+# sysctl net.inet.ip.forwarding=1
+</pre>
+<p>
+Opcje zmieniane za pomocą polecenia <code class="code-inline">sysctl</code> w trakcie działania systemu działają tak długo jak system jest uruchomiony, oznacza to że po ponownym uruchomieniu opcja powróci do swojej pierwotnej wartości. Więc teraz musimy coś zrobić aby nie trzeba było logować sie do bramki i uruchamiać z "ręki" przekazywania pakietów. Rozwiązanie tego problemu jest bardzo proste, wystarczy dopisać opcje <code class="code-inline">net.inet.ip_forwarding</code> z wartością 1 do pliku <em>/etc/sysctl.conf</em>.
+</p>
+<pre class="code-block">
+# echo 'net.inet.ip.forwarding=1' &gt;&gt; /etc/sysctl.conf
+</pre>
+</li>
+</ol>
+<p>
+Jak pokazano wyżej za pomocą kilku prostych poleceń, wyedytowaniu kilku plików można przerobić ten jakże obcy dla wielu system, na naprawdę coś użytecznego. Warto dodać że ja najpierw nauczyłem się tworzyć bramki na OpenBSD, a dopiero później na GNU/Linux. Jeśli posiadamy naprawdę dużą wiedzę na temat systemu GNU/Linux to niestety przyda się ona w kilku/kilkunastu przypadkach. Systemom rodziny BSD, bliżej do macOS X i dziedzictwa UNIX-a niż do GNU/Linux. Nie są one skomplikowane, wręcz przeciwnie, ale brak elementarnej wiedzy powoduje że ten system może być dla nas abstrakcją. Tutaj jedną z niezrozumiałych rzeczy może być PF, zapraszam do dokumentacji PF na stronie projektu OpenBSD, która jest dostępna w postaci podręcznika <a href="https://www.openbsd.org/faq/pf/index.html">https://www.openbsd.org/faq/pf/index.html</a>. Może również pojawi się i tutaj w mojej streszczonej sprawdzonej wersji polskiej. Zabawy z PF.
+<p>
+<p>
+~xf0r3m
+</p>
+</div>
+<p style="margin: 15px; padding: 0; outline: 0;">
+2021; COPYLEFT; ALL RIGHTS REVERSED
+</p>
+</body>
+</html>

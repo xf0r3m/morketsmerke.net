@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Samba AD DC - NTP</h1>
+        <p>
+            Ten materiał jest to drugą częścią instalacji Samba AD DC, pierwsza część znajduje się pod tym linkiem: <a href="../../articles/linux/samba_AD_DC_-_Instalacja.html">Samba AD DC - Instalacja</a>. Tutaj zajmiemy się instalacją usługi <strong>NTP</strong>, która niestety jest wymagana w przypadku implementacji Samby. Nie przedłużając naszą pracę rozpoczniemy instalacji niezbędnego oprogramowania.
+        </p>
+<pre class="code-block">
+$ sudo apt install ntp ntpdate
+</pre>
+        <p>
+            Po zainstalowaniu wyżej wymienionych pakietów, przejdziemy do konfiguracji NTP. Otwieramy plik <em>/etc/ntp.conf</em>. Pierwszą czynnością będzie wyłączenie istniejących źródeł serwerów czasu po przez komentarz i dodanie poniższych.
+        </p>
+<pre class="code-block">
+pool 0.pool.ntp.org iburst
+pool 1.pool.ntp.org iburst
+pool 2.pool.ntp.org iburst
+</pre>
+        <p>
+            Pod zródłami znajdują się jeszcze jedno źródło, serwery zapasowe. Obecene serwery zapasowe wyłączamy, wstawiając na początku znak komentarza, następnie dopisujemy poniższe źródło.
+        </p>
+<pre class="code-block">
+pool 3.pool.ntp.org iburst
+</pre>
+        <p>
+            W pliku konfiguracjnym odszukujemy deklaracje <code class="code-inline">driftfile</code>. Pod tą deklaracją wpisujemy poniższe opcję wskazującą na socket łączący NTP wraz z Sambą.
+        </p>
+<pre class="code-block">
+ntpsigndsocket /var/lib/samba/ntp_signd/
+</pre>
+        <p>
+            Dopisujemy do opcji <code class="code-inline">restrict</code> wartości zabezpieczające nasz serwer NTP.
+        </p>
+<pre class="code-block">
+restrict default kod nomodify nopeer notrap mssntp
+</pre>
+        <p>
+            Zapisujemy zmiany w pliku konfiguracyjnym. Następnie ustawiamy odpowiednie uprawnienia dla folderu z gniazdem, który zdeklarowaliśmy w powyższym pliku.
+        </p>
+<pre class="code-block">
+$ sudo chown root:ntp /var/lib/samba/ntp_signd/
+$ sudo chmod 750 /var/lib/samba/ntp_signd/
+</pre>
+        <p>
+            Po ustawieniu uprawnień, restartujemy serwer.
+        </p>
+<pre class="code-block">
+$ sudo reboot
+</pre>
+        <p>
+            Gdy serwer się uruchomi możemy sprawdzić czy NTP działa. Na początku sprawdzimy jakie porty są otwarte w systemie.
+        </p>
+<pre class="code-block">
+$ sudo ss -tulpn | grep ntp
+</pre>
+        <p>
+            Odfiltrowałem wynik polecenia aby łatwiej by znaleźć interesujące nas informacje. Powinnismy znaleźć jakąś usługę która nasłuchuje na porcie UDP 123. Następnie możemy uruchomić poniższe polecenie aby wyświetlić podsumowanie połączenia ze z serwerami źródłowymi.
+        </p>
+<pre class="code-block">
+$ sudo ntpq -p
+</pre>
+        <p>
+            Odnośnie serwera NTP. <strong>Może być tak że serwer może się zawiesić i przestać odpowiadać na zapytania o aktualizacje czasu.</strong> Jedyne co możemy zrobić w tej sytuacji to zatrzymać usługę, z synchronizować datę i czas serwera z jakiś z oficjalnych zasobów i uruchomić usługę ponownie.
+        </p>
+<pre class="code-block">
+$ sudo systemctl stop ntp.service
+$ sudo ntpdate -b 2.pool.ntp.org
+$ sudo systemctl start ntp.service
+$ sudo systemctl status ntp.service.
+</pre>
+        <p>
+            Ostatnie polecenie nie jest wymagane, jednak warto upewnić się czy wszystko działa.
+        </p>
+        <p>
+            Po uruchomieniu NTP, możemy podłacząć komputery klienckie do naszej domeny. Pamiętajmy jednak żeby na początku w systemie ustawić serwer czasu na kontroler. Teraz możemy ustawić serwery DNS na nasz kontroler i podłączyć chociażby Windowsa. Windowsą sie łatwo podłacza, a warto ponieważ będziemy mogili zainstalować przystawkę dzięki której będziemy kontrolować naszą domenę z poziomu okienka. To koniec części drugiej, nie jest ona tak długa jak część pierwsza i mogła by zostać po prostu włączona do samej instalacji, jednak zostało to podzieleno ponieważ NTP stanowi odrębną usługę i może być wykorzystanie przy innych konfiguracjach serwerów, pomijając oczywiście część związną z socketem.
+        </p>
+        <p>
+            ~xf0r3m
+        </p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+                               ____  _____
+   ____ _________  ___  ____  / __ \/ ___/
+  / __ `/ ___/ _ \/ _ \/ __ \/ / / /\__ \ 
+ / /_/ / /  /  __/  __/ / / / /_/ /___/ / 
+ \__, /_/   \___/\___/_/ /_/\____//____/  
+/____/                                    
+
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">greenOS GNU/Linux</h1>
+    <p>
+      <strong>greenOS</strong> to lekka, oparta na Debianie dystrybucja 
+      przeznaczona do ogólnego 
+      użytku. Dostarczana jest w postaci archiwum z preinstalowanym i
+      prekonfigurowanym jądrem oraz oprogramowaniem, dzięki czemu może zostać
+      zainstalowana z dowolnej innej dystrybucji, nie koniecznie uruchomionej
+      LiveCD. 
+    </p>
+    <p>
+      Zrzut ekranu przestawiający wersję Desktop:
+      <a target="_blank" href="https://files.morketsmerke.net/greenOS/greenOS_screenshot.png">
+        <figure>
+          <img src="https://files.morketsmerke.net/greenOS/greenOS_ss_thumbnail.png">
+          <figcaption>Kilknij obrazek, aby otworzyć w pełnym rozmiarze.</figcaption> 
+        </figure>
+      </a> 
+    </p>
+    <p>
+      <strong>Celem dystrybucji</strong> jest dostarczenie użytkownikowi 
+      stabilnego i elastycznego systemu operacyjnego, nie
+      narzucającego żadnych konkretnych rozwiązań, z możlwością uruchomienia
+      na dowolnym sprzęcie z architekturą i386 lub amd64. Dystrybucja jest
+      również pozbawiona wielu "bajerów", które miały wyłącznie wizualny efekt.
+      Oprogramowanie z jakim dostarczany jest greenOS dobrano w ten sposób
+      aby było jak najbardziej elastyczne w konfiguracji i nie obciązało 
+      komputera. Oprogramowanie dla greenOS jest dostarczane za pomocą 
+      menedżera
+      pakietów APT i jest identyczne z tym dostępnym na Debianie.
+    </p>
+    <p>
+      Dystrybucja występuje w trzech wersjach:  
+    </p>
+    <ul>
+      <li>
+        <p>
+          <strong>Desktop</strong> - wersja z zainstalowanym środowiskiem
+          graficznym przeznaczonym na stacje robocze oraz laptopy.
+          Zainstalowane oprogramowanie:
+        </p>
+        <ul>
+          <li>Powłoka: <strong>BASH</strong></li>
+          <li>
+            Menedżer okien: <strong>IceWM</strong> (z ustawionym domyślnie 
+            tematem <em>win95</em>), instalowany z ręcznej kompilacji.
+          </li>
+          <li>Przeglądarka internetowa: <strong>Firefox-ESR</strong>
+            (lub w zależności o wybranej wersji) <strong>GNU IceCat</strong>,
+          </li>
+          <li>Menedżer plików: <strong>ranger</strong>,</li>
+          <li>Edytor tekstu: <strong>Vim</strong>,</li>
+          <li>Program do odtwarzania plików dzwiękowych: <strong>qmmp</strong>,</li>
+          <li>Program do odtwarzania plików multimedialnych: <strong>VLC</strong>,</li>
+          <li>Klient IRC: <strong>irssi</strong>,</li>
+          <li><strong>iwd</strong> - iNet Wireless Daemon - demon połączenia
+              z siecią bezprzwodową - dostarcza takie narzędzie jak 
+              <strong>iwctl</strong>,
+          <li><strong>firmware-iwlwifi</strong> - <span style="color: red;">
+            <strong>Niewolny</strong></span> sterownik karty WLAN Intela,</strong>
+          </li>
+          <li><strong>firmware-linux</strong> - <span style="color: red;">
+            <strong>Niewolny</strong></span> zestaw sterowników.
+          </li>
+        </ul>
+        <p>
+          Istnieje możliwość zainstalowania takich programów jak Oracle
+          VirtualBox czy Spotify. W tym celu należy postępować z wytycznymi
+          dla instalacji na Debianie.
+        </p> 
+      </li>
+      <li>
+        <p>
+          <strong>Server</strong> - wersja bez środowiska graficznego
+          przeznaczona na serwery. Zainstalowane oprogramowanie:
+        </p>
+        <ul>
+          <li>Powłoka: <strong>BASH</strong>,</li>
+          <li>Edytor tekstu: <strong>Vim</strong>,</li>
+          <li><strong>Serwer OpenSSH</strong>,</li>
+          <li><strong>firmware-linux</strong> - <span style="color: red;">
+            <strong>Niewolny</strong></span> zestaw sterowników.</li>
+        </ul>
+      </li>
+      <li>
+        <p>
+          <strong>Hacker</strong> - najczystsza instalacja, poza jądrem oraz
+          oprogramowaniem niezbędnym do prawidłowego działania systemu oraz
+          połaczenia z siecią lokalną nia zawiera żadnego oprogramowania.
+          Uwaga! Zawiera <span style="color: red;"><strong>Niewolny</strong>          </span> zestaw sterowników <strong>firmware-linux</strong>.
+        </p>
+      </li>
+    </ul>
+    <p>
+      greenOS jest również rozporowadzany na zasadzie <strong>LiveCD</strong>. 
+      Wersja LiveCD
+      jest porównywalna wersją "Desktop" jednak instalowany tam menedżer okien
+      IceWM pochodzi z repozytorium Debiana a nie z ręcznej kompilacji. Poniżej
+      znajdują się linki do pobrania obrazu LiveCD: 
+    </p>
+    <ul>
+      <li>Wersja dla architektury amd64: 
+        <a href="http://ftp.morketsmerke.net/greenOS/iso/amd64/greenOS_amd64.iso">
+          greenOS_amd64.iso</a>
+      </li>
+      <li>Werjsa dla architektury i386:
+        <a href="http://ftp.morketsmerke.net/greenOS/iso/i386/greenOS_i386.iso">
+          greenOS_i386.iso</a>
+      </li>
+    </ul>
+    <p>
+      Dane logowania na obrazach LiveCD (nazwa użytkownika/hasło)
+    </p>
+    <ul>
+      <li>root/toor</li>
+      <li>user/user1</li>
+    </ul>
+    <p>
+      Aby nie narzucać niczego oraz zapewnić elastyczność instalacji, greenOS
+      dostarczany jest bez instalatora. Dystrybucje należy zainstalować ręcznie
+      posiłkując się <a href="instalacja_greenos.html">poradnikiem instalacji</a>.
+    </p>
+    <p>
+      Archiwa z dystrybucją znajdują się poniżej oraz pod adresem
+      <a href="http://ftp.morketsmerke.net/greenOS/rootfs">
+        http://ftp.morketsmerke.net/greenOS/rootfs
+      </a>.
+    </p>
+    <ul>
+      <li>
+        <strong>Desktop:</strong>
+        <ul>
+          <li>
+           <strong>amd64:</strong>
+           <ul>
+            <li>
+              <strong>Mozilla Firefox ESR:</strong><br />
+              <a href="http://ftp.morketsmerke.net/greenOS/rootfs/amd64/desktop/rootfs_amd64_desktop_ffesr.tgz">rootfs_amd64_desktop_ffesr.tgz</a>
+            </li>
+            <li>
+              <strong>GNU IceCat:</strong><br />
+              <a href="http://ftp.morketsmerke.net/greenOS/rootfs/amd64/desktop/rootfs_amd64_desktop_gnuic.tgz">rootfs_amd64_desktop_gnuic.tgz</a>
+            </li>
+           </ul>
+          </li>
+          <li>
+            <strong>i386:</strong>
+            <ul>
+              <li>
+                <strong>Mozilla Firefox ESR:</strong><br />
+                <a href="http://ftp.morketsmerke.net/greenOS/rootfs/i386/desktop/rootfs_i386_desktop_ffesr.tgz">rootfs_i386_desktop_ffesr.tgz</a>
+              </li>
+              <li>
+                <strong>GNU IceCat:</strong><br />
+                <a href="http://ftp.morketsmerke.net/greenOS/rootfs/i386/desktop/rootfs_i386_desktop_gnuic.tgz">rootfs_i386_desktop_gnuic.tgz</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <strong>Server:</strong>
+        <ul>
+          <li>
+            <strong>amd64:</strong><br />
+            <a href="http://ftp.morketsmerke.net/greenOS/rootfs/amd64/server/rootfs_amd64_server.tgz">rootfs_amd64_server.tgz</a>
+          </li>
+          <li>
+            <strong>i386:</strong><br />
+            <a href="http://ftp.morketsmerke.net/greenOS/rootfs/i386/server/rootfs_i386_server.tgz">rootfs_i386_server.tgz</a>
+          </li>
+        </ul> 
+      </li>
+      <li>
+        <strong>Hacker:</strong>
+        <ul>
+          <li>
+            <strong>amd64:</strong><br />
+            <a href="http://ftp.morketsmerke.net/greenOS/rootfs/amd64/hacker/rootfs_amd64_hacker.tgz">rootfs_amd64_hacker.tgz</a>
+          </li>
+          <li>
+            <strong>i386:</strong><br />
+            <a href="http://ftp.morketsmerke.net/greenOS/rootfs/i386/hacker/rootfs_i386_hacker.tgz">rootfs_i386_hacker.tgz</a>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <p>
+      greenOS rozporowadzany jest <strong>bez gwarancji przydatności</strong>.
+      Autor nie ponosi odpowiedzialności za szkody wyrządone instalacją lub
+      korzystaniem z greenOS. Miłej zabawy!
+    </p>
+    <p>
+-- Changelog --
+    </p>
+    <p>
+      -- 18.06.2021 - Wydanie nieoficjalnej wersji greenOS oznaczonej nazwą kodową "first".<br />
+      -- 21.08.2021 - Wydanie pierwszej oficjalnej wersji greenOS oznaczonej nazwą kodową "one".<br />
+    </p>
+  </div>
+  <p style="margin: 15px; padding: 0; outline: 0;">
+	  2021; COPYLEFT; ALL RIGHTS REVERSED;
+  </p>
+
+</body>
+</html>

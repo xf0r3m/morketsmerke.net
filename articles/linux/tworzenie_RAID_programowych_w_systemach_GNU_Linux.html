@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Tworzenie RAID programowych w systemach GNU/Linux</h1>
+    <p>
+      <strong>RAID programowe</strong> są innym sposóbem na zarządzanie dyskami na systemach GNU/Linux. Dzięki temu rozwiązaniu nie musimy już kupować drogich dedykowanych kontrolerów do naszego budżetowego serwera. Oprogramowanie odpowiedzialne za konfigurowanie RAID wspiera wszystkie powszechnie używane poziomy 0,1,5,6,0+1,1+0.
+    </p>
+    <p>
+      Każdy dysk musi mieć partycję typu <em>Linux raid autodetect</em>, więc za pomocą polecenia <em>fdisk</em>, utworzymy je, poniżej znajduje się kolejność wciskanych klawiszy podczas pracy z programem.
+    </p>
+<pre class="code-block">
+$ sudo fdisk /dev/sdb
+> o
+> n
+> p
+> [ENTER]
+> [ENTER]
+> [ENTER]
+> t
+> fd
+> w
+> quit
+</pre>
+    <p>
+      Powtarzamy to na wszystkich dyskach budujących tablicę. Kiedy skończymy przechodzimy do tworzenia tablicy RAID wykorzystujemy polecenie <em>mdadm</em>. Dla swoich dysków wybrałem RAID 1.
+    </p>
+<pre class="code-block">
+$ sudo mdadm --create /dev/md0 --level=1 --raid-devices=2 /dev/sdb1 /dev/sdc1
+</pre>
+    <p>
+      <ul>
+        <li><code class="code-inline">--create</code> - nazwa urządzenia RAID identyfikująca je w systemie,</li>
+        <li><code class="code-inline">--level=1</code> - poziom RAID wykorzystany w tablicy,</li>
+        <li><code class="code-inline">--raid-devices</code> - liczba dysków użyta do stworzenia RAID</li>
+        <li><code class="code-inline">/dev/sdb1 /deb/sdc1</code> - partycje uzyte w RAID.</li>
+      </ul>
+      Po wykonaniu tego polecenia w systemie zostanie utworzone pusty dysk pod nazwa, którą podaliśmy w wartości opcji <code class="code-inline">--create</code>. Aby korzystać z RAID musimy utworzyć na nim partycję i ją sformatować.
+    </p>
+<pre class="code-block">
+$ sudo fdisk /dev/md0
+> o
+> n
+> p
+> [ENTER]
+> [ENTER]
+> [ENTER]
+> w
+> quit
+$ sudo mkfs.ext4 /dev/md0p1
+</pre>
+    <p>
+      Do utworzenia partycji, użyłem programu fdisk z tą samą sekwencją poleceń jakiej używam do tworzenia partycji na klasycznych dyskach. Za pomocą tego samego polecenia z przełącznikem <code class="code-inline">-l</code>, możemy sprawdzić numer naszej partycji, którą przygotowujemy do działania ostatnim poleceniem z powyższego przykładu. Teraz możemy nasze urządzenie RAID pod montować w systemie.
+    </p>
+<pre class="code-block">
+$ sudo mount /dev/md0p1 /mnt
+</pre>
+    <p>
+      Użycie programowych tablic RAID to dobre rozwiązanie kiedy potrzebujemy na zwykłej stacji roboczej RAID 1, a nie posiada ona żadnych fizycznych mechanizmów tworzenia takich tablic, a kontroler może być poza naszym zasięgiem z różnych przyczyn.
+    </p>
+    <p>
+        ~xf0r3m
+    </p>
+  </div>
+	<p style="margin: 15px; padding: 0; outline: 0;">
+		2021; COPYLEFT; ALL RIGHT REVERSED;
+	</p>
+</body>
+</html>

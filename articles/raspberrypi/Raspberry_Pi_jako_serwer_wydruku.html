@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">Raspberry Pi jako serwer wydruku</h1>
+    <p>
+      Jak to się mówi... Potrzeba jest matką wynalazków. W moim przypadku był to problem takiego rodzaju że na dwa komputery w biurze miałem jedną drukarkę. Dość starą drukarkę bo to <em>HP LaserJet 1010</em> wydana w wrześniu 2003. Drukarka nie ma żadnych innych portów niż USB type B, i stała daleko od komputera a ja nie miałem tak długiego kabla żeby ją podłączyć. Więc wpadłem na pomysł aby podłączyć ją do Raspberry i zrobić z RPI serwer wydruku. Poniżej znajdują się czynność, które wykonywałem aby to skonfigurować.
+    </p>
+    <ol>
+      <li>Instalacja aktualizacji oraz niezbednych pakietów.
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+$ sudo apt install cups
+</pre>
+      </li>
+      <li>Umożliwienie dostępu z sieci do <strong>CUPS</strong> Raspberry Pi, w normalnych warunkach CUPS nasłuchuje tylko i wyłącznie na pętli zwrotnej.
+<pre class="code-block">
+$ sudo cupsctl --remote-admin --remote-any --share-printers
+</pre>
+      </li>
+      <li>Dodawnie uprawnień użytkownikom do zarządzania drukarkami.
+        <p>
+          W pliku <em>/etc/cups/cupsd.conf</em> odszukujemy sekcję <code class="code-inline">Limit CUPS-Add-Modify-Printer</code> <strong>pierwszą napotkaną, może ich być wiele</strong>, następnie w opcji <code class="code-inline">Require user</code> po <code class="code-inline">@SYSTEM</code> dopisujemy użytkownika, w tym przypadku będzie to <em>pi</em>. Zapisujemy plik i restartujemy usługę.
+        </p>
+<pre class="code-block">
+$ sudo systemctl restart cups
+</pre>
+      </li>
+      <li>Dodawnie drukarki w systemie CUPS
+        <p>
+          W przeglądarce w pasku adresu, wpisujemy <em>http://&lt;adres_ip raspberry_pi&gt;:631</em>, klikamy na zakładkę <code class="code-inline">Administration</code>, następnie wybieramy opcje <code class="code-inline">Add printer</code>. Zostanie poproszeni o dane logowania, używamy danych logowania z użytkownika <em>pi</em>. W sekcji <code class="code-inline">Local printers</code> powinniśmy dostrzec naszą drukarkę. Jeśli tak to wybieramy ją i klikamy <code class="code-inline">continue</code>.
+					Następnie zaznaczamy opcję <code class="code-inline">Share this printer</code> i klikamy <code class="code-inline">continue</code>. W opcji <code class="code-inline">Model</code>, wyszukujemy model podłączonej drukarki, jeśli nie możemy go znaleźć oznacza to że nie ma sterowników zainstalowanych do naszego urządzenia. Jeśli znaleźlismy naszą drukarkę możemy teraz przejść do punktu nr. 6.
+        </p>
+      </li>
+      <li>Instalacja sterowników drukarki w systemie Linux.
+        <p>
+          Jeśli CUPS nie obsługuje naszej drukarki domyślnie, to pierwszą rzeczą jaką powinniśmy zrobić to odwiedzić stronę <a href="http://openprinting.org/printers">http://openprinting.org/printers</a>. Znajdują się na niej otwarte sterowniki drukarek. Jeśli nie znaleźliśmy na niej nic odpowiedniego dla naszego urządzenia pozostaje, nam tylko strona producenta. Po zainstalowaniu sterownika, wracamy z powrotem do punktu 4. <strong>Uwaga! Drukarki HP przy wyborze sterownika HPLIP (sterownik własnościowy), należy instalować z poziomu oprogramowania sterownika.</strong> Po zainstalowaniu sterownika za pomocą polecenia:
+        </p>
+<pre class="code-block">
+$ sudo apt install hplip
+</pre>
+        <p>
+          Uruchamiamy kreator dodawania drukarek poleceniem:
+        </p>
+<pre class="code-block">
+$ sudo hp-setup -i
+</pre>
+        <p>
+          Kreator zapyta o typ połączania (usb, lan, lpt), a następnie automtycznie wykryje podłączoną drukarkę, lub poprosi o wybór urządzenia jeśli podłączyliśmy więcej niż jedno. Po tym kreator zapyta o instalację pluginu, jest on niezbędny do obsługi naszego urządzenia. Plugin zostanie pobrany ze strony HP, w trakcie możemy otrzymać błąd <code class="code-inline">Unable to receive key from keyserver</code>, nie jest to błąd krytyczny, musimy po prostu potwierdzić że chcemy pobrać wtyczkę bez weryfikacji źródła. Po zainstalowaniu wtyczki zostanie zapytanie o dodanie kolejki wydruku, opis oraz lokalizację drukarki. Na koniec zostaniemy zapytani o stronę testową. Warto to zrobić ponieważ od razu będzie wiadomo czy drukarka współpracuje z zainstalownym właśnie sterownikiem.
+        </p>
+        <p>
+          Po wydrukowaniu strony testowej, drukarka powinna automatycznie pojawić się w panelu CUPS.
+        </p>
+      </li>
+      <li>Dodawanie drukarki w systemie Windows
+        <p>
+          Możliwe są dwa dojścia. Zauważyłem że np. drukarka <em>HP LaserJet 1020</em>, nie chcę drukować po zainstalowaniu za pomocą protokołu Bonjour firmy Apple. Mimo pojawiących się rzeczy w kolejce wydruku w panelu CUPS.
+          <ul>
+          <li>Dojście nr. 1 - protokoł Bonjour:
+              <p>
+              Na naszym Windowsie instalujemy program <a href="https://support.apple.com/kb/DL999?viewlocale=en_US&locale=en_US">Kreator drukarek Bonjour</a> Po uruchomieniu powinien automatycznie odszukać drukarę, widniejącą pod: <em>&lt;nazwa_drukarki&gt;@&lt;nazwa_hosta_raspberry&gt;</em>. Następnie wybieramy sterownik, jeśli nie znaleźliśmy naszego możemy go załadować z dysku. Na razie wybierzmy jakiś generyczny sterownik, ponieważ program lub się tu wykrzaczyć i po prostu nieoczekiwanie zamknąć. Po dodaniu drukarki, przechodzimy do jej właściwości w <code class="code-inline">Panelu sterowania</code> czy w <code class="code-inline">Ustawieniach</code>, wybieramy drukarkę klikamy na nią PPM z menu kontekstowego wybieramy opcję <code class="code-inline">Właściwości drukarki</code> następnie
+							zakładkę <code class="code-inline">Zaawansowane</code> w sekcji <code class="code-inline">Sterownik</code>, kilkamy <code class="code-inline">Nowy sterownik</code> i dopiero tutaj ładujemy nasz sterownik. Dla pewności drukujemy stronę testową. To dojście działa między innymi dla HP LaserJet 1010 na Windows 10.
+              </p>
+          </li>
+          <li>Dojście nr. 2 - ręczna konfiguracja IPP:
+              <p>
+              Sposób może brzmieć skomplikowanie, jedak jest prostszy niż poprzedni... W aplecie <code class="code-inline">Urządzenia i drukarki</code>' panelu sterowania wybieramy <code class="code-inline">Dodaj drukarkę</code> następnie odnośnik <code class="code-inline">Drukarki, której szukam nie ma na liście'</code> zaznaczamy opcje <code class="code-inline">Wybierz drukarkę udostępnioną według nazwy</code> w poniższym okienku wpisujemy:
+              </p>
+<pre class="code-block">
+http://&lt;adres_ip_raspberry&gt;:631/printers/&lt;nazwa_drukarki_w_CUPS&gt;
+</pre>
+              <p>
+              Potem klikamy przycisk <code class="code-inline">Dalej</code>, system powinien się skomunikować z drukarką i wyświetlić nam okienko wyboru sterowników. Wybieramy odpowiedni dla naszego urządzenia sterownik lub ładujemy go z dysku. Po zainstalowniu, drukujemy stronę testową.
+              </p>
+          </li>
+          </ul>
+          Tutaj możemy zakończyć naszą instalację, jednak przedstawię poniżej jeszcze jeden punkt, lekko poprawiający korzystanie z CUPS.
+        </p>
+      </li>
+      <li>Dostrajanie CUPS. (Opcjonalnie)
+          <p>
+          Nie będzie tu tego wiele. Ale dwie rzeczy rzucają się w oczy przy wykorzystywaniu serwera wydruku z RPI np. w firmie. Pierwsza z nich to korzystanie z nazwy <em>FQDN</em> zamiast z adresu IP, oraz logowanie do samego panelu administracyjnego, a nie tylko do funkcji zarządzania drukarkami.
+          </p>
+          <ul>
+          <li>Przyjazna nazwa serwera wydruku.
+              <p>
+              W pliku konfiguracyjnym <em>/etc/cups/cupsd.conf</em>, edytujemy opcję <code class="code-inline">Listen</code>, ustawiając ją na <code class="code-inline">*:631</code> następnie pod nią dopisujemy opcję <code class="code-inline">ServerAlias</code> ustawiając ją na FQDN naszego serwera wydruku. Plik zapisujemy i restartujemy usługę.
+              </p>
+<pre class="code-block">
+$ sudo systemctl restart cups
+</pre>
+          </li>
+          <li>Blokada nieautoryzowanego dostępu do panelu administracyjnego CUPS.
+            <p>
+              W pliku konfiguracyjnym, odnajdujemy sekcję <code class="code-inline">&lt;Location /admin&gt;</code> dopisujemy wewnątrz niej opcję <code class="code-inline">Require user @SYSTEM pi</code>. Plik zapisujemy i restartujemy usługę.
+            </p>
+          </li>
+          </ul>
+      </li>
+      </ol>
+      <p>
+        To rozwiązanie działa... Do czasu. Po kilku miesiącach drukarka na każdą stronę wydruku, drukowała Stronę z napisem "Unsupported Personality: PCL". Pomogła zmiana sterownika z HPLIP na CUPS+Gutenprint, ale co ciekawe tylko na Debianie. Na innych systemach drukarka nie chciała w ogóle drukować na tym sterowniku. Po tych doświadczeniach stwierdzam że nie ma się co bawić w takie rozwiązania, lepiej kupić jakąś porządną drukarkę sieciową ze wsparciem zarówno dla systemów GNU/Linux jak MS Windows.
+      </p>
+      <p>
+        ~xf0r3m
+      </p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+	</body>
+	</html>

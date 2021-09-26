@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center">Mini serwer LXD z łącznością bezprzewodową na Raspberry Pi</h1>
+    <p>
+      Kiedy nie mamy miejsca w domu na prawdziwy serwer, a chcemy pobawić się kontenerami, to jako alternatywy możemy użyć <strong>Raspberry Pi</strong>. Po poza samą usługą <strong>LXD/LXC</strong> do dałem jeszcze funkcję <em>AP</em>, aby można było podłączyć się do niego bez kabli.
+    </p>
+    <ol>
+      <li><strong>Dysk twardy</strong>
+        <p>
+          Do realizacji tego zadania, przyda nam się dysk twardy czy to HDD 2,5 czy 3,5" czy SSD. Obecnie Raspberry od wersji 2 drugie wspiera bootowanie z USB, przy wersji 4 należy na początku uruchomić komputer z karty następnie z aktualizować <em>bootloader</em> i również będzie taka możliwość.
+        </p>
+      </li>
+      <li><strong>Pierwsze czynności po załadowaniu nowego systemu</strong>
+        <p>
+          Zaraz po zalogowaniu do świeżego systemu, należało by zmienić domyślne hasło.
+        </p>
+<pre class="code-block">
+$ passwd
+</pre>
+        <p>
+          Podajemy obecne hasło: <em>raspberry</em>, oraz ustalamy nowe. Następną czynnością jest ustawienie lokalizacji działania sieci bezprzewodowej. <strong>Każdy kraj na własne regulacje prawne odnośnie wykorzystania pasma ISM (2,4GHz)</strong>, dlatego też interfejs sieci bezprzewodowej w RPI jest zablokowany przez rfkill, dopóki nie ustawimy kraju, w którym będziemy z niej korzystać. Uruchamiamy <code class="code-inline">$ sudo raspi-config</code>, następnie wybieramy <code class="code-inline">4 Localisation Options</code> -> <code class="code-inline">I4 Change Wi-Fi Country</code> -> <code class="code-inline">PL Poland</code> potwierdzamy <code class="code-inline">OK</code>. Zostaniemy poinformowani o ustawieniu lokalizacji.
+        </p>
+      </li>
+      <li><strong>Aktualizacja systemu</strong>
+        <p>
+          Teraz zainstalujemy aktualizacje systemu i przejdziemy do konfiguracji połączenia z Internetem.
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+</pre>
+      </li>
+      <li><strong>Konfigurowanie dostępu do internetu.</strong>
+        <p>
+          Możemy pozostawić to takie jakie jest, czyli dostęp realizowany po kablu. Jednak traci to trochę na mobilności. Dlatego proponuje dołożyć drugą kartę bezprzewodową, aby również połączenie z internetem odbywało się za pomocą sieci bezprzewodowej. W moim przypadku użyłem <em>TP-Link Archer T2U</em>. Karta jest dwuzakresowa jednak nie działa <em>out of box</em> z RasPiOS, jeśli chcemy jej użyć musimy wykonać poniższe czynności.
+        </p>
+        <ol>
+          <li>Pobieramy paczke oficjalnego firmware-u i przechodzimy do pobranego katalogu (jeśli nie ma <em>git</em>, to instalujemy go z repozytorium <code class="code-inline">$ sudo apt instal git</code>).
+<pre class="code-block">
+  $ git clone https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
+
+  $ cd linux-firmware
+</pre></li>
+        <li>Tworzymy katalog 'mediatek' na <em>/lib/firmware</em>.
+<pre class="code-block">
+$ sudo mkdir /lib/firmware/mediatek
+</pre>
+        </li>
+        <li>Kopiujemy sterownik do naszego nowo utworzonego katalogu.
+<pre class="code-block">
+$ sudo cp mediatek/mt7610u.bin /lib/firmware/mediatek/
+</pre>
+        </li>
+        <li>Usuwamy niekompatybilny moduł z jądra systemu.
+<pre class="code-block">
+$ sudo rmmod mt76x0
+</pre>
+        <p>
+          Gdyby pojawił się taki komunikat o błedzie:
+        <p>
+<pre class="code-block">
+rmmod: ERROR: ../libkmod/libkmod.c:514 lookup_builtin_file() could not open builtin file '/lib/modules/4.19.97-v7+/modules.builtin.bin'
+</pre>
+        <p>
+          To należy zresetować malinkę: <code class="code-inline">$ sudo reboot</code>
+        </p>
+        </li>
+        <li>Dodajemy nowy moduł do jądra.
+<pre class="code-block">
+$ sudo modprobe mt76x0
+</pre>
+        </li>
+        </ol>
+        <p>
+          Po wprowadzeniu powyższych czynności karta powinna już działać, można to przetestować skanując sieci bezprzewodowe.
+        </p>
+<pre class="code-block">
+$ sudo iwlist wlan1 scan
+</pre>
+      </li>
+			<li><strong>Konfiguracja interfejsu AP</strong>
+				<p>
+					Aby wybudowany interfejs sieci bezprzewodowej mógł być punktem dostępu musi mieć adress ip, które jednocześnie będzie bramą dla jego sieci. Aby nadać mu adres IP w pliku <em>/etc/dhcpcd.conf</em> na samym dole dopisujemy poniższe opcje:
+				</p>
+<pre class="code-block">
+interface wlan0
+static ip_address=192.168.4.1/24
+nohook wpa_supplicant
+</pre>
+			</li>
+			<li><strong>Instalacja i konfiguracja serwera dhcp oraz demona punktu dostępu</strong>
+				<p>
+					Do stworzenia sieci bezprzewodowej potrzebny jest serwer odpowiedzialny za przydział adresów IP oraz program który tak skonfiguruje wbudowaną kartę by rozgłaszała sygnał sieci. Instalujemy dwa pakiety:
+				</p>
+<pre class="code-block">
+$ sudo apt install hostapd dnsmasq
+</pre>
+				<p>
+					Zmieniamy nazwę pliku konfiguracyjnego <em>dnsmasq</em> dostarczonego wraz z pakietem, ponieważ nie będzie on nam potrzebny jednak warto go zachować gdyż może być bazą wiedzy na temat konfiguracji usługi.
+				</p>
+<pre class="code-block">
+$ sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.init
+</pre>
+				<p>
+					Tworzymy nowy plik i zapisujemy w nim poniższe linie, oczywiście adresy zakresu należy dobrać do adresu ustawionego na wlan0.
+				</p>
+<pre class="code-block">
+interface=wlan0
+dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
+</pre>
+				<p>
+					Teraz należy zrestartować usługę.
+				</p>
+<pre class="code-block">
+$ sudo systemctl restart dnsmasq
+</pre>
+				<p>
+					Następnie przechodzimy do pliku konfiguracyjnego daemon <em>hostapd</em>. Plik ten najprawdopodobniej nie istnieje, więc do nowego pliku <em>/etc/hostapd/hostapd.conf</em> wpisujemy poniższą konfiguracje.
+				</p>
+<pre class="code-block">
+interface=wlan0
+driver=nl80211
+ssid=rpilxdsrv
+hw_mode=g
+channel=6
+wmm_enabled=1
+ieee80211n=1
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=1
+wpa=2
+wpa_passphrase=123_LxD_123
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP
+rsn_pairwise=CCMP
+</pre>
+				<p>
+					To nie koniec konfiguracji, otóż daemonowi należy jeszcze wskazać ścieżkę do pliku konfiguracjnego w pliku <em>/etc/default/hostapd</em>. Otwieramy plik, odszukujemy linie zawierajacą <code class="code-inline">DAEMON_CONF=""</code>, usuwamy znajdujący się na początku znak komentarza, pomiędzy podwójnymi apostrofami umieszczamy ścieżkę do pliku.
+				</p>
+<pre class="code-block">
+DAEMON_CONF="/etc/hostapd/hostapd.conf"
+</pre>
+				<p>
+					Aby uruchmić usługę należy wydać poniższe polecenia.
+				</p>
+<pre class="code-block">
+$ sudo systemctl unmask hostapd
+$ sudo systemctl enable hostapd
+$ sudo systemctl start hostapd
+</pre>
+			</li>
+			<li><strong>NAT i przekazywanie pakietów</strong>
+				<p>
+					Włączenie przekazywania pakietów na Raspberry Pi jest dziecinnie proste sprowadza się do usunięcia znaku komentarza z linii <code class="code-inline">#net.ipv4.ip_forwarding=1</code> w pliku <em>/etc/sysctl.conf</em>. Uruchomienie NAT-u, to w sumie też jedno polecenie.
+				</p>
+<pre class="code-block">
+$ sudo iptables -t nat -A POSTROUTING -o &lt;interfejs połączenia z internetem&gt; -j MASQUERADE
+</pre>
+				<p>
+					Jednak kiedy uruchomimy ponownie nasze RPI, reguła NAT-u zniknie. Aby reguły <em>iptables</em> były stałe są zapisywane do pliku, a przy uruchomieniu systemu odtwarzane, aby to zrealizować musimy  zainstalować pakiet <em>iptables-persistent</em>.
+				</p>
+<pre class="code-block">
+$ sudo apt install iptables-persistent
+</pre>
+				<p>
+					Podczas instalacji, zostaniemy zapytani o to czy zapisać istniejące już reguły. Możemy to zrobić. Przy każdym zapisie plik jest nadpisywany obecnie załdowanymi do iptables regułami. Reguły najlepiej zapisywać po każdej zmianie, poniżej znajduje się polecenie odpowiedzialne za ich przywrócenie, należy umieścić je w pliku <em>/etc/rc.local</em> przed linią <code class="code-inline">exit 0</code>.
+				</p>
+<pre class="code-block">
+iptables-restore < /etc/iptables/rules.v4
+</pre>
+			</li>
+			<li><strong>Połączenie z internetem</strong>
+				<p>
+					Kiedy mamy już gotową bramkę pozostaje nam tylko połączyć się z Internetem, połączenie to będzie udostępniane przez nasz mikroserwer za pomocą sieci bezprzewodowej. Jeśli łączymy się po kablu, to tak naprawdę wystarczy go wpiąć i możemy przejść do kolejnego punktu. Jeśli połączenie będziemy realizować za pomocą sieci bezprzewodowej, to teraz się z taką siecią połączymy. Zestawianie połaczenia rozpoczynamy od znalezienia naszej sieci docelowej, skanowania dokonujemy za pomocą polecenia:
+				</p>
+<pre class="code-block">
+$ sudo iwlist wlan1 scan
+</pre>
+				<p>
+					Odszukujemy sieć do której chcemy się podłączyć następnie na podstawie zabezpieczeń sieci wybieramy z jedną z metod sparowania się.
+				</p>
+				<ul>
+					<li>sieć otwarta -
+<pre class="code-block">
+$ sudo iwconfig wlan1 essid "ssid"
+</pre>
+					</li>
+					<li>WEP -
+<pre class="code-block">
+$ sudo iwconfig wlan1 essid "ssid" key "kluczWEP"
+</pre>
+					</li>
+					<li>WPA/WPA2 -
+<pre class="code-block">
+$ sudo wpa_passphrase "ssid" "psk" | sudo tee /etc/wpa_supplicant/wpa_supplicant.conf
+
+$ sudo wpa_supplicant -B -c /etc/wpa_supplicant/wpa_supplicant.conf -i wlan1
+</pre>
+					</li>
+				</ul>
+				<p>
+					Bez względu na wybrany typ sieci, musimy pobrać z niej adres IP, co jest realizowane przez poniższe polecenie.
+				</p>
+<pre class="code-block">
+$ sudo dhclient wlan1
+</pre>
+				<p>
+					Z racji tego iż ta czynność będzie wykonywana za każdym razem gdy użytkownik będzie podłączał się do Internetu. <em>Dnsmasq</em> nie posiada adresu, na który mógłby przekazywać pakiety. Dnsmasq nie jest serwerem DNS sam w sobie. Jest tylko przekaźnikiem co nawet tłumaczy jego nazwa. Po pobraniu adresu IP z docelowej sieci, należy  zrestartować dnsmasq, aby mógł wczytać ten adres i zapewnić swobodny dostęp do Internetu.
+				</p>
+<pre class="code-block">
+$ sudo systemctl restart dnsmasq
+</pre>
+				<p>
+					Powyższy sposób można zautomatyzować, o ile będziemy się łączyć przez cały czas z tą samą siecią. Dodajemy polecenie sparowania z siecią oraz polecenie pobrania adresu ip do pliku <em>/etc/rc.local</em> nad przywróceniem reguł iptables.
+				</p>
+			</li>
+			<li><strong>Instalacja LXD</strong>
+				<p>
+					Aby zainstalować <em>LXD</em>, potrzebujemy znanego z Ubuntu managera pakietów snap oraz oprogramowania to tworzenia mostów. Instalujemy wymagane oprogramowanie.
+				</p>
+<pre class="code-block">
+$ sudo apt install snapd bridge-utils
+</pre>
+				<p>
+					Następnie instalujemy <em>lxd</em> oraz inny wymagany do uruchomienia czego kolwiek z <em>snap</em> pakiet.
+				</p>
+<pre class="code-block">
+$ sudo snap install core
+$ sudo snap install lxd --channel=3.0/stable
+</pre>
+				<p>
+					Po zainstalowaniu dodajemy użytkownika <code class="code-inline">pi</code> do grupy <code class="code-inline">lxd</code>, za pomocą poniższego polecenia.
+				</p>
+<pre class="code-block">
+$ sudo usermod -aG lxd pi
+</pre>
+				<p>
+					Przelogowywujemy się na użytkownika <em>root</em>.
+				</p>
+<pre class="code-block">
+$ sudo su
+</pre>
+				<p>
+					Dodajemy tymczasowo <em>/snap/bin</em> do zmiennej <code class="code-inline">PATH</code>.
+				</p>
+<pre class="code-block">
+# export PATH=${PATH}:/snap/bin
+</pre>
+				<p>
+					Zatrzymujemy usługę 'dnsmasq'.
+				</p>
+<pre class="code-block">
+# systemctl stop dnsmasq
+</pre>
+				<p>
+					Inicjujemy LXD.
+				</p>
+<pre class="code-block">
+# lxd init
+</pre>
+				<p>
+					Opis poszczególnych pytań znajdziemy <a href="../linux/instalacja_konterów_lxd.html">https://morketsmerke.net/articles/linux/instalacja_konterów_lxd.html</a>.
+				</p>
+				<p>
+					Po zainicjowaniu LXD musimy dokonać małych zmian w konfiguracji naszego dnsmasq, otwieramy plik <em>/etc/dnsmasq.conf</em>, po opcji <code class="code-inline">interface=wlan0</code> dopisujemy poniższe opcje.
+				</p>
+<pre class="code-block">
+except-interface=lxdbr0
+bind-interfaces
+</pre>
+				<p>
+					 Teraz możemy ponownie uruchomić dnsmasq.
+				</p>
+<pre class="code-block">
+# systemctl restart dnsmasq
+</pre>
+				<p>
+					 Wylogowujemy się zupełnie z Raspberry, po to aby zmienna <code class="code-inline">PATH</code> się przeładowała. Po ponownym zalogowaniu możemy uruchomić nasz pierwszy kontener.
+				</p>
+<pre class="code-block">
+$ lxc launch ubuntu:18.04 &lt;nazwa kontenera&gt;
+</pre>
+			</li>
+    </ol>
+		<p>
+			Jak widać powyżej nie trzeba władać potężnymi serwera, aby móc korzystać z usług konteneryzacji. W tym przypadku jest LXD, ale równie dobrze może być np. <em>Docker</em>.
+		</p>
+		<p>
+			~xf0r3m
+		</p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+	</body>
+	</html>

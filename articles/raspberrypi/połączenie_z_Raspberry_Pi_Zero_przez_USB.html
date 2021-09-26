@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<meta charset="utf-8" />
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">Połączenie z Raspberry Pi Zero przez USB</h1>
+		<p>
+			<strong>Raspberry Pi Zero</strong>, do dziwny komputerek... Pozbawiony łączności, ze złączem mini-HDMI, oraz jednym portem micro-USB, jest nieco większy niż od listka gumy do żucia i kosztuje ok. 20 zł oczywiście w przeliczeniu $5 na złotówki, bo chyba w żadnym sklepie nie znajdziemy w tej cenie. Jeśli ktoś zaczyna swoją przygodę z tego rodzaju zabawkami, to może sobie sprawić coś takiego. I własnie tym materiałem udowodnie że poza kablem micro-USB (takim do przesyłania danych, nie tylko ładowania), kartą microSD i komputerem z GNU/Linux-em nie potrzebujemy innych akcesoriów, aby móc z niego korzystać.
+		</p>
+		<ol>
+			<li>Wgrywamy system operacyjny na kartę możemy uzyć do tego programu Balena Etcher, lub klasycznego polecenia <code class="code-inline">dd</code>.</li>
+			<li>Po nagraniu systemu na kartę, pojawią nam się w systemie dwie dodatkowe partycje. Przechodzimy do partycji oznaczonej
+			jako <em>boot</em>.</li>
+			<li>Otwieramy plik <em>config.txt</em> i na samym dole dopisujemy <code class="code-inline">dtoverlay=dwc2</code>. Plik zapisujemy i zamykamy.</li>
+			<li>Otwieramy plik <em>cmdline.txt</em> i po słowie <code class="code-inline">rootwait</code> dopisujemy <code class="code-inline">modules-load=dwc2,g_ether</code>.</li>
+			<li>Bezpośrednio na partycji <em>boot</em> tworzymy nowy pusty plik o nazwie <em>ssh</em>.</li>
+			<li>Wyciągamy kartę, wkładamy ją do naszego RPI. Następnie <strong>kabel podłączamy do komputera i do portu USB Raspberry (to bardzo ważne)</strong>!</li>
+			<li>W systemie (Ubuntu 20.04 amd64), powinna pojawić się kolejna karta sieciowa. Jeśli pojawia się łaczenie oraz dostajemy
+    	powiadomienie że <code class="code-inline">Włączenie sieci nie powiodło się</code>", musimy ustawić nasz interfejs na <em>local-link</em>. Jeśli używamy środowiska <em>Gnome</em>, to przechodzimy do <code class="code-inline">Ustawienia</code> -> <code class="code-inline">Sieć</code> -> przycisk opcji przy <code class="code-inline">Ethernet (USB)</code> -> zakładkę <code class="code-inline">IPv4</code> -> <code class="code-inline">Metoda IPv4: Tylko Local-Link</code> ->
+			<code class="code-inline">Zastosuj</code>, następnie wyłączamy włączamy interfejs, klikając na przełącznik obok przycisku opcji. Teraz powinniśmy dostać jeden z adresów z tej klasy 169.254.X.Y/16 i moć się połączyć z RPI.</li>
+			<li>Łączymy sie z Raspberry przez SSH:
+<pre class="code-block">
+$ ssh pi@raspberrypi.local
+</pre></li>
+			<li>Po zalogowaniu, powinniśmy od razu zmienić hasło. Zatem <code class="code-inline">passwd</code>. Po zmienia hasła przydałoby się połączenie z Internetem. Żeby chociaż zaktualizować system. Na nowej karcie terminala, na naszym komputerze uruchamiamy przekazywanie pakietów oraz za pomocą <em>iptables</em> załączamy NAT. Jeśli martwimy się o bałagan, to po zabawie z RPI, robimy <code class="code-inline">reboot</code> i wszystko wraca do normy. Załączenie przekazywania pakietów:<br />
+			<br />
+<pre class="code-block">
+$ sudo sysctl net.ipv4.ip_forward=1
+</pre>
+				<p>
+    			Włączenie NAT-u:
+				</p>
+<pre class="code-block">
+$ sudo iptables -t nat -I POSTROUTING -o &lt;interfejs sieciowy naszego komputera&gt; -j MASQUERADE
+</pre>
+				<p>
+    			To jeszcze nie wszystkie czynności, aby RPI 0 miało dostęp do Internetu. Wydając polecenie <code class="code-inline">ip a</code> odszukujemy intefejsu 'usb0', zapamiętujemy, lub zapisujemy gdzieś przypisany mu adres. Następnie na Raspberry dodaje trasę bramy domyślnej wskazując właśnie ten adres.
+				</p>
+<pre class="code-block">
+$ sudo ip route add default via &lt;adres interfejsu USB0 na naszym komputerze&gt;
+</pre>
+				<p>
+    			Po dodaniu bramy, możemy smiało wydawać polecenia: <code class="code-inline">apt update</code> oraz <code class="code-inline">apt upgrade</code>
+				</p>
+			</li>
+		</ol>
+		<p>
+			Jak widać na powyższych czynnościach nie potrzeba masy akcesoriów jakby się mogło wydawać patrząc na to jak niepozorne jest to urządzenie. Gdyby nie to że trzeba wlutować pinów do GPIO, to korzytał bym RPI Zero przy swoich projektach.
+		</p>
+		<p>
+			~xf0r3m
+		</p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+	</body>
+	</html>

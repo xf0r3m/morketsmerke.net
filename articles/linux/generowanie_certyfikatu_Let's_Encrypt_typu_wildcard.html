@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+        <h1 style="text-align: center;">Generowanie certyfikatu SSL Let's Encrypt typu Wildcard</h1>
+        <p>
+            Pośród materiałów odnośnie GNU/Linux znajduje się też taki nt. generowania <strong>certyfikatu SSL</strong> podpisanego przez samego siebie. W tym materiale wykorzystamy ogólnodostępny urząd certyfikacji - usługę <strong>Let's Encrypt</strong>. Nie wiem jaka jest geneza tej usługi, ale śmiem przypuszczać że ideą, która za tym stoi jest umożliwienie każdemu posiadaczowi domeny wygenerowanie certyfikatu SSL, w celu zabezpiecznia transmisji pomiędzy jego serwerami a klientami korzystającymi z usług świadczonych przez ten serwer. Cel sczytny, ale każdy kij ma dwa końce. Do momentu upowszechnienia się Let's Encrypt, "zielona kłódka" oznaczała serwer godny zaufania, ponieważ tylko komercyjne certyfikaty były akceptowane przez przeglądarkę bez zastrzeżeń.
+						Teraz tylko tyle że "kłódka" jest zielona, nie może oznaczać że serwer jest wiarygodny, teraz liczy się głównie wystawca, jednak aby zobaczyć kto jest wystawcą danego certyfikatu należy kliknąć w tą "kłódkę" i będziemy mieli taki napis jak "Connection secure" lub "Połączenie zabezpieczone" kilkamy w tą strzałeczkę po prawej stronie i powinno się wyświetlić "Verified by: " lub "Zweryfikowano przez: " i nazwa wystawcy. Oczywiście nie możemy demonizować Let's Encrypt bo naprawdę jest to coś dobrego, chciałbym tutaj tylko uczulić na to że jeśli logujemy się do banku to jeśli już weryfikujemy czy połączenie jest bezpieczne, to sprawdźmy wystawcę, na 99,9% na pewno nie powinno być nim Let's Encrypt.
+						Chyba że to jakiś bank dla Januszy, to warto zmienić bank wtedy. Tak samo jest kontami na socjalacha czy skrzynkach mailowych. Duże korporacje mają swoje wewnętrzne urzędy, które dbają o ich certyfikaty. Obecnie intruzi, którzy stosują phishing, często wykorzystują Let's Encrypt aby jeszcze bardzie uwiarygodnić strony do wyłudzania danych. Nie mniej jednak każdy może mieć taki certyfikat wystarczy posiadanie domeny. Certyfikat, który będzie akceptowany w 100% przez przeglądarkę. I tutaj dowiemy się jak go uzyskać.
+        </p>
+        <p>
+            Pierwszą czynnością jest zdobycie oprogramowania, które umożliwi nam uruchomienie procesu generowania certyfikatu przez Let's Encrypt. W zależności od systemu, czy jest <em>Raspbian/RasPiOS</em> pownieważ chcemy uzyskać nasz certyfikat na <em>Raspberry Pi</em>, co może być ciekawym pomysłem o ile powstrzymamy się z wykorzystaniem karty z Raspberry do czegoś innego, kiedy będzie nam ona potrzebna. Nie jest to niezbędne, ale lepiej jest zachować system na którym uzyskało się certyfikat poźniej będzie go łatwiej odnowić, certyfikaty Let's Encrypt ważne są tylko przez 3 miesiące, oczywiście odnawiać będziemy tylko certyfikaty wystawione manualnie. Zatem dla Raspbiana powiniśmy wydać poniższe polecenia.
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt install certbot
+</pre>
+        <p>
+            Jeśli korzystamy z Ubuntu to należy na początku sprawdzić powyższe polecenia, a jeśli ono niezadziała, to należy spróbować tych poleceń poniżej.
+        </p>
+<pre class="code-block">
+$ sudo add-apt-repository ppa:certbot/certbot
+$ sudo apt update
+$ sudo apt install certbot
+</pre>
+        <p>
+            Jeśli wykorzystujemy inną dystrybucje niż powyższe to spóbujmy zainstalować pakiet certbot za pomocą menedżera pakietów używanej przez nasz dystrybucji. Gdy na nawet to się nie powiedzie, to wtenczas możemy odpytać naszą wyszukiwarkę "How to install certbot on", po słowie "on" podajemy nazwę naszej dystrybucji.
+        </p>
+        <p>
+            Po zainstalowaniu certbot-a w naszym systemie, zalogujmy się do konfiguracji domeny u swojego operatora, żeby uwierzytelnić się (pokazać że domena należy do nas) będziemy musieli dodać dwa rekordy DNS. Kiedy już się zalogujemy to wydajemy poniższe polecenie, uruchomi ono cały proces uzyskiwania certyfikatu.
+        </p>
+<pre class="code-block">
+$ sudo certbot certonly --manual -d *.&lt;nazwa_domeny&gt; -d &lt;nazwa_domeny&gt; --agree-tos --no-bootstrap --manual-public-ip-logging-ok \
+--preferred-challenges dns-01 --server https://acme-v02.api.letsencrypt.org/directory
+</pre>
+        <p>
+            Jeśli kopiujemy to polecenie pamiętajmy o tym że należy podać w polach <code class="code-inline">&lt;nazwa_domeny&gt;</code> nazwę swojej domeny. Po wydaniu tego polecenie zostaniemy zapytani o adres email. Polecam podać prawdziwą skrzynkę ponieważ na nią przyjdzie wiadomość o wygasającym certyfikacie.
+        </p>
+<pre class="code-block">
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+Plugins selected: Authenticator manual, Installer None
+Enter email address (used for urgent renewal and security notices) (Enter 'c' to cancel): &lt;adres_email&gt;
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+</pre>
+        <p>
+            Po podaniu adresu email zostaniemy zapytani o to czy chcemy się zapisać tak jak by do newsletter-a EFF.
+        </p>
+<pre class="code-block">
+Would you be willing to share your email address with the Electronic Frontier Foundation, a founding
+partner of the Let's Encrypt project and the non-profit organization that develops Certbot? We'd like to
+send you email about our work encrypting the web, EFF news, campaigns, and ways to support digital
+freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o:
+</pre>
+        <p>
+            Po udzieleniu odpowiedzi na powyższe pytanie, rozpocznie się uzyskiwanie certyfikatów. Aby uzyskać certyfikaty musimy wprowadzić jedno lub dwukrotnie nowy <strong>rekord typu TXT</strong> w konfiguracji naszej domeny. Rekord powinień mieć nazwę <code class="code-inline">_acme-challenge.&lt;nazwa_domeny&gt;</code>, gdzie za <code class="code-inline">nazwa_domeny</code> podstawiamy nazwę naszej domeny wartością tego rekordu będzie ciąg znaków wyświetlony tak jak na poniższym komunikacie.
+        </p>
+<pre class="code-block">
+Please deploy a DNS TXT record under the name
+_acme-challenge.&lt;nazwa_domeny&gt; with the following value:
+
+[Tutaj pojawi się tekst challengu]
+
+Before continuing, verify the record is deployed.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Press Enter to Continue
+</pre>
+        <p>
+            W powyższym polu <code class="code-inline">[Tutaj pojawi się tekst challengu]</code> pojawi się ciąg znaków jaki należy umieścić w polu wartości rekordu. Zwróćmy uwagę na przedostatnią linijkę komunikatu <code class="code-inline">Before continuing, verify the record is deployed.</code> (ang. Przed kontynuowaniem, należy upewnić się że rekord jest wdrożony). Aby to zrobić wydajmy w wierszu polecenia (terminalu) następujące polecenie.
+        </p>
+<pre class="code-block">
+$ dig -t TXT _acme-challenge.&lt;nazwa_domeny&gt;
+</pre>
+        <p>
+            Poniżej znajduje się odpowiedź, dla przykładu wylisowałem rekordy tego typu dla mojej domeny.
+        </p>
+<pre class="code-block">
+; &lt;&lt;&gt;&gt; DiG 9.16.12 &lt;&lt;&gt;&gt; -t TXT _acme-challenge.morketsmerke.net
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 37679
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;_acme-challenge.morketsmerke.net. IN   TXT
+
+;; ANSWER SECTION:
+_acme-challenge.morketsmerke.net. 3600 IN TXT   "G6XrpiukUNExZy_5iOJgaqqA4oxQiDJlhW0MIkXs82s"
+_acme-challenge.morketsmerke.net. 3600 IN TXT   "Z2ibO22FCPjxOQBTYuMz4H_S3UyRU8c2SJO4zsQ9ifY"
+
+;; Query time: 600 msec
+;; SERVER: 192.168.8.1#53(192.168.8.1)
+;; WHEN: wto mar 02 19:08:33 CET 2021
+;; MSG SIZE  rcvd: 173
+</pre>
+        <p>
+            Na podstawie danych zwróconych przez polecenie, możemy ustalić czy nasz rekord jest już osiągalny w Internecie, może się zdarzyć że długo nie będziemy mogli uzyskać odpowiedzi, niestety będziemy musieli się uzbroić w cierpliwość. Kiedy uzyskamy oczekiwany rezultat, wtedy dopiero będziemy mogli nacisnąć enter.
+        </p>
+        <p>
+            Jest wielce prawdopobne że po zatwierdzeniu jednego challenge-u, niezbędny będzie drugi. Procedura wygląda identycznie. Tutaj jednak z sprawdzeniem wdrożenia rekordu może być problem ponieważ serwery DNS, utrzymują ostatnie wyniki zapytań w pamięci podręczej. Najlepiej jest użyć do tego drugie komputera wraz z drugim łączem internetowym np. z komórki.
+        </p>
+        <p>
+            Po udanym procesie zostaniem wyświetlone dłuższe podsumowanie zawierające napis "Congratulations!" świadczący o pomyślnym wykonaniu zadania w nim również będą zawarte ścieżki na których znajdują się certyfikaty, warto przeszukać katalog <em>/etc/letsencrypt</em>, ponieważ te ścieżki wskazują na dowiazania symboliczne, to prawdziwe pliki certyfikatu (plik certyfikatu oraz klucz prywatny) mogą nam się przydać o ile bedziemy przenościć certyfikat na inne serwery.
+        </p>
+<!--
+<pre class="code-block">
+Tu wstawić komunikat o uzyskaniu certyfikatów Let's Encrypt
+</pre>
+-->
+        <p>
+            Istnieje możliwość wygenerowania certyfikatu dla jednego hosta. Cały proces wygląda analogicznie, różni się tylko polecenie, które z resztą znajduje się
+            poniżej.
+        </p>
+<pre class="code-block">
+$ sudo certbot certonly --manual -d &lt;nazwa_hosta&gt;.&lt;nazwa_domeny&gt; -d &lt;nazwa_domeny&gt; --agree-tos --no-bootstrap --manual-public-ip-logging-ok \
+--preferred-challenges dns-01 --server https://acme-v02.api.letsencrypt.org/directory
+</pre>
+        <p>
+            Jedyną róznicą jest podanie nazwy hosta jak wartości przełącznika <code class="code-inline">-d</code>, zamiast nazwy wieloznacznej (*.&lt;nazwa_domeny&gt;).
+        </p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+		</body>
+	</html>

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+
+
+		<body style="font-family: monospace;" >
+<pre>
+88                             88
+88                             88
+88                             88
+88,dPPYba,  ,adPPYba,  ,adPPYb,88
+88P'    "8a I8[    "" a8"    `Y88
+88       d8  `"Y8ba,  8b       88
+88b,   ,a8" aa    ]8I "8a,   ,d88
+8Y"Ybbd8"'  `"YbbdP"'  `"8bbdP"Y8
+</pre>
+
+		<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+			&#9760;&nbsp;<a href="https://morketsmerke.net/">morketsmerke</a>&nbsp;&#9760;
+		</p>
+
+		<div style="margin-left: auto; margin-right: auto; width: 80%;">
+			<h1 style="text-align: center;">Sun Netra T1 AC200 z NetBSD jako serwer mailowy</h1>
+			<p>
+			Czy można zmienić 20 letni serwer w coś użytecznego? I owszem. Czy jest to skuteczne, wszystko zależy od konfiguracji domen,
+			do których będziemy wysyłać maile. Ja pomyślałem, że fajnie było by mieć serwer mailowy, chciaż patrząc na to jak często
+			korzystam z wiadomości e-mail, to raczej jest on zbędny. Nie mniej jednak ciekawe wyzwanie, a żeby tego było mało za docelową
+			maszynę wybrałem serwer <strong>Sun Netra T1 AC200</strong>, maszyna oparta na architekturze Sparc64, z procesorem ULTRASPARC 
+			IIe V9 o taktowaniu 500MHz z 1 GB RAMU SDRAM ECC REG dwoma dyskami SCSI 17G. Dobór systemu operacyjnego to raczej był mus, anieżeli
+			racjonalny wybór. Jak go kupiłem za całe 150 zł to pierwsze co chciałem zbootować na nim OpenBSD, ponieważ już ten 
+			system trochę znałem (nie tak jak teraz, był 2016), jednak to się nie powiodło. Może jednak od początku. Sun Netra T1 AC200 
+			jest serwerem, który nie posiada w ogóle żadnego układu graficznego, zatem do jego obsługi potrzebny jest PC lub Laptop ze 
+			złączem COM/RS-232, to nie nie wszystko, bo złącze (<strong>SERIAL A/LOM</strong> - bo tak się nazywa to złącze, przez które 
+			kontroluje się serwer) konsoli (można tak je chyba nazwać) to zwykłe gniazdo RJ-45. Sprawdziłem w oficjalnym podręczniku. 
+			Do każdej Netry dołączany jest adapter <em>DB-25 - RJ-45</em>, oczywiście można skorzystać z <em>DB-9 - RJ-45</em>, ale ja 
+			już nie pamiętam dlaczego jednak wybrałem  DB-25 oraz adapter <em>DB-25 - DB-9 (F-F)</em>. Adapter DB-25 - RJ-45 przychodzi 
+			w dwóch częściach i trzeba włozyć odpowiednie kabelki w odpowiednie dziurki według dokumentacji. Jak to najlepiej zrobić, 
+			otóż bierzemy kawałek UTP zarabiamy z jednej strony standard B z drugiej strony rozizolowywujemy wszystkie żyły, miernikiem 
+			w teście diody sprawdzamy, który kabelek na adapterze łączy się, z którą żyłą UTP. Pamiętając o tym że będziemy w gniazdo 
+			Serial A/LOM będziemy wtykać klasyczny patchcord ustawiamy piny na adapterze według dokumentacji. Pozłożeniu adaptera możemy 
+			się podłączyć go do komputera, ja użyłem do tego komputera z Debianem z wiadomych dla siebie względów. W systemie należy 
+			zainstalować program <strong>picocom</strong>. Samo połączenie wymaga jednego polecenia.
+			</p>
+<pre class="code-block">
+$ sudo picocom -b 9600 /dev/ttyS
+</pre>
+			<p>
+			Po zwróceniu parametrów konfiguracyjnych połączenie zostanie wyświetlony napis <code class="code-inline">Terminal is ready</code>,
+			naciskamy dwa razy klawisz <em>Enter</em> i w zależności od tego czy serwer jest włączony - dostaniemy odpowiedź 
+			<code class="code-inline">ok</code> lub wyłączony - dostaniemy odpowiedź <code class="code-inline">lom&gt;</code>, jeśli jest
+			wyłączony to możemy go włączyć za pomocą polecenia:
+			</p>
+<pre class="code-block">
+lom&gt;poweron
+</pre>
+			<p>
+			Po włączeniu serwera uzyskamy odpowiedź <code class="code-inline">ok</code>. Kiedy serwer był już włączony możemy już bootwać jakiś
+			system, oczywiście z płyty bo innej opcji poza siecią nie ma. Odnośnie systemów operacyjnych na ten serwer to sprawa wygląda tak że:
+			</p>
+			<ol>
+				<li><strong>GNU/Linux Debian (port dla Sparc64)</strong> - Bootuje z płyty i jest się w stanie zainstalować, jednak nie mogłem
+					znaleźć żadnych mirrorów, aby móc cokolwiek zainstalować. Generalnie to jest mirror, ale wymaga wyższej konfiguracji,
+					niestety nie miałem chęci na zabawę tym.</li>
+				<li><strong>FreeBSD 12.2 Sparc64</strong> - Próbował się bootować jednak wyświetlił kilka ciągów dziwnych znaków i każde 
+					naciśnięcie klawisza powodowalo wyświetlenie podobnych ciągów znaków.</li>
+				<li><strong>OpenBSD 6.8 Sparc64</strong> - Po wydaniu polecenia bootwania z CD, serwer wyświetlił informacje 
+					<code class="code-inline">Fast Data Access MMU Miss</code>. Następnie zwrócł prompt <code class="code-inline">ok</code>
+					I to tyle w temacie OpenBSD na tym serwerze.</li>
+				<li><strong>NetBSD 9.1 Sparc64</strong> - Bootuje się z płyty, instaluje się poprawnie (jeśli wybierzemy opcję instalacji
+					<code class="code-inline">Instalacja bez X11</code>. Jedyne co nie działa (przestało działać dzień po zainstalowaniu
+					systemu) manager instalacji pakietów binarnych, nie może pobrać paczki z bazą, podczas jej rozpakowywania zwraca
+					komunikat, który można zinterpretować jako plik jest uszkodzony. Można to ominąć. Instalując paczki z repozytorium
+					za pomocą narzędzia <strong>pkg_add</strong>, niestety musimy jako argument podać pełną ścieżkę do paczki w repo.
+					Jeszcze jedna rzecz, kiedy ja instalowałem to strasznie wolno pobierał te paczki, okazało się na początku próbował
+					połączyć się z CDN-em, za pomocą IPv6, które coś nie działało. Remedium na to było dodanie lokalnego resolwu 
+					<em>cdn.netbsd.org</em>, do pliku <em>/etc/hosts</em> na pierwszy napotkany adres IPv4.</li>
+
+			</ol>
+			<p>
+			Bootowanie z płyty załączamy poleceniem:
+			</p>
+<pre class="code-block">
+ok boot cdrom
+</pre>
+			<p>
+			Podczas instalacji z konsoli, jednym z pierwszych pytań zadanych przez instalator będzie wybranie rodzaju terminala z którego
+			korzystamy, nalepiej wybrać <strong>xterm</strong>.
+			</p>
+			<p>
+			Pod tym odnośnikiem znajduje się instrukcja jak zainstalować NetBSD:
+			<a href="https://morketsmerke.net/site/articles/bsd/instalacja_NetBSD.html">
+				https://morketsmerke.net/site/articles/bsd/instalacja_NetBSD.html
+			</a>
+			lub jeśli przeglądamy tą strone za pomocą lynx-a czy innej przeglądarki z konsoli to istnieje również wersją bardzie obfita w
+			treść: <a href="https://morketsmerke.net/site/articles/bsd/instalacja_NetBSD_wersja_tekstowa.html">
+				https://morketsmerke.net/site/articles/bsd/instalacja_NetBSD_wersja_tekstowa.html
+			</a>
+			</p>
+			<p>
+			Jeśli system został już zainstalowany według instrukcji to po załadowaniu systemu ustawimy datę i czas, bateria mogłą się już w
+			dawno rozładować. Pewnego razu po wywołaniu polecenia <code class="code-inline">date</code> zobaczyłem rok
+			2019 a raz 2003 (mamy 2021). Aby ustawić date i czas dokonamy synchronizacji czasu z serwera NTP za pomocą polecenia:
+			</p>
+<pre class="code-block">
+# ntpdate -b ntp1.inrim.it
+</pre>
+			<p>
+			Informacją zwrotną będzie to o ile sekund został przesunięty z zegar. Liczba może być naprawdę duża. Po synchronizacji
+			dopiszmy do pliku <em>/etc/rc.conf</em> w linii <code class="code-inline">ntpdate=YES</code> adres hosta dla <em>ntpdate</em>
+			<code class="code-inline">ntpdate_hosts="ntp2.inrim.it"</code>
+			</p>
+			<p>
+			Do budowy serwera będziemy potrzebować kilku programów. Jednak jak je zainstalować z przy uszkodzonym źródle? Otóż sposób jest
+			prosty. Pierwsze co to wywołujemy polecenie:
+			</p>
+<pre class="code-block">
+$ host cdn.netbsd.org
+</pre>
+			<p>
+			Za pomocą pierwszego adresu IPv4 tworzymy wpis do pliku <em>/etc/hosts/</em>.
+			</p>
+<pre class="code-block">
+151.101.1.6	cdn.netbsd.org
+</pre>
+			<p>
+			Następnie na komputerze, z którego łączymy się z serwerem czy to po konsoli szeregowej czy przez SSH, za pomocą przeglądarki 
+			przechodzimy pod ten adres: <a href="http://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/sparc64/9.1/All">
+				http://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/sparc64/9.1/All
+			</a>
+			Kilkając PPM na nazwę pakietu wybieramy opcję "Kopiuj adres odnośnika" i wklejamy do terminala jako argument polecenia 
+			<code class="code-inline">pkg_add</code> podbnego programu jak na OpenBSD. W przypadku konsoli szeregowej może nie być to takie 
+			łatwe, dlatego zalecam jednak połączenie przez SSH. Do pobrania mamy: <em>mc</em>, <em>vim</em>, <em>dovecot</em>, <em>openssl</em>,
+			<em>ca-certificates</em>. 
+			</p>
+			<p>
+			Po pobraniu tych programów możemy ustawić parametr <code class="code-inline">mydestination</code> na nazwę swojej domeny za pomocą 
+			polecenia <code class="code-inline">postconf</code>.
+			<p>
+<pre class="code-block">
+# postconf -e "mydestination=morketsmerke.net"
+</pre>
+			<p>
+			Następnie za pomocą <em>mc</em>, przejdziemy do katalogu <em>/etc/postfix</em> następnie w pliku <em>master.cf</em>, usuwamy znak 
+			komentarza sprzed pierwszego wiersza w pierwszej tabeli.
+			</p>
+<pre class="code-block">
+smtp	inet	n	-	n	-	-	smtpd
+</pre>
+			<p>
+			Teraz możemy połączyć się z serwerem SMTP za pomocą <em>telnet</em> i wyślemy mail do <em>roota</em>, żeby sprawdzić czy
+			wspomniany wcześniej parametr działa.
+			</p>
+<pre class="code-block">
+$ telnet localhost 25
+</pre>
+			<p>
+			Po podłączeniu się musimy wysłać maila za pomocą poleceń protokołu SMTP. Obecnie serwer nie posiada żadnych mechanizów bezpieczeństwa
+			więc możemy od razu przejść do wysyłania maili. Pierwsze polecenie:
+			</p>
+<pre class="code-block">
+mail from:&lt;xf0r3m@morketsmerke.net&gt;
+</pre>
+			<p>
+			W ten sposób przekazujemy serwerowi informacje że będziemy wysłać maila i w polu nadawcy będzie adres: xf0r3m@morketsmerke.net.
+			Po zatwierdzeniu tego polecenia powinniśmy odpowiedź: <code class="code-inline">250 2.1.0 Ok</code>. 
+			Uwaga! Ostre nawiasy są cześcią składni poleceń <code class="code-inline">mail from</code> oraz 
+			<code class="code-inline">rcpt to</code>.
+			</p>
+<pre class="code-block">
+rcpt to:&lt;root@morketsmerke.net&gt;
+</pre>
+			<p>
+			Powyższe polecenie wskazuje adresata wiadomości. Po jego podaniu serwer zwróci  
+			<code class="code-inline">250 2.1.5 Ok</code>. Aby Rozpocząć redagowanie wiadomości wydajemy polecnie
+			</p>
+<pre class="code-block">
+data
+</pre>
+			<p>
+			Serwer zwróci wtedy taki ciąg znaków jak <code class="code-inline">354 End data with &lt;CR&gt;&lt;LF&gt;.&lt;CR&gt;&lt;LF&gt;</code>
+			Oznacza to że aby zakończyć redagowanie wiadomości, należy przesłać do serwera linię z jedną kropką. Naciśnąć enter,
+			kropka (<strong>.</strong>) i ponownie enter. Pola From, To oraz Subject (Temat) możemy definiować wewnątrz danych wiadomości.
+			</p>
+<pre class="code-block">
+354 End data with &lt;CR&gt;&lt;LF&gt;.&lt;CR&gt;&lt;LF&lt;
+From: xf0r3m@morketsmerke.net
+To: root@morketsmerke.net
+Subject: Test serwera SMTP.
+
+Test serwera SMTP wewnątrz organizacji. Proszę o odpowiedź.
+.
+</pre>
+			<p>
+			Po wysłaniu maila sprawdźmy na koncie użytkownika <em>root</em> czy dostaliśmy wiadomość. Jeśli otrzymaliśmy wiadomość to teraz
+			przejdziemy do zabezpieczenie serwera SMTP przed nieautoryzowanym dostępem.
+			</p>
+			<p>
+			Opis konfiguracji SASL znajduje się pod adresem: 
+			<a href="https://doc.dovecot.org/configuration_manual/howto/postfix_and_dovecot_sasl">
+				https://doc.dovecot.org/configuration_manual/howto/postfix_and_dovecot_sasl
+			</a>
+			</p>
+			<p>
+			<em>Postfixa</em> na tym systemie nie instalowaliśmy, już był. Więc musimy sie upewnić czy został skompilowany wraz ze wspraciem dla
+			<strong>Dovecot SASL</strong>.
+			</p>
+<pre class="code-block">
+# postconf -a
+</pre>
+			<p>
+			Jeśli polecenie zwróci <code class="code-inline">dovecot</code>, to możemy przejść do konfiguracji SASL. W tym 
+			przypadku, w pliku <em>/usr/pkg/etc/dovecot/conf.d/10-master.conf</em> musimy odnaleźć w sekcji 
+			<code class="code-inline">auth</code>, deklaracje socketu.
+			</p>
+<pre class="code-block">
+service auth {
+...
+	unix_listener /var/spool/postfix/private/auth {
+		mode = 0660
+		user = postfix
+		group = postfix
+	}
+...
+}
+
+auth_mechanisms = plain login
+</pre>
+			<p>
+			Następnie ustawić w niej użytkownika (<code class="code-inline">user</code>), grupę (<code class="code-inline">group</code>) oraz 
+			prawa dostępu (<code class="code-inline">mode</code>), wartości do ustawienia zaprezentowano na powyższym przykładzie.
+			Po ustawieniu tych informacji możemy przejść konfiguracji <em>Postfixa</em>. W pliku 
+			<code class="code-inline">/etc/postfix/main.cf</code> na samym dole dopisujemy poniższe opcje.
+			</p>
+<pre class="code-block">
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+</pre>
+			<p>
+			Gdzie: 
+			<ul>
+				<li><code class="code-inline">smtpd_sasl_type</code> - typ implementacji SASL,</li>
+				<li><code class="code-inline">smtpd_sasl_path</code> - ścieżka do socketu, względną ponieważ <em>Postfix</em> może mieć 
+					zapisany swój katalog roboczy, lub być <em>chroot-owany</em>,</li>
+				<li><code class="code-inline">smtpd_sasl_auth_enable</code> - włączenie uwierzytelniania,</li>
+				<li><code class="code-inline">smtpd_relay_restrictions</code> - ustawienie restrykcji dla przekazywania maili. Z racji
+					tego iż SMTP na porcie 25 będzie osiągalny z Internetu, aby otrzymywać maile z zewnątrz, to ograniczenia
+					ustawiono w taki sposób aby tylko uwierzytelnieni użytkownicy mogli wysyłać maile poza domenę.</li>
+			</ul>
+			</p>
+			<p>
+			Teraz skonfigurujemy dostęp do SMTP dla klientów przez SSL. Najlepiej rozpocząć to od przepisania konfiguracji z wcześniej 
+			wymienionej strony dla usługi <strong>submission</strong>. Konfigurację umieszczamy w pliku <em>/etc/postfix/master.cf</em>. Możemy 
+			zmodyfikować istniejący już tam wpis.
+			<p>
+<pre class="code-block">
+submission 	inet	n	-	n	-	-	smtpd
+ -o smtpd_tls_security_level=encrypt
+ -o smtpd_sasl_auth_enable=yes
+ -o smtpd_sasl_type=dovecot
+ -o smtpd_sasl_path=private/auth
+ -o smtpd_sasl_security_options=noanonymous
+ -o smtpd_sasl_local_domain=morketsmerke.net
+ -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+ -o smtpd_sender_login_maps=hash:/etc/postfix/virtual
+ -o smtpd_sender_restrictions=reject_sender_login_mismatch
+ -o smtpd_recipient_restrictions=reject_non_fqdn_repcipient,reject_unknown_recipient_domain,permit_sasl_authenticated,reject
+</pre>
+			<p>
+			Po zapisaniu konfiugracji, możemy teraz zmodyfikować konfigurację aby dostosować ją do <strong>smtps</strong>.
+			</p>
+<pre class="code-block">
+smtps 	inet	n	-	n	-	-	smtpd
+ -o smtpd_tls_security_level=encrypt
+ -o smtpd_tls_wrappermode=yes
+ -o smtpd_sasl_auth_enable=yes
+ -o smtpd_sasl_type=dovecot
+ -o smtpd_sasl_path=private/auth
+ -o smtpd_sasl_security_options=noanonymous
+ -o smtpd_sasl_local_domain=morketsmerke.net
+ -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+ -o smtpd_sender_login_maps=hash:/etc/postfix/virtual
+ -o smtpd_sender_restrictions=reject_sender_login_mismatch
+ -o smtpd_recipient_restrictions=reject_non_fqdn_repcipient,reject_unknown_recipient_domain,permit_sasl_authenticated,reject
+</pre>
+			<p>
+			Gdzie:
+			<ul>
+				<li><code class="code-inline">smtpd_tls_security_level</code> - poziom bezpieczeństwa TLS,</li>
+				<li><code class="code-inline">smtpd_tls_wrappermode</code> - umożliwienie użycia starszego SMTPS zamiast STARTTLS,</li>
+				<li><code class="code-inline">smtpd_sasl_type</code> - typ implementacji SASL,</li>
+				<li><code class="code-inline">smtpd_sasl_path</code> - ścieżka do socketu, dzięki któremu <em>Postfix</em> łączy się z
+					usługą SASL <em>Dovecot</em>,</li>
+				<li><code class="code-inline">smtpd_sasl_security_options</code> - opcje bezpieczeństwa SASL przy ustawieniu 
+					<code class="code-inline">noanonymous</code> wyłącza się logowanie anonimowe na SMTP,</li>
+				<li><code class="code-inline">smtpd_sasl_local_domain</code> - nazwa sfery uwierzytelniania SASL,</li>
+				<li><code class="code-inline">smtpd_client_restrictions</code> - ograniczenia dla klientów,</li>
+				<li><code class="code-inline">smtpd_sender_login_maps</code> - wskazanie mapowań loginów do adresów mailowych,</li>
+				<li><code class="code-inline">smtpd_sender_restrictions</code> - ograniczenia wśród nadawców,</li>
+				<li><code class="code-inline">smtpd_recipient_restrictions</code> - ograniczenia wśród odbiorców.</li>
+			</ul>
+			Generalnie takie opisy jak "ograniczenia wśród odbiorców" mogą nic nie mówić więc poniżej opisze ograniczenia w tych trzech grupach:
+			<ul>
+				<li>Ograniczenia wśród klientów: zezwól uwierzytelnionym klientom, resztę odrzuć.</li>
+				<li>Ograniczenia wśród nadawców: odrzuć niezgodność loginu z adresem nadawcy według mapowania. Do tego potrzebne mapowanie
+					z opcji <code class="code-inline">smtpd_sender_login_maps</code>.</li>
+				<li>Ograniczenia wśród odbiorców: odrzuć odbiorców bez nazw FQDN, odrzuć odbiorców z nieznanych domen,zezwól uwierzytelnionym
+					przez SASL, resztę odrzuć.</li>
+			</ul>
+			</p>
+			<p>
+			Teraz musimy umieść pliki certyfikatu w <em>/etc/openssl</em> i wskazać je w pliku konfiguracyjnym <em>Postfixa</em> 
+			(<em>/etc/postfix/main.cf</em>).
+			</p>
+<pre class="code-block">
+smtpd_tls_cert_file=/etc/openssl/fullchain1.pem
+smtpd_tls_cert_key=/etc/openssl/privkey1.pem
+</pre>
+			<p>
+			Do zrobienie pozostało utworzenie bazy danych, w której będą znajdować się odniesienia użytkowników systemowych do adresów poczty.
+			Na początku musimy utworzyć plik <code class="code-inline">/etc/postfix/virtual</code>. Każda linia w pliku to jedno mapowanie.
+			</p>
+<pre class="code-block">
+root@morketsmerke.net	root
+xf0r3m@morketsmerke.net	xf0r3m
+</pre>
+			<p>
+			Plik zapisujemy, następnie tworzymy plik bazy:
+			</p>
+<pre class="code-block">
+# postmap /etc/postfix/virtual
+</pre>
+			<p>
+			Restartujemy <em>Postfixa</em>.
+			</p>
+<pre class="code-block">
+# postfix reload
+</pre>
+			<p>
+			Możemy przestować konfigurację. Jednak żeby to zrobić musimy włączyć <em>Dovecot</em>. Z tego co mi wiadomo nie uruchomi się,  
+			ponieważ posiada jakieś predefiniowane ścieżki do certyfikatów SSL w pliku <em>/usr/pkg/etc/dovecot/conf.d/10-ssl.conf</em> należy
+			je wyłączyć stawiając na początku linii znak komentarza. Zapisujemy zmiany, teraz <em>dovecot</em> powinnien się uruchomić.
+			Podłączamy się za pomocą poniższe polecenie:
+			</p>
+<pre class="code-block">
+$ openssl s_client -connect mail.example.com:465
+</pre>
+			<p>
+			Po podłączeniu musimy określić jakiego zestawu poleceń będziemy używać, do tego służy polecenie <code class="code-inline">EHLO</code>.
+			Jako argument polecenie przyjmuje nazwę hosta, aby użyć jej nie tylko w logach ale również w nagłówku wiadomości, którą będziemy 
+			wysyłać.
+			</p>
+<pre class="code-block">
+EHLO shiny.morketsmerke.net
+</pre>
+			<p>
+			Następną rzeczą jest uwierzytelnie się. Do wyboru mamy albo metodę <em>PLAIN</em>, albo metodę <em>LOGIN</em>.
+			<ul>
+				<li><strong>PLAIN</strong> - Polega na podaniu zakodowanego za pomocą Base64 ciągu składającego się z nazwy użytkownika, 
+					hasła oraz dwóch znaków pomocniczych. Taki ciąg możemy wygenerować z pomocą <em>Perla</em>. 
+<pre class="code-block">
+$ perl -MMIME::Base64 -e 'print encode_base64("\0nazwa_uzytkownika\0haslo");'
+</pre>
+				</li>
+				<li><strong>LOGIN</strong> - Polega na podobnej zasadzie co <em>PLAIN</em>, jednak zakodowane dane podaje się po kolei. 
+					Najpierw nazwę użytkownika, poźniej hasło. Komunikaty serwera róznież będą zakodowane. 
+<pre class="code-block">
+334 VXNlcm5hbWU6 =&gt; 334 Username:
+$ perl -MMIME::Base64 -e 'print encode_base64("uzytkownik");'
+dXp5dGtvd25paw==
+334 UGFzc3dvcmQ6 =&gt; 334 Password:
+$ perl -MMIME::Base64 -e 'print encode_base64("haslo");'
+aGFzbG8=
+</pre>
+				</li>
+
+
+			</ul>
+			Po zalogowaniu niezależnie od wybranej metody dostaniemy poniższym komunikat:
+			</p>
+<pre class="code-block">
+235 2.7.0 Authentication successful
+</pre>
+			<p>
+			Teraz możemy wysłać maila do siebie lub do <em>roota</em>. Jeśli otrzymamy wiadomość, oznacza to że SMTPS działa poprawnie. Teraz 
+			przejdziemy do <em>Dovecot-a</em>. Pierwszą rzeczą, którą się zajmiemy będzie uruchamianie <em>Dovecot</em> wraz ze
+			startem. Możemy to zrobić na dwa sposoby, jednym z nich jest skopiowanie z <em>/usr/pkg/share/examples/rc.d/dovecot</em> 
+			pliku <em>dovecot</em> do <em>/etc/rc.d</em> następnie dodanie wpisu w plik <em>/etc/rc.conf</em>:
+			</p>
+<pre class="code-block">
+dovecot=YES
+</pre>
+			<p>
+			Drugim sposobem jest dodanie <em>Dovecot</em> do listy daemonów lokalnych, nie potrzeba do tego dużej filozofii a jedynie informacji
+			zwracanej przez polecenie <code class="code-inline">which</code>
+			</p>
+<pre class="code-block">
+$ which dovecot
+/usr/pkg/sbin/dovecot
+</pre>
+			<p>
+			Po uzyskaniu odpowiedzi, mogę stworzyć warunek w plik <em>/etc/rc.local</em>:
+			</p>
+<pre class="code-block">
+if [ -x /usr/pkg/sbin/dovecot ]; then
+	echo -n ' dovecot ';
+	/usr/pkg/sbin/dovecot
+fi
+</pre>
+			<p>
+			Kiedy serwer zostanie uruchomiony ponownie, <em>Dovecot</em> sam wystartuje. Plik
+			konfiguracjne nie znajdują się jakby się mogło wydawać w katalog <em>/etc</em>, tylko w <em>/usr/pkg/etc/dovecot/conf.d</em>.
+			Zaczniemy od znanego nam już pliku, <em>10-ssl.conf</em>. Usuwamy znak komentarza przez linii uruchamiającej SSL
+			</p>
+<pre class="code-block">
+ssl = yes
+</pre>
+			<p>
+			Potem ustawiamy pliki certyfikatu, jak na przykładzie poniżej:
+			</p>
+<pre class="code-block">
+ssl_cert=&lt;/etc/openssl/fullchain1.pem
+ssl_key=&lt;/etc/openssl/privkey1.pem
+</pre>
+			<p>
+			<strong>Uwaga!</strong> Nawiasy ostre są częścią składni wartości opcji.
+			</p>
+			<p>
+			Po zapisaniu zmian w pliku, możemy korzystać z zabezpieczonych wersji protokołów IMAP oraz POP3, które wykorzystują SSL. Włączenie 
+			IMAPS oraz POP3S wymaga  odkomentowania opcji <code class="code-inline">port</code> oraz <code class="code-inline">ssl</code>, 
+			wewnątrz deklaracji <code class="code-inline">inet_listener imaps</code> oraz <code class="code-inline">inet_listener pop3s</code>.
+			</p>
+<pre class="code-block">
+...
+inet_listener imaps {
+	port = 993
+	ssl = yes
+}
+
+...
+inet_listener pop3s {
+	port = 995
+	ssl = yes
+}
+</pre>
+			<p>
+			Podobną rzecz zrobimy z <em>submission</em> dostarczanym wraz <em>Dovecot</em>, tylko zamiast włączać, wyłączymy nadając mu port 0.
+			</p>
+<pre class="code-block">
+service submission-login {
+	inet_listner submission {
+		port = 0
+	}
+}
+</pre>
+			<p>
+			Ostatnią rzeczą jaką należy zrobić jest ustawienie lokalizacji skrzynek mailowych. W pliku 
+			<em>/usr/pkg/etc/dovecot/conf.d/10-mail.conf</em> usuwamy znak komentarza z przed opcji <code class="code-inline">mail_location</code>
+			oraz nadajemy jej następującą wartość.
+			</p>
+<pre class="code-block">
+mail_location = mbox:~/mail:INBOX=/var/mail/%u
+</pre>
+			<p>
+			Zapisujemy zmiany i możemy restartować <em>Dovecot</em>.
+			</p>
+<pre class="code-block">
+# dovecot reload
+</pre>
+			<p>
+			Jeśli program nie zwrócił błędów, sprawdżmy jeszcze plik <em>/var/log/maillog</em> czy wszystko działa. Ten plik to plik logów
+			usług pocztowych, tam będzie widać kto się podłączył oraz informacje o przechodzących mailach. Teraz przetestujemy  
+			sobie IMAPS tak samo jak SMTPS, niestety polecenia dla tych protokołów są różne. Zaczynamy klasycznie od wykorzystania 
+			<em>openssl</em> żeby się podłączyć przy użyciu TLS.
+			</p>
+<pre class="code-block">
+openssl s_client -connect mail.example.com:993
+</pre>
+			<p>
+			Pierwsze co musimy się zrobić to się uwierzytelnić. W IMAPS implementacji <em>Dovecot</em> uwierzytelniamy się za pomocą polecenia
+			</p>
+<pre class="code-block">
+a login nazwa_uzytkownika haslo
+</pre>
+			<p>
+			IMAPS nie wymga żadnych zakodowanych ciągów jak ma to miejsce SMTPS. W odpowiedzi dostaniemy:
+			</p>
+<pre class="code-block">
+a OK [ ... ] Logged in
+</pre>
+			<p>
+			Teraz możemy sprawdzić ustawienia skrzynki
+			</p>
+<pre class="code-block">
+b select inbox
+</pre>
+			<p>
+			W odpowiedzi powinniśmy dostać coś takiego:
+			</p>
+<pre class="code-block">
+b select inbox
+* FLAGS (\Answered \Flagged \Deleted \Seen \Draft Old)
+* OK [PERMANENTFLAGS (\Answered \Flagged \Deleted \Seen \Draft Old \*)] Flags permitted.
+* 9 EXISTS
+* 0 RECENT
+* OK [UNSEEN 6] First unseen.
+* OK [UIDVALIDITY 1262394945] UIDs valid
+* OK [UIDNEXT 11] Predicted next UID
+b OK [READ-WRITE] Select completed (0.008 + 0.000 + 0.008 secs)
+</pre>
+			<p>
+			Pod adresem <a href="https://wiki2.dovecot.org/TestInstallation">https://wiki2.dovecot.org/TestInstallation</a> znajduje się 
+			obszerny artykuł na temat jak sprawdzić czy konfiguracja <em>Dovecot</em> rzeczywiście działa. Kiedy jesteśmy zalogowani możemy
+			teraz pobrać wiadomości za pomocą poniższych poleceń.
+			</p>
+<pre class="code-block">
+b select inbox
+b fetch 1:* (flags internaldate body.peek[header.fields (subject)])
+b fetch 1 body[text]
+</pre>
+			<p>
+			Znaki "<strong>b</strong>", to tagi poleceń IMAP, każde polecenie musi zaczynać się od tagu, a tagiem może być dowolny ciąg znaków.
+			</p>
+			<p>
+			Piersze polecenie można powiedzieć że sprawdza skrzynkę, wyświetla podsumowanie liczbowe ile jest wiadomości w skrzynce. Drugie
+			wyświeli nam listę wiadomości z flagami, datą oraz tematem, a ostatnie wyświetli zawartość pierwszej wiadomości. Jeśli wszystkie
+			trzy polecenia powiodły się oznacza to że usługi mailowe, które konfigurowaliśmy działają poprawnie.
+			</p>
+			<p>
+			Cięzko jest korzystać z poczty
+			łącząc się bezpośredrednio z usługami, przy takich serwerach gdzie niema portalu WWW można zastosować klienty czy programy pocztowe
+			jak np. <em>Mozilla Thunderbird</em>.
+			</p>
+			<p>
+			Poniżej przedstawie jak skonfigurować <em>Thunderbirda</em> oraz <em>MUTTa</em>, można było w swobodny sposób korzystać z
+			konfigurowanych przez nas usług pocztowych.
+			</p>
+			<p>
+			<u>Thunderbird:</u>
+			</p>
+			<p>
+			Jeśli do tej pory działaliśym w sieci lokalnej i z usługami łączyliśmy za pomocą adresu IP, to z racji użycia certyfikatów, a 
+			<em>Thunderbird</em> kontroluje pole <em>CN</em> (<em>Common Name</em>), to jeśli adres serwera nie będzie zgadzał się z tym
+			co jest w tym polu, to program zrzuci ostrzeżenie, odnośnie niezgodności z certyfikatem. Warto zainwestować chwilę czasu na
+			budowę np. <em>Pi-Hole</em>. Prócz ogólnosieciowej blokady reklam zyskujemy jeszcze lokalnego DNS, a zasadzie <em>dnsmasq</em>
+			oraz pliku <em>/etc/hosts</em>. 
+			</p>
+			<p>
+			Konfigurację <em>Thunderbirda</em> rozpoczynamy od utworzenia nowego konta. W pole imię i nazwisko możemy wpisać swoje dane
+			lub nazwę użytkownika, w adresie e-mail podajemy adres e-mail naszego konta. Hasło również możemy zapisać, chyba że nie chcemy.
+			Po zatwierdzeniu tych informacji, przechodzimy do ustawień ręcznych. Dane konfiguracyjne dla serwera SMTP:
+			</p>
+			<ul>
+				<li><strong>Nazwa serwera:</strong> mail.example.com</li>
+				<li><strong>Port:</strong> 465</li>
+				<li><strong>Bezpieczeństwo połączenia:</strong> SSL/TLS</li>
+				<li><strong>Metoda uwierzytelniania:</strong> Normalne hasło</li>
+				<li><strong>Użytkownik:</strong> user</li>
+			</ul>
+			<p>
+			Dane konfiguracjne dla serwera IMAP:
+			</p>
+			<ul>
+				<li><strong>Nazwa serwera:</strong> mail.example.com</li>
+				<li><strong>Port:</strong> 993</li>
+				<li><strong>Użytkownik:</strong> user</li>
+				<li><strong>Bezpieczeństwo połączenia:</strong> SSL/TLS</li>
+				<li><strong>Metoda uwierzytelnienia:</strong> Normalne hasło</li>
+			</ul>
+			<p>
+			<u>MUTT</u>
+			</p>
+			<p>
+			Nie wiem czy <em>MUTT</em> zrzuci komunikat o niezgodności adresu serwera z polem <em>CN</em>. Jednak jeśli będziemy mieli w planach
+			wykorzystanie SSL, nie tylko w usługach pocztowych to warto się zaopatrzyć w lokalny DNS, aby uniknąć tych niepotrzebnych
+			komunikatów. Kolejną rzeczą jest obsługa SASL przez <em>MUTT</em>, obsługa musi być dodana podczas kompilacji, w przypadku OpenBSD 
+			istnieje odrębna wersja programu wraz z wsparciem dla SASL. Poniżej przedstawię plik konfiguracyjny umożliwiający użycie tego 
+			programu jako klienta poczty dla konfigurowanych przez nas usług.
+			</p>
+<pre class="code-block">
+set ssl_starttls=yes
+set ssl_force_tls=yes
+
+set imap_user='user'
+set imap_pass='passw0rd'
+set from='user@example.com'
+
+set realname='John Doe'
+set folder=imaps://mail.example.com/
+set spoolfile=imaps://mail.example.com/INBOX
+
+set header_cache="~/.mutt/cache/headers"
+set message_cachedir="~/.mutt/cache/bodies"
+set certificate_file="~/.mutt/certificates"
+
+set smtp_url="smtps://user@mail.example.com"
+set smtp_pass="passw0rd"
+set move = no
+set imap_keepalive = 300
+bind index G imap-fetch-mail
+</pre>
+			<p>
+			Opis co jest od czego, znajduje się w <a href="https://morketsmerke.net/site/articles/faq/index.html">
+				https://morketsmerke.net/site/articles/faq/index.html</a>
+			Jedyną opcją, która tam nie występuje jest ostatnia linia. Powoduje przypisanie G (duże G = <em>shift + g</em>) do polecenia 
+			<code class="code-inline">imap-fetch-mail</code>, czyli odświeżania skrzynki pod klawiszem G (<em>shift + g</em>) 
+			</p>
+			<p>
+			Ostatnia rzecz, która pozostała to  udostępnienie usług pocztowych w Internecie, potrzebny będzie usługodawca, który nie blokuje 
+			portu SMTP <em>TCP/25</em>. Domena dzięki której będziemy mogi zdefiniować rekord <em>MX</em>. Rekord <em>MX</em> definiujemy w ten 
+			sposób że na początku tworzymy klasyczny rekord <em>A</em>, który wskazuje na adres serwera, następnie tworzę rekord <em>MX</em> o 
+			nazwie domeny wskazujący na nazwę rekordu <em>A</em> serwera. Ja swój serwer umieściłem w strefie DMZ z BINAT, oczywiście wymaga to 
+			port forwardingu, jednak BINAT nie zmienia portów. Warto pamiętać o tym by port <em>TCP/25</em> był otwarty. Nie służy on klientom a 
+			przesyłaniu maili do innych domen oraz otrzymwaniu wiadomości od innych serwerów. Jeśli ten port będzie zablokowany nie otrzymamy
+			żadnej wiadomości.
+			</p>
+			<p>
+			Na słowo zakończenia dodam jak wygląda reputacja takich usług mailowych? Otóż niezbyt dobrze. Wysłanie na maila GMAIL spowoduje
+			umieszczenie takiej wiadomości w spamie. Inaczej ma to się przy wysyłaniu informacji do organizacji, którą posiada swoje
+			maile na Googlu, tam mail trafił normalnie do skrzynki odbiorczej. Protomail identycznie, mail trafił do spamu. Jeśli komuś na tym
+			zależy to może się pobawić w podniesienie reputacji. Załącznik w mailach działają bez żadnej dodatkowej konfiguracji. Odnośnie tego
+			spamu, to jeśli my odpowiemy na maila, to wtenczas mail pojawi się klasycznie w wątku pod tym tematem. Jestem ciekaw jak ten 
+			serwer długo pociągnie, online jest od 27.04.2021.
+			</p>
+			<p>
+			~xf0r3m
+			</p>
+
+		</div>
+
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+		</body>
+	</html>
+
+

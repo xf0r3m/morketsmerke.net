@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+					text-align: left;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				ul {
+					text-align: left;
+				}
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+ _                      _             _ _
+| |_ ___ _ __ _ __ ___ (_)_ __   __ _| | | ___   __ _
+| __/ _ \ '__| '_ ` _ \| | '_ \ / _` | | |/ _ \ / _` |
+| ||  __/ |  | | | | | | | | | | (_| | | | (_) | (_| |
+ \__\___|_|  |_| |_| |_|_|_| |_|\__,_|_|_|\___/ \__, |
+			                        |___/
+</pre>
+<p style="margin: 0; padding: 0; outline: 0; font-size: 18pt;">
+	&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+</p>
+	<div style="margin-left: auto; margin-right: auto; text-align: justify; width:80%; ">
+		<h1 style="text-align: center;">BASH Bushido</h1>
+		<p>
+			Artykuł ten przedstawia bardziej z optymalizowane wykorzystnie powłoki, a konkretnie BASH. Dzięki czemu możemy wykonać wiele czynności, które do tej pory wykonywaliśmy mozolnie klepiąc polecenia znacznie szybciej co pozwoli zaoszczędzić czas, który możemy przeznaczyć na cokolwiek innego niż zarządzanie maszynami z UNIX-em.
+		</p>
+		<p>&nbsp;</p>
+		<h2>Spis treści</h2>
+		<ul>
+			<li><a href="#keyboardshortcuts">Skróty klawiszowe</a></li>
+			<li><a href="#vim">Edytor Vi(m)</a></li>
+			<li><a href="#config">Konfiguracja BASH</a></li>
+			<li><a href="#history">Historia</a></li>
+			<li><a href="#indicators">Desygnatory oraz modyfikatory</a></li>
+			<li><a href="#aliases">Aliasy</a></li>
+			<li><a href="#top">Menadżer zadań w UNIX-ach</a></li>
+			<li><a href="#printf">Fancy napisy w terminalu</a></li>
+			<li><a href="#network">Obsługa sieci</a></li>
+			<li><a href="#tipsntricks">Porady i sztuczki</a></li>
+			<li><a href="#terminator">Emulatory terminala</a></li>
+			<li><a href="#end">Koniec"</a></li>
+			<li><a href="#zrodlo">Bibliografia</a></li>
+		</ul>
+		<p>&nbsp;</p>
+		<h2 id="keyboardshortcuts">Skróty klawiszowe</h2>
+		<p>
+			Kiedy zastanawiamy się nad skrótami klawiszowymi powłoki, to na myśl przychodzi nam jedno pytanie. Czy skróty nie są realizowane przez konkretny emulator terminala, z którego obecnie korzystamy? Otóż część skrótów, które zostaną tutaj przedstawione mogą zostać przechwycone przez środowisko graficzne a następnie/lub przez emulator terminala. W tym wypadku należy upewnić się, że te skróty w ww. programach są nam potrzebne i w przeciwnym razie je wyłączyć. Natomiast za obsługę skrótów, które działają nawet w konsoli serwera bez środowiska graficznego odpowiedzialna jest biblioteka <em>GNU Readline</em>.
+		</p>
+		<p>
+			Kiedy mamy jakieś dziwne klawiatury lub często korzystamy z różnych komputerów lub konsol a mimo to chcemy zachować podobną prędkość obsługi powłoki poniżej znajdują się skróty klawiszowe, dzięki którym nie będziemy już potrzebować strzałek, entera, backspace-u oraz klawiszy home end i innych. Jedyne potrzebne nam klawisze to ctrl, poźniej ewentualnie alt.
+		</p>
+		<ul>
+			<li><strong>ctrl + p</strong> - zamiennik strzałki w górę,</li>
+			<li><strong>ctrl + n</strong> - zamiennik strzałki w dół,</li>
+			<li><strong>ctrl + f</strong> - zamiennik strzałki w prawo,</li>
+			<li><strong>ctrl + b</strong> - zamiennik strzałki w lewo,</li>
+			<li><strong>ctrl + a</strong> - zamiennik klawisza home,</li>
+			<li><strong>ctrl + e</strong> - zamiennik klawisza end,</li>
+			<li><strong>ctrl + d</strong> - zamiennik klawisza delete,</li>
+			<li><strong>ctrl + h</strong> - zamiennik klawisza backspace,</li>
+			<li><strong>ctrl + j</strong>,
+				<strong>ctrl + m</strong> - zamiennik klawisza enter.</li>
+		</ul>
+		<p>
+			Za pomocą innych skrótów klawiszowych możemy przesuwać kursor wyraz po wyrazie, usuwać całe słowa a nawet część linii polecenia.
+		</p>
+		<ul>
+			<li><strong>alt + f</strong> - przesunięcie kursora o jedno słowo w przód,</li>
+			<li><strong>alt + b</strong> - przesunięcie kursora o jedno słowo w tył,</li>
+			<li><strong>alt + d</strong> - usunięcie znaków od pozycji kursora do końca wyrazu,</li>
+			<li><strong>ctrl + k</strong> - usunięcie tekstu od pozycji kursora do końca wiersza</li>
+			<li><strong>ctrl + u</strong> - usunięcie tekstu od pozycji kursora do początku wiersza</li>
+		</ul>
+		<p>
+			GNU Readline obsługuje również inne skróty, które nie tylko polegają na poruszaniu się po linii polecenia.
+		</p>
+		<ul>
+			<li><strong>ctrl + l</strong> - czyści ekran, działanie podobne do polecenia <code class="code-inline">clear</code>,</li>
+			<li><strong>ctrl + r</strong> - wsteczne przeszukiwanie historii (klasyczne),</li>
+			<li><strong>ctrl + x, ctrl + v</strong> - wyświetlenie wersji powłoki, musimy nacisnąć dwa skróty po kolei,</li>
+			<li><strong>ctrl + 7 / ctrl + _</strong> - wycofanie wpisywanego polecenia</li>
+			<li><strong>ctrl + x, ctrl + e</strong> - wywołanie programu wskazanego w zmiennej środowiskowej <em>EDITOR</em>,</li>
+			<li><strong>ctrl + alt + e</strong> - rozwiązanie podstawienia powłoki wykonanie oraz wstawienie wartość zwracanej przez podstawienia powłoki czyli polecnia umieszczone pomięzy ukośnymi apostrofami (<strong>``</strong>) lub nawiasami ze znakie dolara na początku (<strong>$()</strong>),</li>
+			<li><strong>ctrl + x, *</strong> - rozwiązanie masek plików wewnątrz linii polecenia.</li>
+		</ul>
+		<p>
+			Wszystkie te skróty jest dostępne po wydaniu polecenia <code class="code-inline">bind -P</code>, jak czytać opisane tam skróty, otóż:
+		</p>
+		<ul>
+			<li><code class="code-inline">\C-</code> = klawisz CTRL</li>
+			<li><code class="code-inline">\e</code> = klawisz ESC</li>
+		</ul>
+		<p>&nbsp;</p>
+		<h2 id="vim">Edytor Vi(m)</h2>
+		<p>
+			Każdy edytor jest najlepszy, ale co odróżnia je od <strong>vi(m)</strong>? Nie są preinstalowane w każdym możliwym UNIX-ie o jakim pomyślimy. Wyjątkiem stanowi tu dystrybucja <em>Gentoo</em>, która na swoim ISO nie posiada <em>vi(m)</em>. Implementacje <em>vi</em> mogą się różnić od siebie, np. na GNU/Linux-ach <em>vi</em> nie obsługuje poruszania kursorem w podczas edycji, z kolei w <em>OpenBSD</em> już tak, i to jest <em>vi</em> a nie <em>vim</em>. Poniżej umieszcze kilka poleceń <em>vi(m)</em>. W tryb poleceń wchodzimy po przez naciśnięcie klawisza ESC, teraz możemy wydawać polecenia.
+		</p>
+		<ul>
+			<li><code class="code-inline">:q</code> - wyście bez zapisu. Jeśli dokonaliśmy jakiś zmian w pliku, będziemy musieli potwierdzić wyjście wykrzyknikiem (<code class="code-inline">:q!</code>)</li>
+			<li><code class="code-inline">:wq / :x</code> - wyjście i zapis</li>
+			<li><code class="code-inline">:w</code> - zapis</li>
+			<li><code class="code-inline">:o ~/ścieżka_do_pliku</code> - otworzenie pliku</li>
+		</ul>
+		<p>
+			Te polecenia działają niezależnie czy jest <em>vi</em> czy <em>vim</em>. Poniżej rzeczy, które działają tylko w <em>vim</em>.
+		</p>
+		<ul>
+			<li><code class="code-inline">:e ~/ścieżka_do_katalogu</code> - uruchamia <strong>netrw</strong> (wtyczka) jest czymś w rodzaju bardzo skromnego manedżera plików.</li>
+			<li><code class="code-inline">:o [protokół]://użytkownik@host[:port]/ścieżka_do_pliku</code> - otwiera plik zdalny, podczas stosowania tego rozwiązania, należy wspomnieć, że jeśli podajemy ścieżkę bezwzględną to trzeba poprzedzić ją jeszcze jednym ukośnikiem (proto://user@host//etc/ssh/sshd_config).</li>
+		</ul>
+		<p>
+			Uruchomienie <em>netrw</em>, można wywołać podając w linii polecenia <em>vim</em> katalog. Znacznie więcej informacji nt. <em>vim</em> oraz samouczek możemy uzyskać za pomocą polecenia <code class="code-inline">vimtutor</code>, jak i również wydając polecenie <em>vi</em> <code class="code-inline">:help</code>.
+		</p>
+		<p>&nbsp;</p>
+		<h2 id="config">Konfiguracja BASH-a</h2>
+			<h3>Znak zachęty (prompt)</h3>
+			<p>
+			Znak zachęty naszej powłoki jest ustalany za pomocą wzorca zapisanego w zmiennej <strong><em>PS1</em></strong> zdefiniowanej w pliku <em>.bashrc</em> w naszym katalogu domowym, inny znak możemy zdefiniować dla nowych użytkowników edytując plik <em>/etc/skel/.bashrc</em> lub domyślny znak zachęty dla całego systemu w pliku <em>/etc/bash.bashrc</em>. Jak już wcześniej wspomniałem znak zachęty ustalamy przy pomocy wzorca. Poniżej znajduje się lista elementów z jakich możemy taki wzorzec stworzyć.
+			</p>
+			<ul>
+				<li><strong>\u</strong> - nazwa użytkownika</li>
+				<li><strong>\h</strong> - hostname</li>
+				<li><strong>\H</strong> - FQDN</li>
+				<li><strong>\s</strong> - nazwa powłoki</li>
+				<li><strong>\v</strong> - wersja powłoki</li>
+				<li><strong>\V</strong> - bardziej szczegółowa wersja powłoki</li>
+				<li><strong>\w</strong> - scieżka do obecnego katalogu</li>
+				<li><strong>\W</strong> - nazwa obecnego katalogu</li>
+			</ul>
+			<p>
+			Podczas tworzenia wzorca możemy wybrane przez nas elementy możemy wyróżnić, za pomocą 8 kolorów. Te kolory możemy mieszać ze sobą wykorzystując jeden na pierwszym planie a drugi natomiast umieścić w tle. Poniżej znajdują się kody kolorów.
+			</p>
+			<ul>
+				<li>czerwony - pierwszy plan: <strong>31</strong>,
+					tło: <strong>41</strong></li>
+				<li>zielony - pierwszy plan: <strong>32</strong>,
+					tło: <strong>42</strong></li>
+				<li>niebieski - pierwszy plan: <strong>34</strong>,
+					tło: <strong>44</strong></li>
+				<li>żółty - pierwszy plan:<strong>33</strong>,
+					tło: <strong>43</strong></li>
+				<li>cyjan - pierwszy plan: <strong>36</strong>,
+					tło: <strong>46</strong></li>
+				<li>magenta - pierwszy plan: <strong>35</strong>,
+					tło: <strong>45</strong></li>
+				<li>czarny - pierwszy plan: <strong>30</strong>,
+					tło: <strong>40</strong></li>
+				<li>biały - pierwszy plan: <strong>37</strong>,
+					tło: <strong>47</strong></li>
+			</ul>
+			<p>
+				Natomiast sam wzorzec znaku zachęty wygląda następująco,
+			</p>
+<pre class="code-block">
+\[\e[&lt;kolor_pierwszego_planu&gt;;&lt;kolor_tła&gt;m\]&lt;element&gt;\[\e[m\]
+</pre>
+			<p>
+				Warto zaznaczyć że kolor tła jest opcjonalny.
+			</p>
+			<br />
+			<h3>Polecenie zachęty</h3>
+			<p>
+				<strong>BASH</strong> daje nam do konfiguracji ciekawą rzecz. Możemy za pomocą jednej zmiennej zdefiniować polecenie, które będzie wykonywane zawsze przed pojawieniem się znaku zachęty. Zmienną <em>PROMPT_COMMAND</em> możemy zadeklarować w pliku <em>.bashrc</em> lub co w tym przypadku może okazać się lepszym rozwiązaniem, wyeksportować zmienną aby można było z niej korzystać w tej samej powłoce.
+			</p>
+<pre class="code-block">
+$ export PROMPT_COMMAND='date +%F-%T | tr -d "\n"'
+</pre>
+			<p>
+				Użycie tego polecenia spowoduje wyświetlenie pełnej daty wraz z czasem przed każdym znakiem zachęty.
+			</p>
+			<br />
+			<h3>Własne skróty klawiszowe GNU Readline</h3>
+			<p>
+				Pamietając ze wcześniejszych akapitów o poleceniu <strong>bind</strong>, które wraz z przełącznikiem <code class="code-inline">-P</code> wyświetli nam wszystkie dostępne już skróty, to za jego pomocą możemy utworzyć również własne mapowania kombinacji klawiszy nakonkretne polecenia. Znając wartości cytowane dla klawiszy CTRL oraz ESC/ALT, zadanie jest banalne. Wystarczy wydać konkretne polecenie. Jednak przed tym warto jednak upewnić się czy dany skrót nie jest już wykorzystywany. Jeśli rzeczywiście tak jest to dopisanie do skrótu kolejniej czynności spowoduje wywołanie tych dwóch akcji jednocześnie, co może mieć niekorzystne skutki. Aby upewnić się czy rzeczywiście dany skrót jest nie używany wydamy polecnie <code class="code-inline">bind -P</code> wraz z przekierowaniem wyjścia za pomocą potoku do polecenia <em>grep</em> wraz ze wzorcem przestawiającym dany skrót np. <em>ctrl + v</em>: <code class="code-inline">'\C-v'</code>. Dzieki temu zostaną nam wyświeltlone wszystkie akcje, które wykorzytują ten skrót.
+			</p>
+			<p>
+				Same skróty tworzymy rownież za pomocą polecenia <em>bind</em>.
+			</p>
+<pre class="code-block">
+$ bind '"\006":"mc\n"'
+</pre>
+			<p>
+				To polecnie spowoduje dodanie do skrótów w naszym systemie, skrótu klawiszowego <em>ctrl + f</em> wywołującego polecenie uruchamiające program <em>Midnight Commander</em>.
+			</p>
+			<p>
+				Polecenie bind przyjmuje jeden argument. Jest to ciąg znaków, który jest podzielony na dwie częsci, jedną częścią jest symbol cytowania danej kombinacji klawiszy, może on być trochę dziwny, jak ten wymieniony w przykładzie <code class="code-inline">\006</code> jest niczym innym jak <em>ctrl + f</em>. Drugą częścia jest czynność jaka ma zostać wykonana po wciśnieciu danej kombinacji klawiszy. Warto zwrócić uwagę na to, że za poleceniem stoi znak przejścia do nowej linii (<strong>\n</strong>), powoduje on zatwierdzenie tego polecenia zaraz po jego podstawieniu w linii polecenia po naciśnięciu odpowiedniej sekwencji klawiszy. Wróćmy jednak do tego niezrozumiałego symbolu z pierwszej części argumentu polecenia. Taki symbol możemy uzyskać naciskąjac wybraną sekwencje klawiszy w trybie cytowania. Tryb cytowania możemy wywołać skrótem <em>ctrl + v</em>.
+				Po wciśnięciu kombinacji <em>ctrl + v</em>, naciskamy odpowiednią sekwencje klawiszy, zatwierdzamy linię polecenia. Powłoka powinna zwrócić: <code class="code-inline">bash: $'\006': nie znaleziono polecenia</code> pomiędzy pojedyńczymi apostrofami znajduje się nasz symbol cytowania. W trybie cytowania możemy odnajdować symbole dla sekwencji z klawiszem alt/esc (użycie tych klawiszy w sekwencjach daje takie same symbole cytowania) lub ctrl. Użycie polecenia bind w danej powłoce utrzymuje skróty do momentu jej zamknięcia, aby nasze skróty zostały utrwalone musimy dodać ich definicje do pliku <em>.bashrc</em>. Definicje są identyczne jak wydawane polecenia <em>bind</em> w powłoce, po prostu wpisuje do pliku polecenie <em>bind</em> następnie definicje skrótu. Odnośnie skrótów, to jest pewna uwaga. Otóż nie wszystkie sekwencje z klawiszem ctrl chcą działać. Wiele znich jest na stałe przypisanych do funkcji systemowych, dlatego też bezpieczeniej korzystać z klawisza alt.
+			</p>
+			<br />
+			<h3>Powrót do poprzedniego katalogu</h3>
+			<p>
+				Powrót od poprzedniego katalog jest łatwy. O ile te katalogi występują po sobie. Wówczas wykorzystujemy polecenie <code class="code-inline">cd ścieżka_do_katlogu</code> oraz <code class="code-inline">cd -</code>, gdzie minus (<strong>-</strong>) oznacza poprzedni katalog, w którym się znajdowaliśmy. W wiekszości przypadków to wystarcza. Co jeśli chcemy się przenieść do katalogu, który był przed poprzednim? Z pomocą przychodzą nam polecenia <strong>pushd</strong> oraz <strong>popd</strong>. Te polecenia powodują odłożenie lub usunięcie ścieżki z konstrukcji stosu. Dzieki czemu możemy skakać z jednego miejsca w systemie na drugie i z powrotem, jednym poleceniem. To samo można zrealizować za pomocą polecenia <code class="code-inline">cd</code> z minusem.
+				Jednak to polecenie nie pozwala na odłożenie innych ścieżek na później, jeśli przestajemy pracować z jedną ścieżką możemy ją wyrzucić poleceniem <em>popd</em> (po wykonaniu tego polecenia zostaniemy przeniesieni na poprzednią ścieżkę na stosie), i następnie swobodnie przenościć się pomiędzy dwoma pozostałymi ścieżkami za pomocą polecenia <em>pushd</em>.
+			</p>
+			<p>
+				Poleceń pushd, popd, można używać zamiennie do cd oraz <code class="code-inline">cd -</code>, z tą różnią że możemy cofnąć się znacznie dalej niż tylko na poprzednią ściężkę, ale również na poprzednią poprzedniej itd. Inny poleceniem związanym z stosem katalogów jest <em>dirs</em>, które zwraca nam katalogi, które znajdują się na stosie.
+			</p>
+			<br />
+			<h3>Dodatkowe ustawienia powłoki</h3>
+			<p>
+				Bash posiada dość niepozorne wbudowane polecenie, którym możemy zmienić zachowanie naszej powłoki. Tym poleceniem jest <strong>shopt</strong>. Wydając to polecenie bez żadnych argumentów możemy dowiedzieć się co możemy zmienić za jego pomocą w powłoce. Jedną z ciekawszych opcji jest <em>autocd</em>, dzięki któremu możemy podawać same ścieżki w linii polecenia, w ten czas zostaniemy przeniesieni na tą ścieżke. Ustawienia opcji obywa się poprzez wydanie polecenia <em>shopt</em> wraz z przełącznikiem <code class="code-inline">-s</code> oraz nazwą opcji. Wyłącznie opcji jest analogiczne tylko zamiast <code class="code-inline">-s</code> jest <code class="code-inline">-u</code>. Aby dowiedzieć się więcej o <em>shopt</em> warto odwiedzić poświęconą mu sekcję na stronie podręcznika powłoki BASH wrozdziale "Wbudowane polecenia powłoki".
+			</p>
+		</p>
+		<p>&nbsp;</p>
+		<h2 id="history">Historia</h2>
+		<p>
+			<strong>Historią w powłoce BASH</strong> (ale nie i tylko), nazywamy listę poleceń, która zawiera wszyskie do tej pory wprowadzone w powłoce polecenia. Ta lista jest przechowywamna w specjalnym pliku, w katalogu głównym użytkownika. Historia może przyspieszyć nasze codzienne rutynowe zadania wykonywane w powłoce. Ponieważ zamiast klepać na nowo te same polecenia, możemy cofnąć się za pomocą <s>strzałki w górę</s> kombinacji klawiszy <em>ctrl + p</em> <s>i tak długo naciskać ten skrót aż dostaniemy nasze polecenie</s> oraz skrótu <em>ctrl + n</em> przeszukać historię choć jest znacznie bardzie efektywny sposób na wyszukiwanie poleceń mianowicie przeszukanie historii w tył, niestety wadą tego rozwiązania jest to że musimy znać fragment polecenia lub kojarzyć czego mogło dotyczyć, potrzebna jest jakaś fraza aby je wyszukać. Za wyświetlenie całej historii odpowiedzialne jest polecenie <strong>history</strong>.
+		</p>
+		<p>
+			Wykonajmy teraz mały eksperyment, uruchom powłokę i wydajmy jakieś nieszkodliwe polecenie np. <code class="code-inline">pwd</code>, teraz uruchomimy drugie okno z połoką, kiedy naciśniemy <em>ctrl + p</em>, okazuje się że nie ma polecenie, którego użyliśmy w poprzeniej powłoce. Historia danej sesji terminala (bo tak możemy nazwać czas spędzony przed pojedyńczym procesem powłoki), trafa do czegoś w rodzaju pamięci powłoki, dopóki nie zakończymy sesji nie zostanie ona utrwalona. Co może być nieco irytujące kiedy korzystamy z wielu połączeń z tym samym serwerem. Jednak tym zajmiemy się za chwilę.
+			Kiedy na danej powłoce historia jest włączona, a my chcemy zatrzeć ślady obecności w systemie, możemy wyczyścić pamięć tej sesji wydając polecenie history z przełącznikiem <code class="code-inline">-c</code> i jeśli będziemy dalej pracować możemy przywrócić pamięć z pliku historii a jeśli nie to możemy się po prostu wylogować, jedyne co pozostanie w historii z tej sesji to polecenie <em>exit</em>.
+		</p>
+		<p>
+			Historia musi być gdzieś przechowywana skoro można ją bez problemu przywrócić, i owszem historia przechowywana jest w pliku, plik ten jest wskazywany przez zmienną środowiskową <strong>HISTFILE</strong>. Najczęściej wskazuje na <em>/home/&lt;username&gt;/.bash_history</em>. Przekierowanie do niego pustego polecenia echo usunie dotychczasową historię całkowicie. Plik ten jest również ograniczony liczbą wierszy jakie może przechowywać, po osiągnięciu tej wartości najstarsze wpisy są usuwane, aby zrobić miejsce najnowszym. Ilość wierszy jest przechowywana w zmiennej środowiskowej <strong>HISTSIZE</strong>. <strong>Jak permanentnie wyłączyć historię? Otóż w bardzo prosty sposób. Ustawiając HISTFILE na <em>/dev/null</em> natomiast ilość wpisów historii w pamięci sesji (zmienna HISTSIZE) na 0.</strong>
+		</p>
+		<p>
+			Wróćmy do przypadku wielu połączeń z serwerem z jednego komputera. Polecenie <em>history</em> posiada jeszcze jeden ważny przełącznik, mianowicie <code class="code-inline">-a</code>. Wydanie polecenia <em>history</em> z tym przełącznikiem powoduje dopisanie poleceń zebranych w pamięci do pliku historii. Jednak użycie tego przełącznika aby zadziałało wymaga zmiany zachowania powłoki, musimy przełączyć za pomocą polecenia <em>shopt</em> opcję <em>histappend</em>, na oby dwu oknach.
+		</p>
+<pre class="code-block">
+$ shopt -s histappend
+</pre>
+		<p>
+			Wykonując sekwencje poleceń w obu oknach, w postaci: dopisania zawartości pamięci do pliku; wyczyszczenia pamięci z historii oraz jej przywrócenia możemy w ten sposób zsynchronizować w historię w pamięci między różnymi sesjami terminala. Proces ten można zautomatyzować, umieszczając jego wykonanie przed pojawieniem się znaku zachęty, czyli umieszczeniu trzech poleceń oddzielonych średnikami w zmiennej <em>PROMPT_COMMAND</em>, tak jak poniżej:
+		</p>
+<pre class="code-block">
+$ export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+</pre>
+		<p>
+			Odwołanie się do <em>PROMPT_COMMAND</em> spowoduje że jeśli coś do tej pory znajdowało się w <em>PROMPT_COMMAND</em> pozostanie ono na swoim miejscu. Użycie w tym wypadku polecenia <em>export</em> oznacza że zmiany w <em>PROMPT_COMMAND</em> są tylko tymczasowe. Aby zapisać to że historia się synchronizuje między sesjami, należy na stałe zmienić wartość zmiennej <em>PROMPT_COMMAND</em> w pliku <em>~/.bashrc</em> (tylda, oznacza katalog domowy).
+		</p>
+		<p>
+		Wróćmy teraz do wylistowania historii za pomocą polecenia <em>history</em>. Listing składa się z dwóch kolumn. Tak jakby z identyfikatora z wystąpienia zdarzenia (polecenia) oraz z samego polecenia. Do pełnej historii brakuje jednak informacji na temat tego kiedy dane polecenie zostało wydane, nie wiem jak to jest w innych dystrybucjach to w GNU/Linux Debian zmienna środowiskowa <strong>HISTTIMEFORMAT</strong> jest pusta. Nadając jej wartość podobną formatem do tego jak podajemy argument poleceniu <em>date</em>.
+<pre class="code-block">
+$ export HISTTIMEFORMAT="%Y-%m-%d %T"
+</pre>
+		<p>
+			Ustawienie tej opcji może wprowadzić nas w małe zakłopotanie, kiedy po jej ustawieniu wprowadzimy kilka poleceń, wylistujemy sobie historię i wszystko wydaje się na pierwszy rzut oka w porządku, zapiszemy sobie więc to polecenie do pliku <em>~/.bashrc</em>, kiedy wylogujemy się i zalogujemy się ponownie, następnie znów wylistujemy historię czasy/daty przestaną się zgadzać, okaże się że czas poleceń wydanych przed uruchomieniem opcji formatu czasu jest zbliżony do czasu wydanie polecenia <em>history</em> w tej powłoce, a zatem jest on późniejszy od czasu poleceń wydanych w poprzedniej sesji po uruchomieniu formatu czasu. Skąd to się wzięło? Otóż jeśli w pliku historii nie znacznika czasu to powłoka ładując go pamięci jako znacznika dla tych poleceń użycje czasu własnego startu.
+		</p>
+		<p>
+			Przyjrzymy się teraz przechowywaniu historii. W <em>BASH</em> możemy łatwo określić ilość przechowywanych przez powłokę (czy to w pamięci, czy w pliku historii) wpisów historii. Za ilość w wpisów przechowywanych w pamięci sesji odpowiada poznana już przez nas zmienna środowiskowa <em>HISTSIZE</em>. Z kolei za wielkość pliku historii odpowiada zmienna <strong>HISTFILESIZE</strong>. Za ich pomocą możemy kontrolować ilość zapisywanej przez sesje historii.
+		</p>
+		<p>
+			To co ma trafić do historii może być kontrolowane, służy do tego zmienna środowiskowa <strong>HISTCONTROL</strong>, przeważnie posiada ona wartość <em>ignoreboth</em>. Oznacza ona że do historii <u>nie trafią</u> polecenie powielone (występujące po sobie), które znajdują się już historii oraz te polecenia rozpoczynające się od spacji. Poniżej znajduje się lista możliwych wartości:
+		</p>
+		<ul>
+			<li><strong>Brak wartości lub wartość niepoprawna</strong> - brak ograniczeń w historii.</li>
+			<li><strong>ignorespace</strong> - polecenie rozpoczynające się od spacji nie zostaną zapisane
+				w historii</li>
+			<li><strong>ignoredups</strong> - polecenie powielone (występujące po sobie) nie będą zapisywane
+				w historii</li>
+			<li><strong>erasedups</strong> - usuwa wszystkie wpisy pasujące do poprzedniego polecenia</li>
+			<li><strong>ignoreboth</strong> - <strong>ignorespace</strong> + <strong>ignoreboth</strong></li>
+		</ul>
+		<p>
+			Warto wspomnieć że wartość tej zmiennej jest listą, której elementy są rozdzielane dwukropekiem (<strong>:</strong>), więc wartości możemy łączyć ze sobą. Zatem zamiast używać "<em>ignoreboth</em>" możemy użyć "<em>ignorespace:ignoreboth</em>".
+		</p>
+		<p>
+			Ostatnią rzeczą z historii pozostało poniekąd również zgadnienie odnośnie kontroli - co ma zostać zapisane w historii. Tą rzeczą jest zmienna <strong>HISTIGNORE</strong>. W jej wartości możem podać najczęściej używane polecenia, aby nie zaśmiecać sobie historii poleceniam typu <em>cd</em> lub <em>ls</em>. Rzeczą o której należy pamiętać jest to aby podać symbol wieloznaczności (<strong>*</strong>) zaraz po poleceniu, spowoduje to przypasowanie poleceń, które zawierają jakiekolwiek argumenty a nie tylko samych poleceń, u niektórych użytkowników <em>HISTIGNORE</em> może wyglądać tak:
+		</p>
+<pre class="code-block">
+$ export HISTIGNORE="cd*:history:htop:ls*:ll*:la:l:popd:pushd*:top"
+</pre>
+		<p>&nbsp;</p>
+		<h2 id="indicators">Desygnatory słów i zdarzeń oraz modyfikatory</h2>
+		<p>
+			Pierwszym opisanym tutaj zagadnieniem będzie <strong>desygnator zdarzenia</strong>, który składa się wykrzyknika (<strong>!</strong>) oraz numeru linii z historii. Można stwierdzić że jest to jeden ze sposobów na wywołanie polecenia z historii, należy jednak znać numery linii interesujących nas poleceń, można sobie wylistować historię a następnie odfiltrować część informacji zwrotnych za pomocą polecenia <em>grep</em>. Z desygnatorem zdarzeń wiąże się również pewna sztuczka, otóż <strong>desygnator ostatniego zdarzenia</strong> wygląda następująco: <code class="code-inline">!!</code> - dwa wykrzykniki. Czasmi musimy wykonać w powłoce pewne zadania administracyjne. Wymagają one zazwyczaj podniesienia uprawnień. Jak wiemy uprawnienia jednorazowo podnosimy za pomoca polecenia <em>sudo</em>. Często jest jednak tak że wydajemy polecenia administracyjne bez <em>sudo</em> wtedy otrzymujemy komunikaty od systemu o braku dostępu.
+			Możemy oczywiście wybrać ponownie to polecenie z historii następnie za pomocą skrótu przenieść się na początek linii, następnie dopisać <em>sudo</em> i zatwierdzić je jeszcze raz. Jest jednak prostszy sposób:<br />
+		</p>
+<pre class="code-block">
+$ sudo !!
+</pre>
+		<p>
+			Powyższy zapis jest równoznaczny z wyżej wymienioną czynnościa, prawda że łatwiejszy? Chociaż bez wprawy w powyższej sztucze nasz mózg będzie i tak podpowiadał nam aby dopisać to <em>sudo</em> na początku linii. Wracając jeszcze do desygnatora zdarzenia to jego wartością nie jest tylko numer linii w historii może on przyjąć w sumie 4 wartości:
+		</p>
+		<ul>
+			<li><strong>!1(liczba dodatnia)</strong> - numer linii w historii liczony od jej początku.</li>
+			<li><strong>!-1(liczba ujemna)</strong> -  numer linii w historii liczony od jej końca.</li>
+			<li><strong>!ciąg_znaków</strong> - ciąg znaków rozpoczynający polecenie.</li>
+			<li><strong>!?ciąg_znaków?</strong> - ciąg znaków zawarty w poleceniu.</li>
+		</ul>
+		<p>
+			Patrząc na polecenie zapisane w linii poleceń, widzimy nazwę programu oraz przekazywane mu argumenty jednak z poziomu przetwarzania tekstów jest to lista słów <u>rozpoczynająca się od 0</u>, które możemy dowolnie wybierać z konkretnych wpisów z historii i co lepsze umieszczać tak zwane <strong>desygnatory słów</strong> jako elementy składowe nowej linii polecenia. Na desygnator słowa składa się desygnator zdarzenia oraz odzielony dwukropkiem (<strong>:</strong>) selektor konkretnego słowa, selektorów <em>BASH</em> oferuje wiele.
+		</p>
+		<ul>
+			<li><strong>0</strong> - zerowe słowo przeważnie wywoływany program (polecenie)</li>
+			<li><strong>n</strong> - n-te słowo</li>
+			<li><strong>^</strong> - pierwszy argument polecenia</li>
+			<li><strong>$</strong> - ostatni argument polecenia</li>
+			<li><strong>x-y</strong> - zakres słów, <strong>x</strong> można pominąć (<strong>-y</strong>) w ten czas
+				jest interpretowane jako <strong>\0-y</strong>.</li>
+			<li><strong>*</strong> - wszystkie słowa poza zerowym, jest zamiennikiem <strong>1-$</strong>,
+				jeśli zdarzenie zawiera tylko nazwę polecenia (programu) zostanie
+				zwrócony pusty ciąg znaków</li>
+			<li><strong>x*</strong> - od konkretnego słowa do końca linii.</li>
+			<li><strong>x-</strong> - od konkretnego słowa do przedostatniego włącznie</li>
+		</ul>
+		<p>
+			Wśród desygnatorów słów panuje taka zasada że jeśli przy desygnatorze zdarzenia nie zostanie podany numer linii w historii, to zostanie użyty ostatnio dodany wpis do historii.
+		</p>
+		<p>
+			Oprócz desygnatorów słów lub wraz z, do jeszcze lepszego dostosowania linii pobranej z historii dzięki desygnatorowi zdarzenia, możemy użyć <strong>modyfikatorów</strong>. Są to dodatkowe czynności wykonywane przez powłokę aby jeszcze bardzie móc wykorzystać już raz wpisane polecenia. Modyfikatorów używa się tak samo jak desygnatorów słów, po dwukropku, po albo samym desygnatora zdarzenia albo desygnatora słowa albo po innym modyfikatorze. Poniżej znajduje się model składni podczas używania desygnatorów zdarzenia:
+		</p>
+<pre class="code-block">
+![numer,ciąg_znaków,!]:[desygnator_słów]:[modyfikator1]:[modyfikator2]...
+</pre>
+		<p>
+		Lista dostępnych modyfikatorów:
+		</p>
+		<ul>
+			<li><strong>h</strong> - ze ścieżki do pliku usuwa nazwę pliku pozostawiając tylko samą ścieżkę dostępu,</li>
+			<li><strong>t</strong> - ze ścieżki do pliku usuwa ścieżkę dostępu pozostawiając samą nazwę pliku,</li>
+			<li><strong>r</strong> - z nazwy pliku usuwa rozszerzenie pozostawiając tylko nazwę właściwą,</li>
+			<li><strong>e</strong> - usuwa z nazwy pliku nazwę właściwą pozostawiając tylko rozszerzenie,</li>
+			<li><strong>p</strong> - wyświetla gotowe polecenie, ale go nie wykonuje,</li>
+			<li><strong>q</strong> - umieszcza gotowe słowa w pojedyńczych cudzysłowach,</li>
+			<li><strong>x</strong> - umieszcza gotowe słowa w pojedyńczych cudzysłowach, rozdzielając je na kolejne słowa przy spacjach oraz znakach nowego wiersza,</li>
+			<li><strong>s/old/new</strong> - zamiana <em>old</em> na <em>new</em>,</li>
+			<li><strong>&</strong> - powtarza zmianę dokonaną przez <strong>s/old/new</strong>, ile <strong>&</strong>tyle razy zostanie powtórzona zmiana,</li>
+			<li><strong>g</strong> - (stosowane wraz z <em>s/old/new</em>) stosuje zamianę <em>s/old/new</em>
+				każdego wystąpienie wartości <em>old</em> na wartość <em>new</em>. Zastosowanie: <code class="code-inline">:gs/old/new</code>,</li>
+			<li><strong>G</strong> - (stosowanie wraz z <strong>s/old/new/</strong>) stosuje zamianę <strong>s/old/new</strong> każdego wystąpienia wartości <em>old</em> na <em>new</em> przynajmniej raz w każdym słowie.</li>
+		</ul>
+		<p>
+			<strong>
+				Odnośnie opcji <em>G</em>, to jeśli zostanie ona skierowana wraz z <em>s/old/new</em>, do pracy na jednym słowie, to wyniki może być nie co dziwny. Ponieważ jeśli zostanie odnalezionych więcej niż jeden elementów <em>old</em>, w słowie to tylko dwa zostaną zmienione. Wynika z tego że jeden z samego modyfikatora <em>s</em> a drugi z <em>G</em>.
+			</strong>
+		</p>
+		<p>
+			Jeśli musimy na szybko zmienić coś w poprzednim poleceniu, to <em>BASH</em> wprowadza skrót: <strong>^old^new^</strong>, działa jak modyfikator <em>s</em> wraz z desygnatorem zdarzenia, ale bez zbędnego desygnatora zdarzenia oraz konstrukcji modyfikatora. Wystarczy wpisać w linii polecenia np. <code class="code-inline">^sduo^sudo^</code>. Warto zaznaczyć, że wraz tą konstrukcją możemy używać innych modyfikatorów takich jak np. <em>:&</em>, aby powtórzyć zamianę wartości.
+		</p>
+		<p>
+			Wróćmy do historii, to zagadnienie nie było by dokońca zrozumiałe bez wcześniejszego opisu desygnatorów oraz modyfikatorów. W <em>BASH</em> istnieje zmienna <em>histchars</em> (<u>nie jest ona zmienną środowiskową</u>, jest po prostu zmienną powłoki, zapisaną małymi literami bez potrzeby poprzedzania jej definicji poleceniem <em>export</em>), w której to możemy zdefiniować znaki używane w historii. <em>Histchars</em> składa się z trzech znaków i każdy z nich coś oznacza.
+		</p>
+		<ul>
+			<li>znak desygnatora zdarzenia - <strong>!</strong>(wykrzyknik)</li>
+			<li>znak szybkiej zmiany - <strong>^</strong>(kareta/daszek)</li>
+			<li>znak komentarza - <strong>#</strong>(kratka/krzyżyk)</li>
+		</ul>
+		<p>
+			Te symbole możemy zmieniać właśnie dzięki <em>histchars</em>. Podając je razem jako wartość zmiennej <em>histchars</em>, np.
+		</p>
+<pre class="code-block">
+$ histchars="+=@"
+$ echo test
+test
+$ ++
+echo test
+test
+$ =t=1
+echo 1est
+1est
+</pre>
+		<p>
+			Przy stosowaniu tej zmiennej warto pamiętać o innych znaczeniach użwanych przez nas znaków w powłoce.
+		</p>
+		<p>
+			Podstawienie historii (inaczej desygnator zdarzeń) możemy wyłączyć na dwa sposoby. Pierwszy sposób to nadanie pustej wartości zmiennej <em>histchars</em>:
+		</p>
+<pre class="code-block">
+$ histchars=
+</pre>
+		<p>
+		lub zmienić zachowanie powłoki za pomocą polecenia <em>set</em>:
+		</p>
+<pre class="code-block">
+/* Wyłączając */
+$ set +o histexpand
+/* Włączając z powrotem */
+$ set -o histexpand
+</pre>
+		<p>
+		Jednak w wiekszości przypadków, nie potrzeba tego robić ponieważ <em>!</em> (wykrzyknik) nie jest rozpoznawany w ciągach jako desygnator zdarzeń (przynajmniej w GNU/Linux Debian).
+		</p>
+		<p>
+		Biorąc pod uwagę to ile jest tu materiału, wypisze poniżej to co jest najczęściej stosowane i czego
+		warto sie nauczyć:
+		</p>
+		<ul>
+			<li>sztuczka z sudo: <em>sudo !!</em>,</li>
+			<li>szybkie podstawienia: <em>^old^new^</em></li>
+			<li>desygnatory zdarzeń: <em>![liczba]</em>, <em>!-[liczba]</em>, <em>!ciąg_znaków</em>, <em>!?ciag_znakow?</em></li>
+		</ul>
+		<p>&nbsp;</p>
+		<h2 id="aliases">Aliasy</h2>
+		<p>
+			Aliasy inaczej nazwy zamienne stosowane najczęściej gdy chcemy zawrzeć długie polecenie w krótkiej przyjaznej nazwie. Aliasy są umieszczane w plikach konfiguracyjnych powłoki aby miały jakiś sens. Tworzenie aliasów w sesji powłoki raczej nie ma sensu. Czemu miało by go mieć. Skoro i tak musimy zapisać nasze bardzo długie polecenie, to już można je wykonać potem ewentualnie użyć historii.
+		</p>
+		<p>
+			Nie mniej jednak, definicja aliasu w <em>BASH</em> rozpoczyna się wbudowanego polecenia <em>alias</em> gdzie następnie podaje się nazwę aliasu, znak równości (<strong>=</strong>) oraz w pojedynczych apostrofach polecenie, dla którego tworzony jest alias. Najprostszy alias jak przychodzi mi do głowy to ten poniżej:
+		</p>
+<pre class="code-block">
+$ alias diceroll='echo $(((RANDOM % 6) + 1))'
+$ diceroll
+6
+</pre>
+		<p>
+			Obecnie używane w systemie aliasy możemy wylistować za pomocą tego samego polecenia tylko że z przełącznikiem <code class="code-inline">-p</code>.
+		</p>
+		<p>
+			Aliasy to takie krótkie zagadnienie że zostały jeszcze tylko dwie rzecz do omówienia. Jak sprawdzić czy dane polecenie jest aliasem? Do sprawdzenia tego typu rzeczy służy polecenie <em>type</em>.
+		</p>
+<pre class="code-block">
+$ type diceroll
+diceroll jest aliasem do echo $(((RANDOM % 6) + 1))'
+$ type pushd
+pushd jest wewnętrznym poleceniem powłoki
+</pre>
+		<p>
+			Warto używać tego polecenia aby sprawdzić czy dana nazwa jest wolna, bo co jeśli stworzymy alias pod nazwą programu, który już istnieje? W sumie nic takiego. Binaria albo skrypt pozostaną nietknięte. Jedynie nie będzie dostępu z poziomu powłoki w tej konfiguracja, a że konfiguracja często jest określana przez użytkowników w ich katalogach domowych, to użytkownik, który posiada taki alias nie będzie miał dostępu do tego programu. Twórcy powłoki przewidzieli taką sytuacje implementując aliasy, więc dali możliwość dostępu do programu przesłoniętego przez alias. Przed nazwą takiego programu daje się backslash czy tam wsteczy ukośnik (<strong>\</strong>), gdy powłoka natrafi na takie polecenie zacznie przeszukiwać <em>PATH</em> w poszukiwaniu programu lub skryptu o takiej nazwie a nie podstawiać polecenie z aliasu.
+		</p>
+		<p>&nbsp;</p>
+		<h2 id="top">Menedżer zadań w UNIX-ach</h2>
+		<p>
+			W tych systemach, w których możemy używać powłoki takiej jaką jest <em>BASH</em> na pewno mamy do dyspozycji programy dzięki, którym możemy śledź procesy jakie są wykonywane w naszym systemie. Możemy robić w trybie nieinteraktywnym używając polecenia <strong>ps</strong> z odpowiednimi przełącznikami oraz odfiltrowując jego dane wyjściowe za pomocą potoków i takich poleceń jak <em>sort</em> oraz <em>uniq</em>. Jednak co przyjęło się wśród użytkowników używanie znacznie lepszych programów, które są nieco bardzie rozmowne z nimi niż polecenie <em>ps</em> mowa tu poleceniach <strong>top</strong> oraz <strong>htop</strong>. <em>Top</em> jest to program, który chyba został wpisany w kanon podstawowych narzędzi dostarczanych wraz systemami UNIX-opodbnymi i to na nim skupimy się na początku, póżniej poznamy bardzie kolorowy <em>htop</em>.
+		</p>
+		<p>
+			Po uruchomieniu programu każdy widzi co dostaje. Najprościej rzecz ujmując statystki zużycia zasobów komputera z listą procesów, które te zasoby używają aby realizować swoje zadania. Wartą wyjaśnienia informacją, która jest nie tylko wyświetlana przez <em>top</em> czy <em>htop</em> ale również przez polecenie <em>uptime</em> jest <strong>load average</strong>. Interpretuje się w bardzo prosty sposób, na początku ustalamy ile nasz komputer (CPU) ma wątków. To <em>load average</em> nie powinien przekroczyć tej wartości w pierwszym z tych pomiarów. Pomiary są ustalane w odstępach czasu 1 minuty, 5 minut oraz 15. Na podstawie wartości jaką jest <em>load average</em> możemy oszacować w jakim stopniu nasz komputer jest zajęty przez procesy. Ta wartość to najmnieszy monitor zasobów jaki możemy spotkać w UNIX-ach. Co może oznaczać wysokie <em>load average</em>? W zależności od tego do czego używamy danego UNIX-a, to jeśli na naszym PC uruchomiliśmy np konwersję plików multimedialnych to wartości mogą skoczyć.
+			Jak również podczas kompilacji. Ta wartość ma nam przekazać informacje, czy możemy swobodnie pracować po mimo uruchomienia jakiś programów, czy też wstrzymać się do zakończenia zasobożernego zadania. Mimo iż <em>load average</em> wskazuje nam wartości równoważne z ilością naszych wątków, to system i tak wydaje się całkiem responsywny. Wtedy system jest w pełni załadowany (obciążony), ale nie przeciążony dlatego też pełne załadowanie systemu jest mniej odczuwalne niż jego przeładowanie gdzie te wartości mają naprawdę ogromne wartości. Nie ma górnego limitu dla <em>load average</em>, więc liczby mogą być na prawdę duże.
+		</p>
+		<p>
+			Po uruchomieniu programu na pierwszej linii, <strong>znajduje się wynik polecenia <em>uptime</em></strong>, wraz z opisaną wcześniej wartością <em>load average</em>. Poniżej znajdują się <strong>sumaryczna ilość uruchomionych procesów</strong>, z podziałem na poszczególne grupy w zależności od stanu w jakim się one znajdują, jednak nie wszystkie grupy są wyświetlane. Nie ma procesów, które znajdują się w stanie bezczynności. Następną linią jest <strong>wskaźnik z użycia procesora przez procesy</strong>. Zużycie procesora jest podzielone na kilka grup, w zależności od tego czego dotyczą procesy. Opisy grup znajdują się na liście poniżej:
+		</p>
+		<ul>
+			<li><strong>us</strong>(er) - bez priorytetowe procesy użytkownika</li>
+			<li><strong>sy</strong>(stem) - procesy jądra systemu</li>
+			<li><strong>ni</strong>(ce) - procesy priorytetowe</li>
+			<li><strong>id</strong>(le) - stan bezczynności</li>
+			<li><strong>wa</strong>(it for IO) - oczekiwanie na operacje wejscia/wyjście</li>
+			<li><strong>hi</strong>[przerwanie sprzętowe] - obsługa przerwań sprzętowych</li>
+			<li><strong>si</strong>[przerwanie programowe] - obsługa przerwań programowych</li>
+			<li><strong>st</strong>(olen) - pobranie zasobu przez nadzorce (w przypadku maszyn
+				wirtualnych)</li>
+		</ul>
+		<p>
+		<strong>Następne dwie linie</strong> to pamięć operacyjna, z podziałem na pamięć RAM oraz przestrzeń wymiany. <strong>Nas w sumie będzie ciekawić głównie</strong> ile wolnej pamięci nam jeszcze zostało, zatem powinna nas interesować ostatnia wartość w drugiej linii (uwaga, w tej wartośći nie jest zawarta pamięć SWAP) opisana jako <strong>avail Mem</strong>. Pozostałe pola raczej nie wymagają opisów.
+		</p>
+		<p>
+			Do omówienia pozostała część główna programu, czyli tabelka z procesami, jej omówienie składa się
+			głównie z opisu kolumn.
+		</p>
+		<ul>
+			<li><strong>PID</strong> - Identyfikator procesu.</li>
+			<li><strong>User</strong> - Właściciel procesu.</li>
+			<li><strong>PR</strong> - Priorytet. Są dwa typy priorytetów: normalny (wyrażony liczbą) lub <strong>rt</strong> (real-time), jeśli natrafimy na proces z <em>rt</em>, oznacza to że pracuje on w czasie rzeczywistym.</li>
+			<li><strong>NI</strong> - Wartość <em>NICE</em>, stopień priorytetu. Priorytet wynika z równania 20 + <em>NICE</em>. Wartości jak może przyjąć <em>NICE</em> są pomiędzy -20 (najwyższy priorytet) a 19 (najniższy).</li>
+			<li><strong>VIRT</strong> - Wielkość obrazu wirtualnego. Ilość pamięci zaalokowanej przez proces wraz z bibliotekami współdzielonymi oraz pamięcią wspódzieloną przez inne procesy. Ta wartość nie jest zbyt miarodajna.</li>
+			<li><strong>RES</strong> - Fizyczna pamięć (bez pliku wymiany) zaalokowana przez proces.</li>
+			<li><strong>SHR</strong> - Pamięć współdzielona wraz z innymi procesami.</li>
+			<li><strong>S</strong> - Status (<strong>R</strong>unning, <strong>S</strong>leeping, <strong>Z</strong>ombie, itd.).</li>
+			<li><strong>%CPU</strong> - Zużycie procentowe procesora, jeśli mamy wielowątkowy lub wielordzeniowy procesor, to proces, który będzie zużywać cały procesor to wartość przedstawiona w tej kolumnie bedzie wynikiem iloczynu liczby watków/rdzeni * 100%. Proces zajmuje pełne 4 rdzenie = 400% itp.</li>
+			<li><strong>%MEM</strong> - Zużycie procentowe pamięci przez proces.</li>
+			<li><strong>%TIME+</strong> - Czas zużywania procesora od uruchomienia procesu. Plus oznacza że wyrażony czas jest przedstawiony w setkach sekund.</li>
+			<li><strong>COMMAND</strong> - Polecenie.</li>
+		</ul>
+		<p>
+			Top jest dość elastycznym programem, niektóre rzeczy możemy dostosować pod własne "widzi mi się". Jednak zanim przystąpimy do konfiguracji <strong>utworzymy, dowiązanie symboliczne do głównego programu tak jakoby byśmy działali na kopii</strong>.
+		</p>
+<pre class="code-block">
+$ sudo ln -s /usr/bin/top /usr/bin/my_top
+</pre>
+		<p>
+			A więc sprawa z konfiguracją <em>top</em>. Jest na tyle nie skomplikowana, że żeby ją dokładnie wyjaśnić trzeba by przepisać stronę z podręcznika. Czego robił nie będę, jeśli wybraliśmy język polski podczas instalacji powinniśmy mieć strony podręcznika w naszym rodzimym języku. Jeśli nie to niestety musimy sobie jakoś radzić. Może zamiast przepisywania podręcznika, kilka uwaga. Na początku uruchomimy program <em>top</em> z naszego dowiązania symbolicznego w moim przypadku będzie to <em>my_top</em>.
+		</p>
+		<ul>
+			<li><strong>Do zmiany kolejności pol, w tabelce lepiej użyć opcji <em>f</em> niż <em>o</em></strong>. W ten czas za pomocą spacji lub litery 'd' wyłączamy/włączamy pole. Strzałką w prawo zaznaczamy kolumnę, strzałka w góre/dół zmieniamy jej położenie, strzałka w lewo odznaczamy kolumnę.</li>
+			<li><strong>Zmiana wyświetlania CPU w nagłówku (za pomocą klawisza t) na krótszą da lepszy obraz</strong>, ta liczba przy pasku do całkowity procent zużycia.</li>
+			<li>Warto <strong>zmienić jednostkę miary pamięci (za pomocą E [shift + e]), dla lepszego obrazu</strong> do GiB.</li>
+			<li><strong>Konfiguracje zapisujemy za pomocą W (shift + w).</strong></li>
+		</ul>
+		<p>
+			<strong>
+				Kiedy konfiguracja zostanie zapisana, wyłączymy <em>my_top</em>, następnie uruchomimy oryginalne polecenie <em>top</em>, okaże się że nie ma żadnych ustawień. Dzieje się tak, ponieważ konfiguracja utworzona jest przypisana tylko do tej kopii utworzonej przez dowiązanie symboliczne, którą wrazie czego zawsze można usunąć.
+			</strong>
+		</p>
+		<p>
+			Żeby używać <em>top</em>-a, w praktyce <strong>musimy pamiętać o dwóch klawiszach. Pierwszy z nich to <em>h</em> powodujący wyświetlenie pomocy, drugim z nich jest <em>q</em>, które naciśnięcie spowoduje zamknięcie programu.</strong> Jeśli coś w wyświetlanej pomocy nie jest jasne, zawsze pozostaje strona podręcznika <em>man 1 top</em>, ale jeśli ktoś jakimś cudem trafia właśnie na ten artykuł, w celu uzyskania pomocy odnośnie programu <em>top</em>, to poniżej kilka klawiszy, których trzeba się nauczyć, chcąc korzystać biegle z <em>top</em>-a.
+		</p>
+		</p>
+			<u>Sortowanie i filtry</u>:
+		</p>
+		<ul>
+			<li><strong>P</strong> - posortowanie procesów wg. użycia procesora.</li>
+			<li><strong>M</strong> - posortowanie procesów wg. użycia pamięci.</li>
+			<li><strong>n</strong> - sortowanie wg. PID.</li>
+			<li><strong>&lt;,&gt;</strong> - zmiana pola sortowania.</li>
+			<li><strong>u</strong> - filtruj w nazwy użytkownika.</li>
+			<li><strong>R</strong> - odwrócenie sortowania.</li>
+		</ul>
+		<p>
+			<u>Użyteczne polecenia <em>top</em></u>:<br />
+		</p>
+		<ul>
+			<li><strong>k</strong> - wysłanie sygnały do procesu, przeważnie 15 SIGTERM lub 9 SIGKILL, choć można
+				użyć dowolnego sygnału dostępnego na GNU/Linux.</li>
+			<li><strong>r</strong> - zmiana priorytety dla procesu.</li>
+			<li><strong>c</strong> - włączenie/wyłączenie ścieżek bezwzględnych przy procesach.</li>
+			<li><strong>g</strong> - zmiana wyświetlania tabelki (przedstawiając tak jakby różne tryby pracy) z procesam do wyboru trzy predefiniowane układy kolumn, kolejno pod numerami 2,3,4. Numer 1 to tryb wyjściowy.</li>
+			<li><strong>V</strong> - uruchomienie trybu drzewa, pokazującego hierarchie procesów.</li>
+		</ul>
+		<p>
+			<u>Wyświetlanie agregowane*</u>:<br />
+			* Wyświetla w jednej tabeli wszystkie tryby pracy od 1 do 4 (znane z polecenia <em>g</em>)<em>top</em>.
+		</p>
+		<ul>
+			<li><strong>A</strong> - włączenie/wyłączenie trybu agregacji.</li>
+			<li><strong>a</strong> lub <strong>w</strong> - przełączanie pomiędzy trybami.</li>
+		</ul>
+		<p>
+			<u>Wyświetlanie podsumowania (dane nad tabelką)</u>:
+		</p>
+		<ul>
+			<li><strong>1,2,3</strong> - zmiana trybu podsumowania zużycia procesora.</li>
+			<li><strong>t</strong> - zmiana sposobu wyświetlania podsumowania zużycia procesora.</li>
+			<li><strong>m</strong> - zmiana sposobu wyświetlania podsumowania zużycia pamięci.</li>
+			<li><strong>l</strong> - włączenie/wyłączenie górnej linii, przedstawiającej tak
+				naprawdę wynik działania polecenia <em>uptime</em></li>
+			<li><strong>H</strong> - zmiana trybu wyświetlania z procesów na wątki oraz odwrotnie</li>
+		</ul>
+		<p>
+			Obecnie w systemach GNU/Linux, istnieje wersja ulepszonego <em>top</em>-a. Pod nazwą <em>htop</em>. Różnica miedzy <strong>htop</strong> a <em>top</em> jest taka że przeważnie nie jest preinstalowany. Jest dostępny w repozytoriach lub trzeba go kompilować oraz jest prostszy w obsłudze. Z <em>Htop</em>-em możemy pracować od razu nie potrzeba go dostosowywać, ponieważ wszystko jest czytelne "out of box". Czynności mamy zmapowane pod klawiszami funkcyjnymi, gdzie na pasku na dole jest opisane, który klawisz jest do czego. Jest on na pewno bardzie interaktywny niż <em>top</em>. Jednak kiedy już ograniemy, konfiguracje <em>top</em>-a, <em>htop</em> staje się zbędny. Sam fakt że trzeba go doinstalowywać. Nie będę opisywał tu konfigurajcji programu <em>htop</em>, ponieważ wystarczy czytać ze zrozumieniem aby dostosować pod siebie ten menadżer zadań.
+			Na koniec chciałbym dodać iż <em>htop</em> posiada wskaźnik baterii do włączenia w ustawieniach, może być to przydatne dla osób, które są zmuszone działać na bardzo uproszczonych (domyślnie) środowiskach graficznych.
+		</p>
+		<p>&nbsp;</p>
+		<br />
+		<h2 id="printf">Fancy napisy w terminalu</h2>
+		<p>
+			Ten rodział można traktować z przymrużeniem oka. Tutaj nie zostaną przestawione żadne zaawansowane techniki wykorzystania powłoki, ale jednak <strong>jeśli ktoś szuka jakiegoś napisu na MOTD na serwer FTP czy IRC, lub nawet jako ładny nagłówek dla wyświetlenia pomocy w skrypcie/programie to tutaj znajdzie kilka rozwiązań</strong>.
+		</p>
+		<p>
+			Pierwszym, najstarszym programem tego jest <strong>banner</strong>, który domyślnie wypisze do co podamy w argumentach za pomocą kratek (<strong>#</strong>), po jedenej linii dla każdego argumentu. Dla GNU/Linux Debian pakiet nazywa się <em>sysvbanner</em>, podaje tą informacje dlatego że prawdobnie trzeba będzie go do instalować.
+		</p>
+<pre class="code-block">
+$ banner GNU/Linux
+</pre>
+<pre>
+ #####  #     # #     #       # #
+#     # ##    # #     #      #  #           #    #    #  #    #  #    #
+#       # #   # #     #     #   #           #    ##   #  #    #   #  #
+#  #### #  #  # #     #    #    #           #    # #  #  #    #    ##
+#     # #   # # #     #   #     #           #    #  # #  #    #    ##
+#     # #    ## #     #  #      #           #    #   ##  #    #   #  #
+ #####  #     #  #####  #       #######     #    #    #   ####   #    #
+</pre>
+	<p>
+		Banner nie posiada żadnych przełączników, ani opcji do wyboru. To co widać powyżej jest jego główną i jedyną funkcjonalnością.
+	</p>
+	<p>
+		Inny programem, którego możemy użyć do tworzenia tekstowych banerów jest <strong>figlet</strong>. Ten jest już nieco bardziej dziej rozbudowany. Posiadający wiele tak zwanych czcionek, z których mozemy tworzyć napisy.
+	</p>
+<pre class="code-block">
+$ figlet GNU/Linux
+</pre>
+	<p>
+		Tak wygląda klasyczny font polecenia <em>figlet</em>.
+	</p>
+<pre>
+  ____ _   _ _   _   ___     _
+ / ___| \ | | | | | / / |   (_)_ __  _   ___  __
+| |  _|  \| | | | |/ /| |   | | '_ \| | | \ \/ /
+| |_| | |\  | |_| / / | |___| | | | | |_| |>  <
+ \____|_| \_|\___/_/  |_____|_|_| |_|\__,_/_/\_\
+</pre>
+	<p>
+		Poniżej drugi dośc popularny font <strong>slant</strong>.<br />
+	</p>
+<pre class="code-block">
+$ figlet -f slant GNU/Linux
+</pre>
+<pre>
+   _______   ____  __   ____    _
+  / ____/ | / / / / / _/_/ /   (_)___  __  ___  __
+ / / __/  |/ / / / /_/_// /   / / __ \/ / / / |/_/
+/ /_/ / /|  / /_/ //_/ / /___/ / / / / /_/ />  <
+\____/_/ |_/\____/_/  /_____/_/_/ /_/\__,_/_/|_|
+</pre>
+	<p>
+		Dla <em>figlet</em> istnieje masa różnych fontów. Jednego z nich użyłem do utworzenia baneru na górze tego dokumentu, przedstawiającego jego kategorię. Więcej czcionek znajduje się tutaj:
+	</p>
+	<p>
+		<a href="http://www.figlet.org/examples.html">http://www.figlet.org/examples.html</a>. Polecam również zapoznać się ze stroną podręcznika tego polecenie w poszukiwaniu bardzie zaawansowanych opcji tego polecenia. Za pomocą poniższego polecenia możemy sprawdzić jakie czcionki zostały z zainstalowane wraz z pakietem:
+	</p>
+<pre class="code-block">
+$ ls -al /usr/share/figlet/*.flf
+</pre>
+	<p>
+		W powszechnym użytku znajduje się znajdują się jeszcze dwa programy, które możemy wykorzystać do dowcipów w postaci "easter eggów" w skryptach, lub MOTD. Pierwszy z nich raczej może posłużyć do tego pierwszego lub otaczania istotnych informacji np. na LiveCD. <strong>Cowsay</strong>. Ten pakiet posiada dwa odrębne polecenia <strong>cowsay</strong> oraz <strong>cowthink</strong>. Przestawiające tekst z pierwszego argumentu jako wypowiedź lub myśli krowy.
+	</p>
+<pre class="code-block">
+$ cowsay "Login: user | Hasło: user1"
+</pre>
+<pre>
+____________________________
+< Login: user | Hasło: user1 >
+----------------------------
+\   ^__^
+ \  (oo)\_______
+    (__)\       )\/\
+	||----w |
+	||     ||
+</pre>
+	<p>
+		To polecenie możemy połączyć z jeszce jednym poleceniem <strong>fortune</strong> instalowanym z pakietu <em>fortune-mod</em>, wynik <strong>przełączenia wyjścia z polecenia <em>fortune</em> na <em>cowsay</em> lub <em>cowthink</em> może przynieść całkiem zabawne rezulataty.</strong> Np. krowa może rzucić jakimś cytatem Marka Twaina, albo dowcipem o tym ilu psyhiatrów potrzeba do zmiany żarówki. Teraz wiemy również co robi polecenie <em>fortune</em>. Wypisuje jakiś losowo wybrany tekst z swojej bazy.
+	</p>
+<pre class="code-block">
+ $ fortune | cowsay
+</pre>
+<pre>
+_______________________________________
+/ Don't hate yourself in the morning -- \
+\ sleep till noon.                      /
+---------------------------------------
+\   ^__^
+ \  (oo)\_______
+    (__)\       )\/\
+	||----w |
+	||     ||
+</pre>
+	<p>
+		Ostatnim programem tego typu, jeśli chodzi jakieś ładne napisy, jest myślę <strong>najlepszy pomysł na MOTD</strong>. Mianowicie chodzi o program <strong>neofetch</strong>, który oprócz wypisywania dużego loga dystrybucji w ASCII Wyświetla takie podsumowanie odnośnie maszyny jakiej używamy, przypomina ono troche informacje o systemie z macOS, którą otwiera każdy aby zobaczyć co to za mac i co ma w środku. Poniżej wynik polecenia z mojej maszyny, na której redagowałem fragment tekstu tego dokumentu.<br />
+	</p>
+<code class="code-block">
+		$ neofetch
+</code>
+<pre>
+       _,met$$$$$gg.          xf0r3m@vostro-3580
+    ,g$$$$$$$$$$$$$$$P.       ------------------
+  ,g$$P"     """Y$$.".        OS: Debian GNU/Linux 10 (buster) x86_64
+ ,$$P'              `$$$.     Host: Vostro 3580
+',$$P       ,ggs.     `$$b:   Kernel: 4.19.0-13-amd64
+`d$$'     ,$P"'   .    $$$    Uptime: 9 hours, 2 mins
+ $$P      d$'     ,    $$P    Packages: 1818 (dpkg), 3 (snap)
+ $$:      $$.   -    ,d$$'    Shell: bash 5.0.3
+ $$;      Y$b._   _,d$P'      Resolution: 1920x1080
+ Y$$.    `.`"Y$$$$P"'         DE: GNOME 3.30.2
+ `$$b      "-.__              Theme: Adwaita [GTK2/3]
+  `Y$$                        Icons: Adwaita [GTK2/3]
+   `Y$$.                      Terminal: terminator
+     `$$b.                    CPU: Intel i5-8265U (8) @ 3.900GHz
+       `Y$$b.                 GPU: Intel UHD Graphics 620
+          `"Y$b._             Memory: 2426MiB / 7835MiB
+              `"""
+
+</pre>
+	<p>
+	Jak widać, jest tu wiele informacji, których musieli byśmy szukać róznymi poleceniami.
+	</p>
+	<p>&nbsp;</p>
+	<h2 id="network">Obsługa sieci</h2>
+	<p>
+	Na pierwszy ogień weźmiemy problem, z którym chyba spotkał się każdy kto chciał za pomocą swojego ulubionego edytora, dokonywać zmian w plikach znajdujących się na serwerze. Rozwiązania tego problemu są dwa. Pierwszy z nich klasyczny: sciągamy plik z serwera, zmieniamy co trzeba, wrzucamy ponownie. Drugi to z kolei edycja zdalna, tylko aby jej użyć musimy mieć do dyspozycji <em>ssh</em>, plik możemy wyedytować za pomocą <em>vim</em>-a, ale co jeśli nie pamiętamy jego dokładnej nazwy? No właśnie, i tu przychodzi <strong>montowanie odległego systemu plików za pomocą <em>ssh</em> - <em>sshfs</em></strong>. Program możemy za instalować z repozytorium. Poźniej tworzymy na punkt montowania gdzieś w swoim katalogu domowym. Sama procedura montowania jest
+	banalna.
+	</p>
+<pre class="code-block">
+$ sshfs xf0r3m@192.168.8.4:/home/xf0r3m xf0r3m@sapphire
+</pre>
+	<p>
+	Gdzie:
+	</p>
+	<ul>
+		<li><strong>xf0r3m</strong> - nazwa użytkownika na serwerze.</li>
+		<li><strong>192.168.8.4</strong> - adres serwera.</li>
+		<li><strong>/home/xf0r3m</strong> - ścieżka do katalogu zdalnego.</li>
+		<li><strong>xf0r3m@sapphire</strong> - punkt montowania.</li>
+	</ul>
+	<p>
+		Teraz możemy wykonywać wszystkie możliwe operacje na plikach (z pewnymi ograniczeniami), tak jak byśmy wykonywali je na plikach lokalnych. Po zakończeniu prac, warto <strong>katalog odmontować, za pomoca poniższego polecenia:</strong>
+	</p>
+<pre class="code-block">
+$ fusermount -u /home/xf0r3m/xf0r3m@sapphire
+</pre>
+	<p>
+		Żeby zbytnio nie owijać w bawełne, przedstawie chyba naciekawszy problem który możemy rozwiązać kilkunastu stuknięć w klawiaturę. Powiedzmy że żyjemy w małej miejscowości (nie mowię, że na wsi), gdzie internet jest albo z osiedlówki albo z sieci komórkowej. Aby nie cieszyć się 200 Mb/s przez 20 dni, ponieważ w taki okres czasu jesteśmy w stanie wypompować 300GB pakietu danych, wybraliśmy osiedlówkę bujającą się na 10Mb/s. Po podłączeniu routera do modemu DOCSIS, okazałow się że adres na WAN-ie mamy prywatny 10.x.y.z/8. Chcemy jednak mieć dostęp do naszego serwera plików poprzez <em>ssh</em>. W pracy możemy skonfigurować sobie jedną z maszyn jako serwer stricte <strong><em>ssh</em></strong> (wystarczy zainstalować <em>openssh-server</em>) co pozwoli uruchomić nasz <strong>tunel</strong>, dzięki któremu będziemy mogli połączyć się z pracy z serwerem w domu bez otwierania portów na domowym routerze. Nie będe opisywał tutaj procedury, ponieważ już to zrobiłem przy okazji sieci
+		VPN. Zainteresowanych zapraszam do linku poniżej: <a href="articles/terminallog/laboratorium_vpn.html"> https://morketsmerke.net/articles/terminallog/laboratorium_vpn.html</a>
+	<p>
+	</p>
+		Do realizacji tego realizacji tego zadania użyjemy prawdopodobnie najpopularnieszego języka na świecie. A będzie on nam potrzebny do <strong>udostępnienia swojego katalogu domowego bez brudzenia w systemie</strong> i instalowania różnych usług w systemie, wystarczy jedno polecenie. Obecnie chyba w każdym GNU/Linux-ie preinstalowany jest <strong>Python w wersji 3</strong>.
+	</p>
+<pre class="code-block">
+$ python3 -m http.server 8080
+</pre>
+	<p>
+		Wydanie tego polecenia spowoduje uruchomienie bardzo prostego serwera, który udostępni zawartość katalog domowego o ile nie znajduje się w nim plik o nazwie <em>index.html</em>, wtedy zamiast plików zobaczymy jego zawartość. Domyślnie <strong>serwer HTTP Python-a</strong> nasłuchuje na wszystkich dostępnych interfejsach w systemie, za pomocą przełącznika <em>-b</em> możemy wymusić wykorzystanie tylko konkretnego interfejsu podając jako wartość przełącznika adres interfejsu. Np.
+	</p>
+<pre class="code-block">
+$ python3 -m http.server 8080 -b 127.0.0.1
+</pre>
+	<p>
+		Oczywiście nasłuchiwanie na pętli zwrotnej w tym przypadku akurat nie ma sensu. <strong>Podczas uruchamiania serwera najlepiej wybierać porty powyżej 1024, ponieważ do niższych portów będzie potrzebne uruchomienie polecenia z uprawnieniami administratora.</strong>
+	</p>
+	<p>
+		Kolejną ciekawą rzeczą jest skanowanie sieci, nie tylko pod kątem dostępności, ale również pod kątem zainstalowanych na danych hostach usług. <strong><u>Tutaj należy pamiętać aby wykonywać te czynności tylko na systemtach którymi administrujemy. Tak niewielka czynność jak skanowanie portów, może podnieść alarm i dzięki czemu możemy mieć poźniej problemy z prawem. Dlatego wpisując adres musimy upewnić się dwa razy, że wpisaliśmy poprawny.</u></strong>. Skanowania dokonujem za pomocą programu <strong>nmap</strong>, który dziś już ma renomę kultowego. <strong>Do wyszukiwania komputerów w sieci możemy użyć poniższego polecenia</strong>:
+	</p>
+<pre class="code-block">
+$ sudo nmap -sP 192.168.8.1/2
+</pre>
+	<p>
+		Jeśli upatrzymy sobie już jakiś serwer możemy go wyskanować pod kątem obecności usług, jakie posiada uruchomione, w zależności od używanego przez usługę rodzaju transmisji.
+	</p>
+	<p>
+		<u>Skanowanie TCP</u>:
+	</p>
+<pre class="code-block">
+$ sudo nmap -sS 192.168.8.4
+</pre>
+	<p>
+		Tutaj małe wyjaśnienie, do skanowania TCP używam <strong>skanowania SYN</strong>, żeby odkryć czy port jest otwarty nie potrzeba kończyć połączenia, wystarczy że otrzyma się wiadomość zwrotną o tym że można nawiązać połączenie. Skanowanie SYN jest znacznie szybsze od skanowania TCP, jednak może dać czasami nie miarodajne efekty, chociaż aby to nastąpiło serwer musi być nieco bardziej zabezpieczony. Wiec jeśli zależy nam jednak na wynikach skanowania, możemy użyć stricte skanowania TCP za pomocą poniższego polecenia.
+	</p>
+<pre class="code-block">
+$ sudo nmap -sT -T 4 192.168.8.4
+</pre>
+	<p>
+		Opcja <em>-T</em> - wskazuje na szablon zależności czasowych, mamy 6 stopni od 0 do 5, im niższy tym dokładniejsze skanowanie, jednak trwa ono dłużej. Więcej na ten temat w na stronie podręcznika <code class="code-inline">man nmap</code>, po uruchmieniu naciskamy ukośnik (<strong>/</strong>) po nim wpisujemy "szablonu\ zależności", następnie naciskamy enter, i powiniśmy zostać przeniesieni pod sekcje opisującą opcje <em>-T</em>.
+	</p>
+	<p>
+		<u>Skanowanie UDP</u>:
+	</p>
+<pre class="code-block">
+$ sudo nmap -sU 192.168.8.4
+</pre>
+	<p>
+		Często wykorzystywanym trybem jest <strong>tryb pełnego skanowania</strong>, który poza samym skanowaniem portów, stara się ustalić wersje wykorzystywanych usług, dodatkowe informacje już z samych usług oraz ustalić system operacyjny jaki jest używany na serwerze. Poniżej uruchomienie pełnego skanowania:
+	</p>
+<pre class="code-block">
+$ sudo nmap -A -T 4 192.168.8.4
+</pre>
+	<p>
+		<em>Nmap</em> sam w sobie jest dość niebezpiecznym programem w rękach osoby, która ma opananowane do perfekcji testy penetracyjne (oczywiście mającej złe intencje, nie można winić broni za morderstwa). Za pomocą skryptów rozszerzających ten sam program dla administratorów, który służy do lokalizowania drukarek można za pomocą kilku stuknięć w klawisze włamać się do systemu. Strasznie negatywanie nacechowany wyszedł ten paragraf, jednak myślę że zachęciłem do nauki <em>nmap</em>-a nim więcej osób niż mówił bym jaki to nie jest użyteczny, mimo tego właśnie w nim to zrobiłem. Ludzką naturę kręci wszystko co niebezpieczne.
+	</p>
+	<p>
+		Pośród ciekawych programów sieciowych mamy dyspozycji monitory ruchu sieciowego, oprócz Wiresharka, który jest niestety programem wymagającym środowiska graficznego oraz tshark, który jest nieco nieinteaktywny mamy ciekawą alternatywę: <strong>iptraf-ng</strong>, który jest troche jak wireshark tylko że interfejsem przeznaczonym na terminale. Innym programem jest minimalistyczny <strong>nload</strong>, który przy domyślnej konfiguracji zwraca tylko podsumowanie z prędkością oraz ilością przesyłanych przez nas danych. Jednak konfigracja <em>nload</em> wymaga przeczytania strony podręcznika.
+	</p>
+	<p>
+		Kiedyś aby zobczyć jakie porty są otwarte w systemie wydawało się polecenie <em>netstat</em>, obecnie czasy się zmieniły i do tego rodzaju czynności używa się polecenia <strong>ss</strong>. Jeśli wydamy poniższe polecenie zobaczymy wszystkie nawiązane połączenia w systemie.
+	</p>
+<pre class="code-block">
+$ ss
+</pre>
+	<p>
+		Większość wygląda nieco nie zrozumiale, te połączenia są to wewnętrzne połączenia procesów z użyciem gniazd, procesy mogą się tak komunikować z innymi procesami. Póki co nas to nie za bardzo interesuje. Poniżej znajduje się lista przełączników, dzięki której będziemy stanie wybrać interesujące nas połączenia.
+	</p>
+	<ul>
+		<li><strong>-t</strong> - połączenia TCP</li>
+		<li><strong>-u</strong> - połączenia UDP</li>
+		<li><strong>-l</strong> - w połączeniu w przełącznikiami TCP/UDP (<em>-lt</em>, <em>-lu</em>, <em>-ltu</em>)
+			wyświetla listę otwartych portów w systemie.</li>
+		<li><strong>-n</strong> - wyświetla numery portów zamiast nazw usług z <em>/etc/services</em></li>
+		<li><strong>-r</strong> - rozwiązuje adresy IP na nazwy domenowe.</li>
+		<li><strong>-o</strong> - wyświetla czas trwania połączenia</li>
+	</ul>
+	<p>
+		Za pomocą prawdopodobnie dowolnego UNIX-a mamy możliwość komunikacji z dowolnym innym UNIX-em podwarunkiem że posiada on w swoim systemie program <strong>netcat</strong> (<strong>nc</strong>), za pomocą tego programu możemy np. połączyć się z dowolnym portem, lub tez otworzyć port i oczekiwać na nim na połączenie, od zwyczajnych tekstów przesyłanych z jednego systemu na drugi, które mogą wyglądać jak najzwyklejszy czat, po przez przesyłanie całych katalogów z użyciem metod kompresji, ale najpierw podstawy.
+	</p>
+	<p>
+		<u>Nawiązywanie połączenie TCP</u>:<br />
+	</p>
+<pre class="code-block">
+$ nc &lt;HOST&gt; &lt;PORT&gt;
+</pre>
+	<p>
+		<u>Nawiązywanie połączenie UDP</u>:
+	</p>
+<pre class="code-block">
+$ nc -u &lt;HOST&gt; &lt;PORT&gt;
+</pre>
+	<p>
+		<u>Zrzut danych z sesji do pliku</u>:
+	</p>
+<pre class="code-block">
+$ nc -o &lt;nazwa_pliku&gt; &lt;HOST&gt; &lt;PORT&gt;
+</pre>
+	<p>
+		Jak możemy przetestować naszego <em>nc</em>? Otoż sposób w samej funkcjonalności jest dość prosty. Połączmy się z jakimś lokalnym serwerem WWW, ale najpierw przygotujemy sobie żądanie. W pustym pliku wpiszymy te 3 linie:
+	</p>
+<pre class="code-block">
+GET / HTTP/1.0
+Host: &lt;HOST&gt;
+
+</pre>
+	<p>
+		Pusta linia jako trzeci wiersz w pliku, nie jest błędem, jest wręcz wymagana. Jeśli posiadamy polecenie <strong>unix2dos</strong>, to możemy skonwertować UNIX-owe znaki nowej linii, na te DOS-owskie, które są wymagane przez protokół HTTP. Jeśli nie mamy to musimy doinstalować (<code class="code-inline">apt install dos2unix</code>). Po instalacji konwertujemy znaki nowej linii.
+	</p>
+<pre class="code-block">
+$ unix2dos payload.txt
+</pre>
+	<p>
+		Gdzie <em>payload.txt</em>, jest moim plikiem z żądaniem, po konwersji możemy już wysłać nasze żądanie do serwera:
+	</p>
+<pre class="code-block">
+$ cat payload.txt | nc 192.168.8.4 80
+</pre>
+	<p>
+		W odpowiedzi powinniśmy dostać kod strony. Z testowaniem usług przy użyciu <em>netcat</em> po nawiązaniu połączenia musimy wydawać polecenia zgodne ze specyfikacją danych usług, które są dostępne w plikach RFC, pod poniższym adresem: <a href="https://www.rfc-editor.org/rfc-index.html">https://www.rfc-editor.org/rfc-index.html</a> Teraz przetestujemy sobie połączenia. Do tego ćwiczenia potrzebujemy dwóch UNIX-ów w sieci LAN, aby nic nie zaburzało połączenia. Na powiedzmy hoście A, który będzie naszym serwerem wydajemy proste polecenie:
+	</p>
+<pre class="code-block">
+$ nc -l -p 9090
+</pre>
+	<p>
+		Z kolei na hoście B, który będzie pełnił funkcje klienta, podłączymy się pod otwarty na serwerze port.
+	</p>
+<pre class="code-block">
+$ nc 192.168.8.4 9090
+</pre>
+	<p>
+		Teraz dosłownie możemy porozmawiać z komputerem. Możemy również przesłać plik, na komputerze B nadajemy plik na komputer A, jednak przed nadaniem pliku, musimy wiedzieć że komputer A na niego oczekuje:
+	</p>
+<pre class="code-block">
+/* KOMPUTER A */
+$ nc -l -p 9090 &gt; file.txt
+/* KOMPUTER B */
+$ cat file.txt | nc 192.168.8.4 9090
+</pre>
+	<p>
+		Polecenie po przesłaniu pliku nadal będzie oczekiwać dalsze dane, możemy zakończyć połączenie za pomocą skrótu ctrl + c. Ostatnią rzeczą do przedstawienia tutaj odnośnie netcat jest przesłanie całego katalogu za pomocą polecenia <strong>tar</strong> z algorytmem kompresji <strong>gzip</strong>, jak to wygląda po względem technicznym? Otóż tworzymy skompresowane archiwum za pomocą <em>tar</em> wraz z <em>gzip</em> na standardowym wyjściu, które następnie przekazywane jest za pomocą potoku do ustawionego połączenia sieciowego przez nasz <em>netcat</em> do odbiorcy, gdzie znów potokiem przekierowane jest do dekompresji. Jednak kolejność wydawania poleceń jest odwrotna do sposobu działania, to odbiorca w tym przypadku komputer A musi czekać na katalog.
+	</p>
+<pre class="code-block">
+/* KOMPUTER A */
+$ nc -l -p 9090 | tar -xzvf -
+/* KOMPUTER B */
+$ tar -czvf - sciezka/do/katalogu/ | nc 192.168.8.4 9090
+</pre>
+	<p>
+		Gdzie myślniki (<strong>-</strong>) oznaczają stardardowe wyjście.
+	</p>
+	<p>
+		Odnośnie sprawdzania odległych portów, to istnieje jeszcze jeden sposób, nieco przestarzały, ale nadal spełniający swoje zadanie. Mianowicie chodzi o <strong>telnet</strong>. Jest to protokół, który umożliwiał połączenie ze zdalną powłoką gdzieś na odległym serwerze. Jak każdy protokół, musi mieć programy go obsługujące, tak protokół <em>telnet</em> posiada program, o jakżeby innej nazwie jak <em>telnet</em>. Jestem ciekaw okoliczności w jakich ktoś pomylił się przy wpisywaniu portu i doszedł do wniosku że <em>telnet</em> można wykorzystać do skanowania portów na hostach w sieci, i takie zadanie przychodzi realizować temu programowi, w 95% przypadków jego użycia w obecnych czasach, innym zastosowanie jest bardziej zaawansowana konfiguracja nieco starszych urządzeń sieciowych lub też obsługa protokół TFTP. Zatem jak sprawdzić za pomocą telenetu czy port jest otwarty, najprościej wydając poniższe polecenie
+	</p>
+<pre class="code-block">
+$ telnet 192.168.8.4 22
+</pre>
+	<p>
+		Odpowiedź:
+	</p>
+<pre class="code-block">
+Trying 192.168.8.4...
+Connected to 192.168.8.4.
+Escape character is '^]'.
+SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2
+
+Protocol mismatch.
+Connection closed by foreign host.
+</pre>
+	<p>
+		Po tej odpowiedzi możemy bardzo, ale to bardzo wiele wywnioskować.
+	</p>
+	<ol>
+		<li>Port 22 jest otwarty</li>
+		<li>Host używa SSH w wersji 2.0</li>
+		<li>Do obsługi SSH używa daemon OpenSSH w wersji 7.9p1</li>
+		<li>System operacyjny jest GNU/Linux-em Debian w wersji 10
+			lub opartym na GNU/Linux Debian 10 (buster)</li>
+	</ol>
+	<p>
+		Oczywiście nie ma się co łudzić niewiele jest tak gadatliwych protokołów, ale jeśli tylko zobaczymy linijkę <code class="code-inline">Connected to &lt;HOST&gt;</code>. To nasz cel został osiągnięty, połącznie zostało nazwiązane i możemy sobie wpisać ten port jako otwarty. Zatem aby sprawdzić telenetem port wystarczy podać adres hosta następnie port i czekać na informacje o nawiązaniu połączenia.
+	</p>
+	<p>&nbsp;</p>
+	<h2 id="tipsntricks">Porady i sztuczki</h2>
+	<p>
+		<h3>Powtarzaj do skutku</h3>
+		<p>
+			Czasami może zdarzyć się że nie możemy wykonać pewnej czynności ponieważ serwer z którego potrzebujemy danych sam ich jeszcze nie posiada. Zatem jedyną rzeczą jaką możemy zrobić to stworzyć skrtypt, który <strong>zapętli nasz skrypt do momentu, gdy ten zróci poprawne wykonanie</strong>. Możemy wykorzystać do tego poniższy skrypt.
+		</p>
+<pre class="code-block">
+#!/bin/bash
+while [ true ]; do . $1 && break; done
+</pre>
+		<p>
+			W dobie dzisiejszych komputerów pozostawienie skryptu na nieskończonej pętli, nie spowoduje jakiegoś nadmiernego obciążenia, jeden wątek może zostać obciążony na 100%. Co tu się tak naprawdę dzieje? Otóż skrypt uruchamia jakieś polecenie, nie wiadomo jakie, podawana przez użytkownika w parametrze pozycjnym, na podstawie wartości zwracanej przez skrypt określane jest przy użyciu <code class="code-inline">&&</code> czy pętla wykona się ponownie czy też nie. Jednak generalnie w sztuce programowania przyjeło się kontrolowanie w jakiś sposób konstrukcji tego typu. Opcje są dwie. Albo ustawimy jakiś limit jej wykonań albo też możemy użyć czasu. Rozpatrzymy pierwszy przypadek użycia limitu.
+		<p>
+<code class="code-block">
+i=1;<br />
+while [ $i -le 1000 ]; do
+	echo "$i: ";
+	. $1 && break;
+	i=$((i + 1));
+done
+</code>
+		<p>
+			Tutaj dodałem licznik, który ma pewny limit. Warto zwrócić uwagę na to iż nie jest już to pętla nieskończona. Oczywiście można ten kod przerobić w taki sposób że warunek <em>true</em> pozostanie i wewnątrz pętli zimplementować mechanizmy jej kontroli. Jednak nie widze sensu w tym konkretnym przypadku. Identycznie jest ustawieniem pętli na czas. Zatem na początku pętli zdefiniowałem zmienną, której nadałem wartość 1, mniej więcej wyzerowałem licznik. Warunek ustawiłem, wartość licznika mniejszą lub równą 1000. Pod linią definiująca dalsze wykonianie pętli została umieszczona inkrementacja licznika i to jest wszystko. Teraz zajmiemy się limitem czasowym
+		</p>
+<pre class="code-block">
+if [ ! "$2" ]; then limit=10;
+else limit=$2; fi
+i=1;
+starttime=$(date +%s);
+while [ $(($(date +%s) - starttime)) -lt $limit ]; do
+	echo "Sekund: $(($(date +%s) - starttime))";
+	echo "Numer obrotu: $i";
+	. $1 && break;
+	i=$((i + 1));
+done
+</pre>
+	<p>
+		Tutaj to znów pętla nie jest nieskończona, został ustawiony warunek, w którym sprawdzane jest czy różnica sekund pomiedzy czasem zmierzonym w momencie sprawdzenia warunku a czasem rozpoczęcia pętli jest mniejsza od limitu, w ten czas wykonywane jest ciało pętli, licznik tutaj został umieszczony dla celów badawczych aby sprawdzić ile obrotów pętli zostanie wykonanych na danym odcinku czasu. Lepiej nie tworzyć nieskończonych pętli. Dlaczego tutaj też zmieniłem warunek, mogła pozostać pętla nieskończona i ustawić limit czasowy z timeout-em w środku. Otóż jeśli w konstrukcji kontrolnej zdarzył by się błąd, pętla leciała by ku nieskończoności.
+	</p>
+	<br />
+		<h3>Wydrukowanie konkretnych linii z pliku</h3>
+		<p>
+			Omawiając to zagadnienie, warto wspomnieć jak możemy wyświetlić sobie plik wraz z numerami linii przy każdej z nich kiedy używamy polecenia <code class="code-inline">cat</code> wystarczy dodać przełącznik <code class="code-inline">-n</code>. Dla przykładu wylistujemy sobie fragment pliku <em>/etc/passwd</em>.
+		</p>
+<pre class="code-block">
+$ cat -n /etc/passwd | head -n 10
+1 root:x:0:0:root:/root:/bin/bash
+2 daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+3 bin:x:2:2:bin:/bin:/usr/sbin/nologin
+4 sys:x:3:3:sys:/dev:/usr/sbin/nologin
+5 sync:x:4:65534:sync:/bin:/bin/sync
+6 games:x:5:60:games:/usr/games:/usr/sbin/nologin
+7 man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+8 lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+9 mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+10 news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+</pre>
+		<p>
+			Polecenie <code class="code-inline">head -n 10</code> odfiltrowuje z wyjścia na potoku ze wszystkich linii pozostawiają tylko 10 początkowych. Kiedy wiemy jak wypisać sobie plik wraz z numerami możemy teraz spokojnie, przejść do głównego tematu, który jest realizowany za pomocą polecenia <code class="code-inline">sed</code> z przełącznikiem <code class="code-inline">-n</code>. Po przełączniku podajemy polecenie dla <em>sed</em>. Sam <em>sed</em> jest edytorem strumienia, coś ala nieinteraktywny edytor tekstu, gdzie wiele rzeczy robi się za pomocą specjalnych poleceń i teraz tak też zrobimy.
+		</p>
+<pre class="code-block">
+$ cat -n /etc/passwd | head -n 10 | sed -n '3,8p'
+3 bin:x:2:2:bin:/bin:/usr/sbin/nologin
+4 sys:x:3:3:sys:/dev:/usr/sbin/nologin
+5 sync:x:4:65534:sync:/bin:/bin/sync
+6 games:x:5:60:games:/usr/games:/usr/sbin/nologin
+7 man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+8 lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+</pre>
+		<p>
+			Polecenie <em>sed</em> podajemy w pojedyńczych apostrofach, na początku zawsze podajemy numery linii, na których mamy wykonać polecenie, którym jest mała literka po zakresie linii. Zakres linii może być pojedyńczą liczbą wtedy polecenie  wykonywane jest na tej jednej konkretnej linii. Wszystkie polecenia <em>sed</em> są dostępne na stronie podręcznika polecenia, dostępnej chyba w każdym UNIX-ie.
+		</p>
+		<br />
+		<h3>Podgląd pliku na żywo.</h3>
+		<p>
+			Podgląd pliku w momencie wypełniania go informacjami jest niezwykle przydatny. Szczególnie gdy administrujemy usługami. Sam pamiętam gdzie dla zleceniodawcy monitorowałem serwer WWW ponieważ ciągle był problem z dostępnością udostępnionych na nim zasobów, po zresetowaniu połączeń wyszystko wracało do normy. Podejrzewałem jedno, atak DoS. Własnie za pomocą podglądu na żywo <em>accesslog</em>-u daemon'a Apache2 upewniłem się że to rzeczywiście atak DoS. Zatem aby uruchomić plik w taki sposób aby przyjrzeć się jak wypełnia się on danymi wystarczy wydać poniższe polecenie
+		</p>
+<pre class="code-block">
+$ tail -f sciezka/do/pliku
+</pre>
+		<p>
+			Plik będzie wyświetlał się i wypełniał ekran w miarę wypełniania go treścią.
+		</p>
+		<br />
+		<h3>Nieinteraktywne find and replace w strumieniu</h3>
+		<p>
+			Za pomocą już wcześniej poznanego programu <strong>sed</strong> możemy odnajdować i zamieniać ciągi znaków w strumieniu. Składnia tego polecenia jest nieco dziwna. Jednak jej opanowanie nie powinno przysporzyć problemów. W tym poleceniu zakres linii również może zostać użyty, poźniej następuje polecnie: <code class="code-inline">s/old/new/[mods]</code>. Polecenie poszuka piewszego wystąpienia ciągu <em>old</em> i zamieni je na <em>new</em>. Modyfikatory jakie możmy użyć z tym poleceniem to:
+		<p>
+		<ul>
+			<li><strong>g</strong> - zamienia wszystkie wystąpienia w strumieniu lub w jego fragmencie o ile został podany zakres linii</li>
+			<li><strong>i</strong> - wyłącza natywną dla UNIX-ów wrażliwość na wielkość liter.</li>
+		</ul>
+		<p>
+			<strong>Warto wspomnieć że <em>sed</em> jest tutaj bardzo elastyczny, gdy będziemy musieli operować np na ukośnikach (<strong>/</strong>), to ukośniki z polecenia możemy zmienić na dowolny inny znak</strong>. Na przykład na małpę (<strong>@</strong>). <em>Sed</em> przyjmuje plik/ściezkę do pliku jak kolejny argument za poleceniem, użycie pliku jednak spowoduje, że wszelkie zmiany jakie na nim dokonamy, dokonamy tak naprawdę na utworzonym z pliku strumieniu, jeśli chcemy zapisać nasze zmiany musimy użyć przełącznika <code class="code-inline">-i</code> przed poleceniem.
+		</p>
+		<h3>Skrypt kończy swoje działanie po napotkaniu pierwszwgo błędu</h3>
+		<p>
+			Często problemem przy obszernych skryptach jest jeden błąd, może narobić niezłego bałaganu w plikach samego skryptu, jak nie gorzej w samym systemie. Jest na sposób oczywiście. Na początku skryptu należy ustawić opcje powłoki, aby kończyła działanie po pierwszym napotkanym błędzie, ustawienie to wymaga jedynie drobnego polecenia zapisanego przez pierwszymi poleceniami. Poniżej znajduje się to polecnie:
+		</p>
+<pre class="code-block">
+$ set -e
+</pre>
+		<p>
+			Możemy je sobie przestestować wykonując je w zwykłej powłoce, a następnie wpisać byle co w powłoce np. 'asdasdsdsdfa' przy zwykłych ustawieniach dostaniem informacje że nie odnaleziono takiego polecenia, ale w tym wypadku powłoka po prostu się zamknie. Tak samo będzie ze skryptem. <em>BASH</em> posiada jeszcze jedną dość przydatną rzecz jeśli chodzi o bardziej restrykcyjne działanie skryptów. Przy uruchamianiu skryptu bez tego ustawienia, możemy definiować puste zmienne. Po włączeniu tej opcji puste zmienne będą oznaczane jako błąd, a jeszcze opcja <code class="code-inline">-e</code> spowoduje zakończenie wykonywania skryptu. Ustawienie opcji bardziej restrykcyjnego traktowania zmiennych zawsze jest ustawiene wraz z kończeniem wykonywania skryptu na pierwszym błędzie. Ustawianie bardziej restyrkcyjnego traktowania zmiennych służy przełącznik <code class="code-inline">-u</code> polecenia <em>set</em>.
+		</p>
+<pre class="code-block">
+$ set -eu
+</pre>
+		<br />
+		<h3>Debugowanie skryptów powłoki BASH</h3>
+		<p>
+			Debugowanie skryptu powłoki, nie jest tak bardzo zawansowane ja w przypadku innych języków. Nie co liczyć na manualne uruchamianie linia po linii i tego typu rzeczy. Jedyne co dostaniemy to rozwinięte linie o ile korzystaliśmy z podstawień oraz wartości zmiennych, które muszą być wynikiem jakiś operacji. I to wystarczy. Jedyne co warto zmienić to jeśli skrypt korzysta z innego skryptu to ciężko się połapać, które linie są od czego, więc zmienimy znak zachęty odpowiedzialny oznaczenia <em>BASH</em> w trybie debugowania.
+		</p>
+<pre class="code-block">
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+</pre>
+		Gdzie:<br />
+		<ul>
+			<li><code class="code-inline">BASH_SOURCE</code> - zmienna zawierająca scieżkę do pliku żródłowego skryptu</li>
+			<li><code class="code-inline">LINENO</code> - zmienna zawierająca numer linii własnego wywołania</li>
+			<li><code class="code-inline">${FUNCNAME[0]:+${FUNCNAME[0]}(): }</code> - instrukcja podstawienia, jeśli
+				<code class="code-inline">FUNCNAME[0]</code> istnieje i nie jest pusty zostaje podstawione słowo
+				po znaku <strong>+</strong> (plus) w tym przypadku <code class="code-inline">${FUNCNAME[0]}():</code>, zmienna
+				<code class="code-inline">FUNCNAME[0]</code> przechowuje nazwę obecnie wywoływanej funkcji zdefiniowanej
+				w skrypcie.</li>
+		</ul>
+		<p>
+		Sekcja z <code class="code-inline">FUNCNAME[0]</code> nie zostanie użyta do momentu wywołania przez skrypt funkcji.
+		</p>
+		<br />
+		<h3>Twórz lepsze skrypt powłoki</h3>
+		<p>
+			Dawniej istniały oddzielne programy, których zadaniem była analiza kodu po względem jakości, takie programy były w stanie wystawić nawet programiście ocenę zgodną z anglosaskim system szkolnictwa, takie programy zwały się linterami. W obenych czasach lintery są zintegrowane w nowoczesne IDE, przekazując programistom różnego rodzaju wskazówki. Z racji tego że dla skryptów powłoki nie ma jakoś IDE, ponieważ są one tworzone w razie potrzeby, to ktoś w trosce o jakość tych skryptów stworzył własnie linter, skryptów powłoki <em>BASH</em>. Taki program nazywa się <strong>shellcheck</strong> i nawet posiada paczkę w repozytorium dystrybucji GNU/Linux Debian. Użycie go jest dziecinnie protste, jako pierwszy argument podajemy ścieżkę do skryptu.
+		</p>
+<pre class="code-block">
+$ shellcheck sciezka/do/skryptu
+</pre>
+		<p>
+			Wynik działania <em>shellcheck</em> przedstawiam poniżniej:
+		</p>
+<pre class="code-block">
+In RUS.sh line 18:
+while [ $(($(date +%s) - starttime)) -lt $limit ]; do
+				 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In RUS.sh line 21:
+. $1 && break;
+^-- SC1090: Can't follow non-constant source. Use a directive to specify location.
+  ^-- SC2086: Double quote to prevent globbing and word splitting.
+</pre>
+		<p>
+			Niestety nie będzie tego widać na powyższym przykładzie, ale shellcheck swoje uwagi zwraca w kolorze. Tak więc błedy są oznaczone na kolor wiadomo - czerwony, ostrzeżenia - na zółty, a uwagi na zielony. Każda uwaga zwrócona przez <em>shellcheck</em> rozpoczyna się od pewnego rodzaju kodu identyfikującego komunikat, każdy kod na stronie wiki projektu na GitHub, posiada swoją stronę rozszerzającą informacje na jego temat z przykładami. Dlatego można zajrzeć w link poniżej <a href="https://github.com/koalaman/shellcheck/wiki">https://github.com/koalaman/shellcheck/wiki</a>, rozwijając zakładkę "Pages", znajduje się wyszukiwarka, gdzie możemy wrzucić kod interesującego nas błędu lub podać po ukośniku na końcu adresu linku.
+		</p>
+		<h3>Wykonanie polecenia o podanym czasie</h3>
+		<p>
+			Chcemy wykonać pewne polecnie, ale nie teraz powiedzmy że za dwie minuty, to możemy to zrealizować za pomocą polecenia <strong>at</strong>. Jeśli nasze polecenie za powiedzmy 2 minuty ma zostać uruchomione to na początku wskazujemy poleceniu <em>at</em> czas, który jest wynikiem dodawania pożądanego czasu do obecnego jak w przykładzie poniżej.
+		</p>
+<pre class="code-block">
+$ at now + 2 minutes
+</pre>
+		<p>
+			Następnie zostanie nam wyświetlony znak zachęty programu <code class="code-inline">at&gt;</code>, po którym wpisujemy polecenia jakie mają się wykonać. Warto pamiętać o przekierowaniu wyjścia do pliku, ponieważ polecenie <em>at</em>, podczas wykonywania zadań nie zwrócić żadnych danych, chyba że mamy zainstalowany program <em>mailx</em>. Więc jeśli nam na tym zależy musimy te dane przekierować. Zatwierdzenie listy poleceń i wyjście z trybu polecenia <code class="code-inline">at&gt;</code> dokonujemy za pomocą skrótu klawiszowego ctrl + d. Więcej informacji znajduje się na stronie podręcznika polecenia <em>at</em>.
+		</p>
+		<h3>AWK wyświetla linie wg. zakresu</h3>
+		<p>
+			<strong>Awk</strong>, podbnie jak <em>sed</em> za pomocą specjalnych poleceń może wyświetlić linie z konkretnego zakresu, jednak tutaj konstrukcja polecenia jest nieco bardziej skomplikowana. Kiedy otwieramy plik lub przekazujemy strumień to w <em>awk</em> jest specjalna zmienna, która przechowuje numer linii <code class="code-inline">NR</code>, i to na niej oprzemy warunki naszego polecenia.
+		</p>
+<pre class="code-block">
+$ awk 'NR&gt;=2 && NR&lt;=8' /etc/passwd
+</pre>
+			<br />
+		<h3>dos2unix, unix2dos</h3>
+		<p>
+			Przypomnijmy sobie ten drobny programik, który zamieniał znak końca wiersza w pliku z żądaniem HTTP dla <em>telnet</em>. To czasami może być potrzeba aby zamienić te znaki w drugą stronę, kiedy edytowaliśmy coś na MS Windows i nagle przeniesiemy to na UNIX-a, to nagle mamy takie znaczki jak <code class="code-inline">^M</code>, to jeśli to kod źródłowy, to interpreter/kompilator może sypać błędami. Zamiast usuwać te znaki ręcznie możemy użyć właśnie programu o przeciwynym działaniu od tego którego używaliśmy przy żądaniu HTTP dla <em>telnet</em>, <strong>dos2unix</strong>
+		</p>
+<pre class="code-block">
+$ dos2unix hello.c
+</pre>
+			<br />
+			<h3>Tablica ASCII</h3>
+			<p>
+				Tablica ASCII jest dostępna w prawie każdym GNU/Linux za pomocą poniższego polecenia:
+			</p>
+<pre class="code-block">
+$ man 7 ascii
+</pre>
+			<br />
+			<h3>Automatyczne wylogowanie z połoki</h3>
+			<p>
+				Kiedy pracujemy bez GUI, możemy ustawić sobie <strong>automatyczne wylogowanie podczas bezczynnosci na podstawie wartość zmiennej <em>TMOUT</em></strong>, której wartość przechowuje ilość czasu bez żadnego wydanego polecenia w wyrażonego w sekundach, po upływie tego czasu zostaniemy wylogowanii z połoki. Jeśli jednak w naszej powłoce działa jakiś proces to wylogowanie nie będzie możliwe, z kolei mimo procesów w tle wylogowanie nastąpi. Aby ustawić sobie autowylogowanie wystarczy zdefiniować w powłoce zmienną <em>TMOUT</em> i jeśli nie wydamy przez ten czas żadnego polecenia zostaniemy wylogowani. Zmienną również możemy dopisać do naszego pliku <em>.bashrc</em>, pamiętając poprzedzeniu deklaracji słowem <em>export</em>.
+			</p>
+<pre class="code-block">
+$ TMOUT=30
+</pre>
+			<br />
+			<h3>Timeout dla procesów</h3>
+			<p>
+				Za pomocą spcjalnego polecenia zakończyć działanie procesów jeśli przekroczą limit czasowy. Najprostszym przykładem żeby to zaprezentować jest ustawienie limitu czasu za pomocą polecenia <strong>timeout</strong> dla polecenia <em>sleep</em>.
+			</p>
+<pre class="code-block">
+$ timeout 5 sleep 7 || echo "It fails!"
+</pre>
+			<p>
+			Zwróćmy uwagę na to iż polecenie dla któremu checemy nadać czas oczekiwania podajemy jak argument polecenia <em>timeout</em> za raz po limicie czasowym.
+			</p>
+			<br />
+			<h3>Jaki jest mój publiczny adres IP?</h3>
+			<p>
+				Na to pytanie może odpowiedzieć nam jedna strona, jednak <strong>wymagane jest posiadanie w systemie polecenia <em>curl</em></strong>. Kiedy mamy zainstalowany pakiet w systemie, wystarczy że wydamy poniższe polecenie aby dowiedzieć się jaki jest nasz publiczny adress IP.
+			</p>
+<pre class="code-block">
+$ curl ifconfig.co
+</pre>
+			<br />
+			<h3>Podgląd wielu plików na żywo</h3>
+			<p>
+				Może zdarzyć się tak że musimy podejrzeć kilka plików na żywo na jednym oknie. Możemy wspomóc się multiplekserami terminali takimi jak <em>GNU Screen</em> czy <em>TMUX</em>. Jednak nie jest to konieczne jeśli jesteśmy w stanie zainstalować w systemie taki program jak <strong>multitail</strong>, program jako argumenty przymuje kolejne pliki do podglądu, dzieli ekran na równe części a w każdej z tych części mamy jeden z naszych plików. <em>Multitail</em> zawiera wiele przełączników i konfigurowalnych opcji, które są opisane w wyczerpujący sposób na stronie podręcznika polecenia <em>multitail</em>.
+			</p>
+<pre class="code-block">
+$ sudo multitail /var/log/messages /var/log/auth.log
+</pre>
+
+			<h3>Wykonywanie poleceń co jakiś czas</h3>
+			<p>
+				Tytuł może być mylący. Może wskazywać na harmonogram zadań, jednak w tym akapicie nie o to chodzi. Na UNIX-ach istnieje takie polecenie jak <strong>watch</strong>, które uruchamia nam polecenie co jakiś interwał czasu, domyślnie są to 2 sekundy, ale oczywiście za pomocą przełącznika <code class="code-inline">-n</code> możemy ustawić dowolny interwał.
+			</p>
+<pre class="code-block">
+$ watch uptime
+</pre>
+			<p>
+				Warto wspomnieć o dwóch rzeczach. <em>Watch</em> najmniejszy interwał jaki może przyjąć to 0.1 sekundy. Drugą rzeczą jest największy możliwy interwał, który wynosi wielkość 32-bitowej zmiennej integer bez znaku czyli 2^32. <em>Watch</em> może być naprawdę użytecznym programem, o wiele więcej informacji znajduje się na stronie podręcznika polecenia <em>watch</em>.
+			</p>
+			<br />
+			<h3>Konwersja z użyciem ImageMagick</h3>
+			<p>
+				ImageMagick jest programem graficznym, którego obsługa nie należy do najbardziej przyjaznych użytkownikowi. Ma on jednak jedną bardzo ważną rzecz. Można niektóre czynności wykonać z poziomu terminala, a wraz z pakietem <em>ImageMagick</em> dostajemy polecenie <strong>convert</strong>, za pomocą którego możemy w prosty sposób konwertować obrazki. Skonwertujemy sobie na początek PNG na JPEG.<br />
+			</p>
+<pre class="code-block">
+$ convert obrazek.png obrazek.jpg
+</pre>
+			<p>
+				Niezbyt skomplikowane? Innymi czynnościami jakie możemy wykonać za pomocą polecnie <em>convert</em> jest kompresja.
+			</p>
+<pre class="code-block">
+$ convert original.jpg -strip -sampling-factor 4:2:0 -quality 80 -interlace JPEG -colorspace RGB compressed.jpg
+</pre>
+			<p>
+				Za pomocą naszego polecenia możemy również zmienić wielkość naszego obrazka.
+			</p>
+<pre class="code-block">
+$ convert huge_image.png -resize 500x500 resized_image.png
+</pre>
+			<p>
+				Obrazek zostanie przeskalowany za pomocą w uzwględnieniem proprocji, aby wyłączyć tę funkcję wydamy poniższe polecnie.
+			</p>
+<pre class="code-block">
+$ convert huge_image.png -resize 500x500! resized_image.png
+</pre>
+			<p>
+				<strong>
+					Najciekawszą rzeczą jaką możemy zrobić za pomocą polecenia <em>convert</em> jest stworzenie gifa wskazując np. wszystkie obrazki w danym folderze za pomocą symbolu wieloznaczności.
+				</strong>
+			</p>
+<pre class="code-block">
+$ convert -delay 80 -loop 0 *.png my.gif
+</pre>
+			<br />
+			<h3>Połączenie wielu plików PDF w jeden</h3>
+			<p>
+				Pracujemy cięzko w systemie GNU/Linux, usprawniając nasze skrypty i nagle ktoś prosi nas o to <strong>aby połaczyć kilka PDF-ów</strong> w jeden żeby miał łatwiej do wydrukowania. Możemy spędzić znaczną częsć czasu na poszukiwanie odpowiedniego oprogramowania, chyba że <strong>użyjemy polecenia <strong>gs</strong></strong>, skrótu od nazwy programu <em>Ghostscript</em>, służacego do manipulowania PostScript-em oraz PDF-ami.
+			</p>
+<pre class="code-block">
+$ gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=out.pdf file1.pdf file2.pdf file3.pdf ...
+</pre>
+			<br />
+			<h3>Łatwiejsze kopiowanie lub zmiana nazwy</h3>
+			<p>
+				Te zagadnienie mogą się przydać przy tworzeniu pierwotnej kopii pliku, przed wprowadzeń zmian oraz gdy utworzony plik powinien mieć jakieś przyrostek na końcu nazwy.
+			</p>
+<pre class="code-block">
+$ cp /etc/fstab{,.bak}
+</pre>
+			<p>
+				To polecenie spowoduje utworzenie kopii pliku <em>/etc/fstab</em> z rozszerzeniem <em>.bak</em>. Podobne polecenie możemy wykonać gdy jesteśmy w takiej typowej sytuacji, że do pliku tekstowego stworzonego na UNIX-ie musimy do dodać rozszerzenie <em>.txt</em>.<br />
+			</p>
+<pre class="code-block">
+$ mv wazne_dane{,.txt}
+</pre>
+			<br />
+			<h3>du oraz ncdu</h3>
+			<p>
+				Programy takie jak <strong>du</strong>, pomagają monitorować użycie miejsca na dysku, jednak samo wydanie polecnie wydaje się mało przydatne więc poniżej umieszcze kilka przydatnych przełączników, aby <em>du</em> zwracało bardzie przystępne wyniki.
+			</p>
+			<ul>
+				<li><strong>-a</strong> - wyświetla rozmiar każdego pliku a nie rozmiar sumaryczny katalogów</li>
+				<li><strong>-h</strong> - skalowanie jednostek rozmiaru</li>
+				<li><strong>-s</strong> - sumaryczna wartość dla każde podanego argumentu (katalogu, pliku). Przydatne dla katalogów.</li>
+				<li><strong>-x</strong> - przeliczenie jednostek dla jednego systemu plików, niektóre udziały sieciowe mogą być bardzo
+					wolne przez co przelicznie katalogów wraz z miejscami montowania może zająć wieki.</li>
+				<li><strong>-d</strong> - maksymalny poziom zagłębienia w katalogi (rekruencji).</li>
+			</ul>
+<pre class="code-block">
+/* Wyświetlenie przestrzeni zużytej przez nasz katalog domowy */
+$ du -sh ~/*
+</pre>
+			<p>
+				Innym ciekawym rozwiązaniem w monitorowaniu przestrzeni na dysku/dyskach może być program <strong>ncdu</strong>, do zainstalowania z repozytorium (przynajmniej w GNU/Linux Debian). Pozwala on w sposób bardziej interaktywny zaprezentowanie wykorzystania przestrzeni dyskowej. Program nie jest jakość bardzo skomplikowany, więc nie ma sensu go tu opisywać. Uruchomienie go bez żadnego argumentu pokaże zużycie dla katalogu, w którym się obecnie znajdujemy.
+			</p>
+<pre class="code-block">
+$ ncdu
+</pre>
+			<br />
+			<h3>Podgląd potoku</h3>
+			<p>
+				Istnieje narzędzie, dzięki któremu możemy podejrzeć kopiowanie danych, <strong>pv</strong> - Pipe Viewer. Dosłownie podglądacz potoku. Zasada korzystania z <em>pv</em> jest dosyć prosta, otóż chcąc skopiować zwyczajny plik, podajemy ścieżkę zródłową jako pierwszy argument następnie przekierowujemy standardowe wyście na ścieżkę docelową pamiętając po podaniu nazwy kopiowanego pliku.
+			</p>
+<pre class="code-block">
+$ pv Dokumenty/oldVM.ova &gt; Pobrane/oldVM.ova
+</pre>
+			<p>
+				<strong>
+					Inny przykładem tutaj może być tworzenie pendrive-ów bootowalnych z GNU/Linux-em.
+				</strong>
+			</p>
+<pre class="code-block">
+$ dd if=Pobrane/manjaro-xfce-20.2.1-210103-linux59.iso | pv | dd  of=/dev/sdc bs=4M conv=fsync
+</pre>
+			<p>
+				Możliwe jest również użycie polecenia z przykładu ze zwykłym plikiem, jako ścieżkę źródłową podajemy ścieżkę do plik, natomiast jako ścieżkę dysk, tylko należy pamiętać aby podać cały, nie jedną partycje.
+			</p>
+<pre class="code-block">
+$ pv Pobrane/manjaro-xfce-20.2.1-210103-linux59.iso &gt; /dev/sdX
+</pre>
+			<br />
+			<h3>Pewne działania w systemie działają bardzo długo...</h3>
+			<p>
+				Tak jak w tytule tego akapitu, niektóre operacje kopiowania działają bardzo długo a jeszcze jeśli nie damy żadnych dodatkowych opcji zwiększających gadatliwość tych programów to zobaczymy jedynie migający kursor. Jednak jest na jakieś rozwiązanie. Polecenie <strong>progress</strong>, jest wstanie wyciągnąć informacje na temat działania, niektórych poleceń systemowych takich jak <em>cp</em>, <em>rsync</em> itp. Poniżej lista:
+			</p>
+<pre class="code-block">
+cp, mv, dd, tar, cat, rsync, grep, fgrep, egrep, cut, sort, md5sum, sha1sum,<br /> sha224sum, sha256sum, sha384sum, sha512sum, adb, gzip, gunzip, bzip2, bunzip2, xz, unxz, lzma, unlzma, 7z, 7za, zcat, bzcat, lzcat, split, gpg
+</pre>
+			<p>
+				Wystarczy że polecenie działa w tle lub na innym terminalu. Wystarczy wydać polecnie <em>progress</em>, już on sam je odnajdzie.
+			</p>
+			<br />
+			<h3>Wysyłanie komunikatów wewnątrz systemu w postaci maili</h3>
+			<p>
+				<strong>Aby móc wysyłać maile wewnątrz systemu, potrzebujemy programu <em>mailx</em></strong>, wraz z nim zainstaluje się exim4. Pod czas jego konfiguracji wybierzemy konfiguracje lokalną. Po zainstalowaniu programu samo wysyłanie komunikatów jest proste za pomocą potoku przekazujemy komunikat, czy to log z pliku, wyjście ze skryptu czy zwykły napis za pomocą polecnie <em>echo</em>, temat podajemy po przełączniku <code class="code-inline">-s</code> po temacie podajemy nadawcę, przeważnie <code class="code-inline">nazwa_uzytkownika@localhost</code>.
+			</p>
+<pre class="code-block">
+$ echo "TEST" | mail -s "Komunikat testowy" xf0r3m@localhost
+</pre>
+			<br />
+			<h3>Lista otwartych plików</h3>
+			<p>
+				Po skopiowaniu danych pendrive, chcemy go odmontować jednak dostajemy komunikat o tym że cel jest zajęty. W tym przypadku możemy podejrzeć otwarte pliki za pomocą polecenia <strong>lsof</strong> i sprawdzić czy jakiś proces korzysta z plików z naszego pendrive'a, kiedy wydamy jest od tak po prostu w systemie ukaże nam się bardzo długa lista wyszystkich otwartych plików systemie, z racji konstrukcji UNIX-ów, gdzie prawie wszystko jest plikiem ta lista może być naprawdę długa. Możemy ją jednak ograniczyć za pomocą potoku oraz polecenia <em>grep</em>.
+			</p>
+<pre class="code-block">
+$ lsof | grep "bushi"
+vim 4504 xf0r3m 4u REG 254,3 122880 7735057 /home/xf0r3m/Nextcloud/Devel/morketsmerke/articles/terminallog/.bash_bushido.html.swp
+</pre>
+			<br />
+			<h3>Automatyczne potwierdzenie wykonania polecenia</h3>
+			<p>
+				Czasami działanie, niektórych programów może mieć bardzo destrukcyjny wpływ na systemem, wiec same programy pytają czy kontynuować. Takie zachowanie jest bezpieczne, ale jeśli chcemy użyć tego polecenia w skrypcie? Czasami sami twórcy implementują opcje wymuszenia potwierdzenia zazwyczaj za pomocą przełącznika <code class="code-inline">-f</code> lub <code class="code-inline">--force</code>, nie jest to jednak standardem. Dla wszystkich poleceń, których działanie wymaga potwierdzenia a chcemy ich użyć w skrypcie to możemy przekierować do takiego polecenia wyjście polecenia <strong>yes</strong>, które po prostu potwierdzi automatycznie działanie takich programów.
+			</p>
+			<br />
+			<h3>Jednoczesne przekierowanie wyjścia do pliku i wyjście standardowe</h3>
+			<p>
+				Polecenie <strong>tee</strong> przekierowuje wszystko co dostanie na standardowe wejście na swoje standardowej wyjście oraz do pliku, który podamy jako pierwszy argument, polecenie to ma tyle zastosowań że aż ciężko wymienić. Na przykład:
+			</p>
+<code class="code-block">
+$ bash -x script.sh 2&gt;&1 | tee script.debug
+</code>
+			<p>
+				W tym wypadku podczas debugowania sporych pętli możemy użyć polecnia 	<em>tee</em>. Jednak nie jest to najlepszy przykład ponieważ <em>tracelog</em>, <em>BASH</em>-a jest wyświetlany na strumieniu błędów więc musiałem podłączyć wyjście diagnostyczne do standardowego wyjścia.
+			</p>
+			<br />
+			<h3>Zapisanie sesji terminala</h3>
+			<p>
+				Tytuł może wprowadzić w błąd, ponieważ jeśli ktoś czytał rodział o historii wie, że każda sesja jest zapisna w historii sztuką jest ją tylko odnaleźć, <strong>jednak tutaj "Zapisanie sesji termianala" możemy określić jako nagranie sesji terminala do pliku tekstowego. Program <em>script</em> do uruchomienia potrzebuje pliku jako pierwszego argumentu po uruchomieniu zapisuje do niego wszystkie wpisane polecenia</strong> kiedy chcemy zakończyć nagrywanie wydajemy po prostu polecenie <em>exit</em>. Polecenie <em>script</em> może być niezwykle przydatne podczas tworzenia skryptów czy tutoriali.
+			</p>
+			<br />
+			<h3>Miekki restart powłoki</h3>
+			<p>
+			Czasami nasza powłoka może zachowywać się dziwnie, szczególnie gdy wyświetlimy jakiś przypadkiem jakiś plik binarny. To teraz możemy albo wyłączyć terminal i włączyć go ponownie lub wykonać miękki restart powłoki. Dlaczego <em>miękki</em>? Ponieważ jest on wykonywany z polecenia wydawanago właśnie w uszkodzonej powłoce, jeśli czujemy że coś jest nie tak, wywołajmy po prostu polecenie <strong>reset</strong>.
+			</p>
+			<br />
+			<h3>Uruchomienie polecenia na podstawie odpowiedniego obciążenia systemu (load average)</h3>
+			<p>
+				<strong>Za pomocą polecnie <em>batch</em>, możey ustawić odpowiedni program, który zostanie uruchomiony kiedy wartość <em>load average</em> osiągnie konkretną wartość</strong>. Warto zwrócić uwagę że jest polecnie podobne do polecenia <em>at</em>, nawet znak zachęty jest identyczny, więc konfiguracja jest już znana z <em>at</em>, warto wspomnieć że domyślną wartością załadowania systemu dla programu <em>batch</em> jest <em>0.8</em>. Możemy to zmienić wykorzystując zmienną <em>OPTS</em>, w której to zdefiniujemy wartość <em>load average</em>, po której osiągnięciu zostanie uruchomione polecenie zdefiniowane w przy użyciu polecnia <em>batch</em>.
+			</p>
+		<p>&nbsp;</p>
+		<h2 id="terminator">Emulatory terminala</h2>
+		<p>
+		Tworząc maszyny dla projektu VTMP, podczas instalacji dystrybucji BlackArch skierowanej pod testy penetracyjne po wybraniu środowiska zostaniemy nazwani <em>noobami</em> - nowicjuszem/słabiakiem. Daje to trochę do myślenia. Sam RMS nie korzysta ze srodowiska graficznego zatem tekstowa konsola systemu jest najlepszym emulatorem terminala, oparta na wyżej wspomnianej bibliotece GNU Readline. Jednak rzeczywistość weryfikuje nasze marzenia bycia pro, musimy skorzystać z przeglądarki albo jak odpalić muzykę na Spotify bez GUI. Na GitHub jest kilka projektów, z których możemy skorzystać, ale i tak poprawne skonfigurowanie programów odpowiedzialnych za dźwiek na UNIX-ach przypada konfiguracji środowiska graficznego, więc puki co radzę przy tym pozostać. Szanujmy nasz czas oraz pracę tych wszystkich osób zaangażowanych w tworzenie GUI. Ile środowisk tyle różnych emulatorów, ale jeden się wybija ponad wszystkie i trzeba go zainstalować.
+		Mianowicie <strong>terminator</strong>, najciekawszą z funkcji jest możliwość podzielenia jednego okna na kilka odrębnych powłok<br />
+		</p>
+		<ul>
+			<li><strong>ctrl+shift+e</strong> - podzielenie panelu na dwie równe części w pionie.</li>
+			<li><strong>ctrl+shift+o</strong> - podzielenie panelu na dwie równe części w poziomie.</li>
+		</ul>
+		<p>
+			Na liście specjalnie napisałem panelu, ponieważ każdą wydzieloną częsć również możemy znów podzielić na kolejne dwie części w dowolnym kierunku. Samo początkowe okno jest pojedyńczym panelem. Inną ciekawą rzeczą jest możliwość zmiany nazw kart jeśli już ich używamy. Terminator daje znacznie więcej możliwości, pomoc jest dostępna pod klawiszem F1, niestety potrzebny jest internet. Wiem że Twój ulubiony emulator jest najlepszy jednak serdecznie polecam wypróbować <em>terminator</em>.
+		</p>
+		<br />
+		<h2 id="end">Koniec</h2>
+		<p>
+			To było by na tyle jeśli chodzi jakąś bardziej zaawansowaną naukę obsługi powłoki. Jeśli ktoś jest "powłokofilem", to polecam użyć poniższego polecenia.
+		</p>
+<pre class="code-block">
+$ man bash
+</pre>
+		<p>
+		Poziomu mistrzowskiego w obsłudze powłoki.
+		</p>
+		<p>
+		~xf0r3m
+		</p>
+		<p>&nbsp;</p>
+		<h2 id="zrodlo">Bibliografia</h2>
+		<p>
+		<ul>
+			<li><strong>Bash Bushido - Aleksander Baranowski</strong> - <a href="https://alexbaranowski.github.io/bash-bushido-book/">https://alexbaranowski.github.io/bash-bushido-book/</a></li>
+		</ul>
+		</p>
+	</div>
+
+<p style="margin: 15; padding: 0; outline: 0;">
+2021; COPYLEFT; ALL RIGHTS REVERSED
+</p>
+
+		</body>
+	</html>

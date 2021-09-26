@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+        <h1 style="text-align: center;">Instalacja kontenerów LXD/LXC</h1>
+        <p>
+            Kontenery <strong>LXD/LXC</strong> są kompromisem pomiędzy konternerami aplikacji takimi jak <em>Docker</em> oraz maszyna wirtualnymi <em>kvm</em> czy <em>xen</em>. Po ściągnięciu obrazu dostajemy czysty system operacyjny tak jakby to była świeżo zainstalowana maszyna wirtualna, ale to nadal przestrzeń użytkowa (userspace) ze współdzielonym wraz z hostem jądrem - kontener. Kontener będzie posiadać oddzielne wszystko to co kojarzy nam się z system operacyjnym, z tym elementami, których możemy hipotetycznie dotknąć. Do instalacji wybrałem serwer z system Ubuntu Server 18.04, ponieważ akurat taki miałem od ręką.
+        </p>
+        <p>
+            Pierwszą czynnością jaką wykonamy jest dodanie naszego użytkownika do grupy <code class="code-inline">lxd</code>, uwaga ta grupa może nie być dostępna przed instalacją pakietu LXD, więc jeśli to polecenie się nie powiedzie należy je wykonać zaraz po zainstalowaniu pakietu.
+        </p>
+<pre class="code-block">
+$ sudo usermod --append --groups lxd <nazwa_użytkownia>
+</pre>
+        <p>
+            Podczas instalacji tym przypadku wykorzystałem system plików <strong>ZFS</strong>, jako magazyn danych dla kontenerów. ZFS wybieram głównie, gdy dane kontenerów będą przechowywane w oddzielnym dysku. Kiedy storage kontenerów jest wspódzielony z system operacyjnym to wtenczas wybieram <strong>dir</strong> - klasyczny katalog. Póki co Ubuntu w tej wersji nie wspiera natywnie ZFS dlatego też trzeba doinstalować jego obsługę z repozytorium. Jeśli będziemy korzystać z istniejącego dysku to
+            należy utworzyć na nim partycję na całej jego wielkości.
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt install zfsutils-linux
+</pre>
+        <p>
+            W wielu systemach dostępny jest manager pakietów snap. Na tej stronie możemy sprawdzić czy dla naszej dystrybucji jest on wspierany: <a href="https://snapcraft.io/docs/installing-snapd">https://snapcraft.io/docs/installing-snapd</a>, kiedy uporamy się z instalacją snapa, możemy przejść do instalacji
+            właściwego pakietu.
+        </p>
+<pre class="code-block">
+$ sudo snap install lxd
+</pre>
+        <p>
+            Po zainstalowaniu pakietu, środowisko trzeba jescze zaincjować. Wydając poniższe polecenie uruchomimy kreator, który zbierze niezbędne do konfiguracji informacje. Postaram się przetłumaczyć te pytania.
+        </p>
+<pre class="code-block">
+$ sudo lxd init
+</pre>
+
+        <p>
+            Zatem:
+        </p>
+<pre class="code-block">
+Would you like to use LXD clustering ? (yes/no) [default=no]:
+</pre>
+				<p>
+					<em>Czy chcesz użyć klastrowania LXD?</em> - spowoduje uruchomienie LXC w trybie klastrowania, czy umożliwie podłączenia do sieci węzłów, wszystkie węzły posiadają jedną bazę danych i są zarządzane za pomocą pojedyńczych poleceń. Klaster ma za zadanie łatwiejsze zarządzanie dużą ilością serwerów z LXC.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna</strong>.
+				</p>
+<pre class="code-block">
+Do you want to configure a new storage pool ? (yes/no) [default=yes]:
+</pre>
+				<p>
+					<em>Czy chcesz skonfigurować nową przestrzeń danych</em> - odpowiedź na to pytanie uruchomi, inicjalizacje przestrzeni danych (storage) dla kontenerów.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna</strong>.
+				</p>
+<pre class="code-block">
+Name of the new storage pool [default=default]:
+</pre>
+				<p>
+					<em>Nazwa nowej przestrzeni danych?</em> - tutaj możemy nadać nazwę przestrzeni danych dla naszych kontenerów.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna / nazwa własna</strong>
+				</p>
+<pre class="code-block">
+Name of the storage backend to use (btrfs, dir, lvm, zfs) [default=zfs]
+</pre>
+				<p>
+					<em>Rodzaj przestrzeni danych</em> - możemy teraz wybrać jaka technologia zostanie użyta do zarządzania przestrzenią danych naszych kontenerów, dla oddzielnych dysków wybieram zfs, ponieważ daje najkorzystniejsze efekty, kontener ma do dyspozycji tak jakby cały dysk (wykorzystuje obraz przestrzeni ZFS), dla dysku współdzielonego z systemem używam klasyczny dir. Do tego drugiego trzeba mieć odpowiednio duży dysk. Odpowiedź może być zasugerowana w zależności od dostępności danych technologii w systemie.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <code class="code-inline">zfs</code> / <code class="code-inline">dir</code>. <em>Patrz wyżej.</em>
+				</p>
+<pre class="code-block">
+Would you like to use an existing block device ? (yes/no) [default=no]:
+</pre>
+				<p>
+					<em>Czy chcesz użyć istniejącego dysku?</em> - wskazujemy dysk, ale tylko jeśli wybraliśmy zfs lub inny rodzaj storage-u, której jest również system plików w UNIX-ach, wyjątkiem będzie lvm, który jest sposobem zarządzania przestrzenią dyskową nie stricte system plików.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>yes</strong>.
+				</p>
+<pre class="code-block">
+Path to existing block device:
+</pre>
+				<p>
+					<em>Ścieżka do istniejącego dysku</em> - musi to być partycja, najlepiej zrobić ją jeszcze przed rozpoczęciem inicjacji.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>np. /dev/sda1</strong>
+				</p>
+<pre class="code-block">
+Would you like to connect to a MASS server? (yes/no) [default=no]:
+</pre>
+				<p>
+					<em>Czy chcesz podłączyć się do serwera MAAS?</em> - MAAS - technologia chmury od Canonical Ltd. <a href="https://maas.io">https://maas.io</a>
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna</strong>
+				</p>
+<pre class="code-block">
+Would you like to create a new local network bridge? (yes/no) [default=yes]
+</pre>
+				<p>
+					<em>Czy chcesz utworzyć nowy most sieci lokalnej?</em> - tworzymy sieć lokalną dla kontenerów, to coś jak <em>intnet</em> w VirtualBox. Od poźniejszych ustawień będzie zależeć jak będzie wyglądać ich komunikacja, jednak między sobą oraz systemem je hostującym będzie ona dość swobodna.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna</strong>
+				</p>
+<pre class="code-block">
+What should the new bridge be called ? [default=lxdbr0]
+</pre>
+				<p>
+					<em>Jaką nazwę nadać dla nowego mostu?</em> - interfejsu między którym będzie wymieniana komunikacja pomiędzy wirtualnymi interfejsami kontenerów a interfejsem systemu hostującego.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna / dowolna</strong>
+				</p>
+<pre class="code-block">
+What IPv4 address should be used ? (CIDR subnet notation, "auto", "none") [default=auto]
+</pre>
+				<p>
+					<em>Jakiego adresu IPv4 należy użyć? [adres z notacją CIDR, "auto", "none"]</em> - podajemy adres dla mostu, jedenocześnie ustalając klasę adresów dla naszych kontererów poprzez podanie maski CIDR.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>192.168.56.1/24 / dowolna inna.</strong>
+				</p>
+<pre class="code-block">
+Would you like LXD to NAT IPv4 traffic on your bridge? [default=yes]:
+</pre>
+				<p>
+					<em>Czy chcesz przepuścić przez NAT ruch na twoim moście?</em> - Ustawając tutaj yes lub no, możemy wybrać czy kontenery będą miały dostęp do sieci poza system je hostującym czy też nie.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna</strong>.
+				</p>
+<pre class="code-block">
+What IPv6 address should be used? (CIDR subnet notation, "auto" or "none") [default=auto]: none
+</pre>
+				<p>
+					<em>Jakiego adresu IPv6 należy użyć? [adres z notacją CIDR, "auto", "none"]</em> - możemy zefiniować adres IPv6, jeśli z nich korzystamy, ja z nich nie korzystam więc ustawiam <code class="code-inline">none</code>
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>w zależności od potrzeb / none</strong>
+				</p>
+<pre class="code-block">
+Would you like LXD to be available over network (yes/no) [default=no]:
+</pre>
+				<p>
+					(Czy chcesz aby LXD by dostępny przez sieć?) - jeśli mamy wiele serwerów pod kontrolą to możemy to ustawić, następnie zarządzać
+					nimi wszystkimi z jednego, umożliwienie dostępu do LXD przez sieć da nam również możliwość przenoszenia kontenerów między serwerami.
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>w zależności od potrzeb, dla pojedyńczego serwera zostawiamy domyślnie.</strong>
+				</p>
+<pre class="code-block">
+Would you like stale cached images to be updated automatically? (yes/no) [default=yes]:
+</pre>
+				<p>
+					<em>Czy chcesz automatyczne aktualizować pobrane obrazy kontenerów?</em>
+				</p>
+				<p>
+    			<u>Odpowiedź:</u> <strong>domyślna</strong>
+				</p>
+<pre class="code-block">
+Would you like a YAML "lxd init" preseed to be printed? (yes/no) [default=no]:
+</pre>
+				<p>
+					<em>(Czy chcemy wydrukowac wygenerowaną na podstawie naszych odpowiedzi konfiguracje LXD?)</em>
+				</p>
+				<p>
+					<u>Odpowiedź:</u> <strong>domyślna</strong>
+				</p>
+        <p>
+            Po tym ostatnim pytaniu, środowisko LXC zostanie skonfigurowane do użycia. Kiedy zostanie nam zwrócony znak zachęty możemy przejść do utworzenia naszego
+            pierwszego kontenera. Aby utworzyć kontener należy wydać poniższe polecenie.
+        </p>
+<pre class="code-block">
+$ lxc launch ubuntu:18.04 c1
+</pre>
+        <p>
+            Gdzie <code class="code-inline">launch</code> jest poleceniem odpowiedzialnym za tworzenie nowych kontenerów, <code class="code-inline">ubuntu:18.04</code> jest nazwą źródła obrazu systemu operacyjnego, w tym przypadku określnego wyłącznie wersją, który służy do utworzenia kontenera, <code class="code-inline">c1</code> jest nazwą naszego kontenera. System LXC wspiera wiele systemów operacyjnych, ich lista znajduje się tutaj: <a href="https://us.images.linuxcontainers.org/">https://us.images.linuxcontainers.org/</a>, aby skorzystać z innych systemów niż ubuntu, należy skorzystać z oficjalnego
+            źródła, a nazwę zródła możemy sprawdzić wydając polecenie:
+        </p>
+<pre class="code-block">
+$ lxc remote list
+</pre>
+        <p>
+            Teraz dla przykładu możemy stworzyć kontener np. z GNU/Linux Debian, wydając poniższe polecenie. Dla Debiana możemy odwoływać zarówno numerem wersji jak i jej nazwą, identycznie dla Ubuntu.
+        </p>
+<pre class="code-block">
+$ lxc launch images:debian/10/amd64 c1
+</pre>
+        <p>
+            Po utworzeniu kontenera możemy się na niego zalogować aby móc na nim działać jak byśmy siedzieli przed konsolą prawdziwego serwera. Logowania możemy dokonać na dwa sposoby, jako użytkownik <em>root</em>, lub użytkownik nieuprzywilejowany z możliwością użycia polecenia podnoszącego uprawnienia. Niestety ten drugi sposób nie jest standardem i to czy możliwe będzie wykorzystanie go czy też nie, zależy głównie od konstrukcji obrazu kontenera. Druga opcja stosowana jest np. w Ubuntu, z kolei w Debianie już nie. Dlatego zachęcam do skorzystania z pierwszego sposobu.
+        </p>
+        <ul>
+            <li>Zalogowanie się na kontener jako <em>root</em> - <code class="code-inline">lxc exec &lt;nazwa_kontenera&gt; -- /bin/bash</code></li>
+            <li>Zalogowanie się jako zwykły użytkownik z prawami do <code class="code-inline">sudo</code> - <code class="code-inline">lxc exec &lt;nazwa_kontenera&gt; -- sudo --login --user ubuntu</code>(użytkownik wykorzystywany przez obrazy Ubuntu oraz Linux Mint)</li>
+        </ul>
+        <p>
+            Zalogowanie się do kontenera uruchomi powłokę interaktywną w środowisku kontenera, a co jeśli chcemy wykonać pojedyńcze polecenie, a nie uruchamiać powłokę? W tym przypadku zamiast <code class="code-inline">/bin/bash</code> wstawiamy polecenie jak ma zostać wykonane. Kiedy jednak wydajemy takie
+            polecenie, to musimy mieć świadomość tego że jest ono wykonywane z uprawnieniami użytkownika <em>root</em>, chociaż jeżeli coś popsujemy na kontenerze
+            zawsze możemy usunąć i uruchomić jeszcze raz, w prosty i szybki sposób, a nie ślęcząc przez instalacją po raz kolejny systemu bo zapomnieliśmy wyeksportować czystej maszyny zaraz po instalacji systemu, o fizycznych serwerach już nie wspominając.
+        </p>
+        <p>
+            ~xf0r3m
+        </p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+</body>
+</html>

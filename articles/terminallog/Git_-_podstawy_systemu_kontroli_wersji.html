@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+					text-align: left;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				ul {
+					text-align: left;
+				}
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+ _                      _             _ _
+| |_ ___ _ __ _ __ ___ (_)_ __   __ _| | | ___   __ _
+| __/ _ \ '__| '_ ` _ \| | '_ \ / _` | | |/ _ \ / _` |
+| ||  __/ |  | | | | | | | | | | (_| | | | (_) | (_| |
+ \__\___|_|  |_| |_| |_|_|_| |_|\__,_|_|_|\___/ \__, |
+			                        |___/
+</pre>
+<p style="margin: 0; padding: 0; outline: 0; font-size: 18pt;">
+	&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+</p>
+	<div style="margin-left: auto; margin-right: auto; text-align: justify; width:80%; ">
+		<h1 style="text-align: center;">Git - podstawy systemu kontroli wersji</h1>
+
+		<p>
+			<strong>
+				Ta strona wymaga aktualizacji, informacje na niej zawarte <u>mogą być niezgodne z prawdą.</u>
+			</strong>
+		</p>
+		<p>
+			W tym jakże krótkim wpisie chciałbym przedstawić podstawową obsługę systemu kontroli wersji <strong>Git</strong>. Podstawowym zadaniem Git-a jest monitorowanie zmian oraz umożliwienie wycofania modyfikacji w danym pliku.
+		</p>
+		<h2>Podstawy lokalnego systemy kontroli wersji Git</h2>
+		<p>
+			Folder z danymi, na których pracujemy po zainstalowaniu <strong>repozytorium</strong> staje się pierwszą warstwą pracy z Git. Tę warstwę nazywamy <strong>working directory</strong> (ang. katalog roboczy). Natomiast samo repozytorium, które umożliwni nam pracę z Git instalujemy poniższym poleceniem.
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/Dokumenty/landisk $ git init
+</pre>
+		<p>
+			Czym jest repozytorium? Repozytorium to ukryty katalog wewnątrz katalogu roboczego. W nim  znajdują się zapisane i przechowane w odpowiedni sposób zamiany wprowadzone w plikach katalogu roboczego. Po zainstalowaniu repozytorium w katalogu, w którym jakieś pliki już istnieją możemy je dodać wybiórczo, korzystając z poniższego polecenia:
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/Dokumenty/landisk $ git add landisk.sh</pre>
+</pre>
+		<p>
+			lub dodać wszystkie pliki z katalogu, wykorzystując to polecenie:
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/Dokumenty/landisk $ git add .
+</pre>
+		<p>
+			Nowe pliki są automatycznie zauważane przez Git, jako zmiany w katalogu roboczym.
+		</p>
+		<p>
+			Podając <strong>.</strong> (kropkę) jako argument polecenia <em>add</em>, dodaliśmy wszystkie plik do naszego repozytorium. Rozważmy teraz taki scenariusz, że nasze repozytorium zawiera bardzo dużo plików. Moglibyśmy skorzystać z polecenia <code class="code-inline">git add .</code> jednak w naszym repozytorium znajdują się pliki, których nie chcemy monitorować, w tej sytuacji możemy regulować, które pliki mają być monitorowane, a które nie. Służy temu specjalny plik Git-a, umieszczany w repozytorium: <strong>.gitignore</strong>. W tym pliku umieszczamy nazwy katalogów, plików (w nazwach plików możemy używać symbolu wieloznaczności <strong>*</strong>) lub ścieżki, które mają zostać pominięte podczas monitorowania katalogu przez Git. Pamiętać należy o tym że <span style="text-decoration: underline;">ten plik jest ukryty</span>.
+		</p>
+		<p>
+			Wszystkie zauważone przez Git zmiany możemy sprawdzić za pomocą polecenia:
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/Dokumenty/landisk $ git status
+</pre>
+		<p>
+			Z informacji zwróconych przez polecenie, możemy sprawdzić stan naszych plików, teraz po dodaniu plików do monitorowania mamy informacje o zamianach w naszym katalogu roboczym. Korzystanie z Git-a, nie jest wcale trudne, sam Git daje nam podpowiedzi, aby usunąć jakiś plik z obecnego <strong>stanu przejściowego</strong> wydajemy poniższe polecenie. <strong>Uwaga!</strong> <strong>Usunięcie plików ze stanu przejściowego nie spowoduje przywrócenia pliku przed zmianami.</strong> Plik zostanie pominięty podczas zapisywania go zapisywania go w repozytorium:
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/Dokumenty/landisk $ git rm --cached &lt;nazwa_pliku&gt;
+</pre>
+		<p>
+			Czym jest ten stan przejściowy? Otóż podczas pracy z Git-em, operujemy tak naprawdę na trzech płaszczyznach.
+		</p>
+		<figure style="margin: auto; width: 50%;">
+				<img src="https://files.morketsmerke.net/resources/git_diagram_1.png" alt="Diagram with local repository workflow"/>
+		</figure>
+		<p>
+			Pierwszy z nich to <strong>katalog roboczy</strong>, na plikach w tym katalogu są dokonywane przez nas zmiany, te zmiany są rejestrowane w tak zwanym <strong>stanie przejściowym</strong>. Ten stan przechowuje wszystkie zmiany przed zapisaniem ich w repozytorium, tworzy tymczasowe migawki plików, w których dokonano zmian. Ze stanu przejściowego bardzo łatwo cofnąć zmiany wystarczy jedno polecenie.
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/Dokumenty/landisk $ git checkout landisk.sh
+</pre>
+		<p>
+			Podając jako argument nazwę pliku przywracamy tylko konkretny plik, warto zauważyć że po wydaniu tego polecenia, zmiany zarejestrowane przez Git w pliku zostają wycofane oraz zostaje on usunięty ze stanu przejściowego. Zamiast nazwy pliku możemy użyć kropki (<strong>.</strong>), wtedy przywrócimy wszystkie pliki. Warto pamiętać, że polecenie <em>checkout</em> wycofuje zmiany tylko z stanu przejściowego. To polecenie <strong>nie działa na nowe pliki</strong>. Jak widzimy możemy sobie swobodnie balansować pomiędzy stanem przejściowym, a katalogiem roboczym. W edytorze naciskamy <em>ctrl+s</em>, Git od razu wyłapuje zmianę, testujemy, coś nie działa, wydajemy polecenie <code class="code-inline">git checkout</code>, zmiany zostały wycofane, kiedy jednak jesteśmy pewni że nasz kod działa możemy dokonać <strong>zatwierdzenia</strong>. Zatwierdzenie jest dokonywane z plików, których zmiany zostały uwzględnione w stanie przejściowym.
+			To co znajduje się w stanie przejściowym sprawdzamy poleceniem <code class="code-inline">git status</code>. Zatwierdzenie dokonuje takiej stałej migawki, którą będzie mogli przywrócić nie zależnie od tego ile zmian było już plikach projektu, kiedy przy poleceniu <em>checkout</em> możemy cofnąć tylko ostatnią zmianę. Aby dokonać zatwierdzenia, wydajemy następujące polecenie.
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/git_lab/repo1$ git commit -am "Pierwsze pliki"
+[master (root-commit) 7f5135a] Pierwsze pliki
+ 2 files changed, 9 insertions(+)
+ create mode 100644 imiona
+ create mode 100644 kolory
+</pre>
+		<p>
+			Opcja <code class="code-inline">-a</code> w poleceniu powoduje uwzględnienie wszystkich zmodyfikowanych plików, z kolei <code class="code-inline">-m</code> powoduje dodanie komentarza do zatwierdzenia. Sprawdzenie stanu repozytorium dokonujemy za pomocą polecenia
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/git_lab/repo1$ git log --pretty=oneline
+7f5135af8bca2dad1d9f1d7c7db34990a6115efa (HEAD -&gt; master) Pierwsze pliki
+</pre>
+		<p>
+			Jak widzimy repozytorium jest takim miejscem przechowywania zatwierdzeń. Teraz dokonamy zmian w plikach aby mieć jeszcze jedno zatwierdzenie w repozytorium. Po wiedzmy że w tym zatwierdzeniu powinny być dwa pliki zmienione nie tylko jeden. Z repozytorium pliki możemy przywrócić na dwa sposoby: do stanu przejściowego (<code class="code-inline">git reset --soft</code>) oraz do katalogu roboczego (<code class="code-inline">git reset --hard</code>), jeśli chcemy dodać po prostu plik wycofując stare zatwierdzenie i utworzyć nowe tym razem obejmujące wszystkie pliki, wybierzemy opcje <em>--soft</em>. Jako argument opcji <em>--soft</em> podajemy to zatwierdzenie, z którego chcemy przywrócić pliki, nie te które ostatnio wprowadziliśmy, w którym znajduje się nasz błąd.
+		</p>
+<pre class="code-block">
+1f7ecc0bca359431bf11493358fd1f87e24fc341 (HEAD -&gt; master) Zmiany w imionach
+7f5135af8bca2dad1d9f1d7c7db34990a6115efa Pierwsze pliki
+</pre>
+		<p>
+			Więc jako argument opcji <em>--soft</em> podamy <em>ID</em> zatwierdzenia <em>7f5135</em>. Po przywróceniu zatwierdzenie opisane jako "Zmiany w imionach" przestaje istnieć. Słowo o <strong>commit ID</strong>. Każde zatwierdzenie jest identyfikowane przez Git za pomocą długiego ciągu znaków zapisanego w systemie heksadecymalnym, który występuje w pierwszej kolumnie danych zwracanych przez polecenie <code class="code-inline">git log --pretty=oneline</code>. <em>Commit ID</em> jest sześcioma pierwszymi znakami tego ciągu.
+		</p>
+		<p>
+			To kiedy wydamy polecenie
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/git_lab/repo1$ git status
+</pre>
+		<p>
+			Otrzymamy taką odpowiedź (o ile nie wprowadziliśmy żadnych w innych plikach) od Git.
+		</p>
+<pre class="code-block">
+On branch master
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	zmodyfikowany: imiona
+</pre>
+		<p>
+			Jeśli zmieniliśmy jakieś pliki to odpowiedź będzie taka jak poniżej:
+		</p>
+<pre class="code-block">
+On branch master
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	zmodyfikowany: imiona
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	zmodyfikowany: kolory
+</pre>
+		<p>
+			Teraz aby dodać te pliki należy wydać polecenie <code class="code-inline">git add &lt;nazwa_pliku&gt;</code> w tym przypadku są to <em>kolory</em>.
+		</p>
+		<p>
+			Na tym przykładzie lepiej widać jak działa stan przejściowy. Kiedy plik zostaje zmodyfikowany, trafia on do stanu przejściowego jednak nie jest oznaczony jako plik do zatwierdzenia, dlatego wydajemy polecenie <em>commit</em> wraz opcją <code class="code-inline">-a</code>, aby nie musieć dodawać plików jako "do zatwierdzenia". Tylko zatwierdzać wszystkie zmodyfikowane pliki. Gdybyśmy nie stosowali tej opcji, to należało by każdy nieoznaczony plik dodać za pomocą polecenia <em>add</em>.
+		</p>
+		<p>
+			Pozostała w sumie ostatnia podstawowa czynność jaką możemy wykonać czyli przywrócić pliki z repozytorium bezpośrednio do katalogu roboczego. Aby wykonać tą czynność wydajemy polecenie.
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~/git_lab/repo1$ git reset --hard 7f5135
+</pre>
+		<p>
+			Przy tym poleceniu z <em>ID</em> <em>commit-u</em> jest identycznie. Ten <em>commit</em>, który wybraliśmy jest oznaczony jako <strong>HEAD</strong>, czyli główny <em>commit</em> repozytorium.
+		</p>
+		<p>&nbsp;</p>
+		<h2>Prywatne, zdalne repozytorium</h2>
+		<p>
+			Teraz utworzymy sobie w prosty sposób zdalne repozytorium, będzie to wymagać jedynie kilka poleceń w powłoce, ponieważ połączenia będziemy realizować za pomocą <strong>SSH</strong>.
+		</p>
+		<p>
+			Na naszym serwerze sprawdzamy czy jest dostępny Git. Jeśli jest dostępny to możemy przejść od razu do tworzenie nowego użytkownika. Jeśli po wydaniu polecenia <code class="code-inline">git</code> dostajemy informacje o tym, że nie można odnaleźć polecenia, to wydajemy polecenie odpowiednie dla naszej dystrybucji, które zainstaluje Git w systemie.
+		</p>
+<pre class="code-block">
+ubuntu@gitssh:~$ sudo apt install git
+</pre>
+		<p>
+			Kiedy Git znajduje się już w systemie, lub został przed chwilą zainstalowany, tworzymy użytkownika, który w swoim folderze domowym będzie przechowywał nasze repozytoria.
+		</p>
+<pre class="code-block">
+ubuntu@gitssh:~$ sudo adduser git
+</pre>
+		<p>
+			W tym momencie (najlepiej zaraz po utworzeniu użytkownika), podać nasz klucz publiczny do logowania przez SSH nowemu użytkownikowi.
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:~$ ssh-keygen
+xf0r3m@K53F:~$ ssh-copy-id git@gitssh
+</pre>
+		<p>
+			Teraz kiedy już możemy zalogować się bez hasła, zalogujemy się na serwer jako <em>git</em>. Następnie tworzymy nowy katalog o nazwie <em>git-shell-commands</em> oraz nadamy mu odpowiednie uprawnienia.
+		</p>
+<pre class="code-block">
+git@gitssh:~$ mkdir git-shell-commands
+git@gitssh:~$ chmod 775 git-shell-commands
+</pre>
+		<p>
+			Wylogowujemy się z tego użytkownika, a następnie logujemy się na użytkownika z uprawnieniami administracyjnymi, po zalogowaniu w pliku <em>/etc/passwd</em> zmieniamy domyślną powłokę dla użytkownika <em>git</em> z <code class="code-inline">/bin/bash</code> na <code class="code-inline">/usr/bin/git-shell</code>. Zapisujemy zmiany w pliku.
+		</p>
+<pre class="code-block">
+git:x:1001:1001:git,,,:/home/git:/usr/bin/git-shell
+</pre>
+		<p>
+			Teraz kiedy wydamy polecenie <code class="code-inline">su git</code> ukaże nam się taki obraz (aby wyjść wydajemy polecenie <code class="code-inline">exit</code>):
+		</p>
+<pre class="code-block">
+git&gt;
+</pre>
+		<p>
+			Aby jednak uruchomić normalną powłokę UNIX-ową dla tego użytkownika musimy zalogować się jako <em>root</em>. Następnie wydać poniższe polecenie.
+		</p>
+<pre class="code-block">
+root@gitssh:/home/ubuntu$ su -s /bin/bash - git
+</pre>
+		<p>
+			Teraz zalogujemy się do powłoki <em>bash</em> na użytkowniku <em>git</em> i utworzymy katalog naszego repozytorium:
+		</p>
+<pre class="code-block">
+git@gitssh:~$ mkdir example.git
+</pre>
+		<p>
+			Wewnątrz utworzonego przez nas katalogu wydajemy poniższe polecenie:
+		</p>
+<pre class="code-block">
+git@gitssh:~/example.git$ git --bare init
+</pre>
+		<p>
+			Po wydaniu tego polecenia, nasze repozytorium jest gotowe, w celach testowych możemy przesłać na niego pusty plik README.
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:/git_lab/repo3$ touch README.md
+xf0r3m@K52F:/git_lab/repo3$ git init
+Initialized empty Git repository in /home/xf0r3m/git_lab/repo3/.git/
+xf0r3m@K52F:/git_lab/repo3$ git add .
+xf0r3m@K52F:/git_lab/repo3$ git commit -am "first commit"
+[master (root-commit) 5bafc2b] first commit
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ create mode 100644 README.m
+xf0r3m@K52F:/git_lab/repo3$ git remote add origin ssh://git@192.168.56.211/~/example.git
+xf0r3m@K52F:/git_lab/repo3$ git push origin master
+Enumerating objects: 3, done.
+Counting objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 209 bytes | 209.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0)
+To ssh://192.168.56.211/~/example.git
+ * [new branch]      master -&gt; master
+</pre>
+		<p>
+			Powyżej mamy listing z terminala, użyłem tutaj dwóch nowych poleceń, które często będą wykorzystywane przez nas podczas pracy ze zdalnym repozytorium. Pierwsze polecenie:
+		</p>
+<pre class="code-block">
+xf0r3m@K52F:/git_lab/repo3$ git remote add origin ssh://git@192.168.56.211/~/example.git
+</pre>
+		<p>
+			dodaje pod nazwą <strong>origin</strong> adres do zdalnego repozytorium do naszej lokalnej konfiguracji Git. Dzięki tej nazwie łatwiej będzie nam <strong>wpychać</strong> (przesyłać) nasze repozytorium na zdalny Git. Drugie polecenie:
+		</p>
+<pre class="code-block">
+git push origin master
+</pre>
+		<p>
+			powoduje wepchnięcie <strong>gałęzi</strong> o nazwie <strong>master</strong> (głównego repozytorium) na zdalne repozytorium, którego adres kryje się po nazwą <em>origin</em>.
+		</p>
+		<p>
+			Zdalne repozytorium po SSH jest dobre kiedy w szybki, prosty i bezpieczny sposób musimy stworzyć prywatne repozytorium. Jednak do pracy w wieloma użytkownikami jest ono nadzwyczaj nie wygodne, ponieważ każdy użytkownik musi zalogować się jako root, aby utworzyć kolejne repozytorium.
+		</p>
+		<p>
+			Obecnie dostępne są trzy sprawne pakiety oprogramowania zapewniające usługę zdalnego repozytorium obsługiwane z poziomu WWW. Taki GitHub tylko że hostowany na swoich serwerach. Poniżej przedstawię instalację wszystkich trzech pakietów. Obsługa nie jest trudna, wystarczy czytać ze zrozumieniem i nie bać się eksperymentować. Jak co się uszkodzi to zawsze możemy zainstalować to jeszcze raz z poniższych poradników lub mieć z tyłu głowy zapisane, aby zrobić kopie zapasową naszego środowiska testowego przed wprowadzeniem jakieś poważnej zmiany, prawda ?
+		</p>
+		<p>&nbsp;</p>
+		<h2>GitLab</h2>
+		<p>
+			Na początek weźmiemy pod lupę pierwszy najbardziej zaawansowany i w sumie najłatwiejszy do zainstalowania - <strong>GitLab</strong>. Moim środowiskiem testowym to przedstawienia instalacji była maszyna wirtualna VirtualBox z Ubuntu Server 20.04, nie radze używać kontenerów chyba że uprzywilejowanych, ponieważ GitLab podczas swojej instalacji zmienia kilka ustawień kernela.
+		</p>
+		<p>
+			Dokonujemy aktualizacji repozytoriów z paczkami oprogramowania następnie instalujemy niezbędne w systemie pakiety. W Ubuntu Server 20.04, wymagane oprogramowanie jest już zainstalowane, jednak kiedy korzystamy z 18 lub 16.04 warto upewnić się czy te pakiety są już w naszym systemie.
+		</p>
+<pre class="code-block">
+xf0r3m@gitlab:~$ sudo apt update
+xf0r3m@gitlab:~$ sudo apt install curl openssh-server ca-certificates tzdata
+</pre>
+		<p>
+			Instalacje Postfix możemy pominąć.
+		</p>
+		<p>
+			Teraz dodamy repozytoria GitLab do naszych repozytoriów systemowych.
+		</p>
+<pre class="code-block">
+xf0r3m@gitalab:~$ curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | sudo bash
+</pre>
+		<p>
+			Właściwa instalacja GitLab odbywa się za pomocą APT. Jednak przed wydaniem polecenia należy zdefiniować w zmiennej <code class="code-inline">EXTERNAL_URL</code>, adres pod którym nasz GitLab będzie dostępny.
+		</p>
+<pre class="code-block">
+xf0r3m@gitlab:~$ sudo EXTERNAL_URL="http://192.168.0.211" apt install gitlab-ce
+</pre>
+		<p>
+			Instalacja GitLab może potrwać nawet do dwóch godzin w zależności od łącza internetowego oraz mocy obliczeniowej naszego sprzętu. O zakończeniu instalacji zostaniemy poinformowani odpowiednim komunikatem. Po zainstalowaniu możemy przejść pod adres, który podaliśmy w zmiennej EXTERNAL_URL. Po załadowaniu strony, zostaniemy poproszeni o zdefiniowanie hasła dla użytkownika administracyjnego GitLab. Teraz możemy zalogować się, podając w nazwie użytkownika nazwę <em>root</em>. Jeśli zdecydujemy się na użycie GitLab jako naszego zdalnego repozytorium, to należało by użyć HTTPS. Aby to zrealizować należy<em>:</em>
+		</p>
+		<ol>
+			<li>Zmienić w pliku <em>/etc/gitlab/gitlab.rb</em> wartość opcji EXTERNAL_URL. Zmieć protokół na HTTPS następnie podać nazwę domeny, pod którą GitLab będzie dostępny.<br />
+<pre class="code-block">
+xf0r3m@gitlab:~$ sudo vi /etc/gitlab/gitlab.rb
+</pre>
+				<p>
+					Wewnątrz pliku odszukujemy opcję <code class="code-inline">EXTERNAL_URL</code> i ustawiamy jej wartość na adres pod którym będzie widoczny GitLab.
+				</p>
+<pre class="code-block">
+EXTERNAL_URL="https://gitlab.morketsmerke.net"
+</pre>
+			</li>
+			<li>Utworzyć katalog <em>ssl</em> wewnątrz katalogu <em>/etc/gitlab</em>, nadać mu uprawnienia 755 następnie przekopiować do tego katalogu nasze pliki certyfikatu.<br />
+<pre class="code-block">
+xf0r3m@gitlab:~$ sudo mkdir -p /etc/gitlab/ssl
+xf0r3m@gitlab:~$ sudo chmod 755 /etc/gitlab/ssl
+xf0r3m@gitlab:~$ sudo cp *.pem /etc/gitlab/ssl
+</pre>
+			</li>
+			<li>Następnie wydajemy polecenie:<br />
+<pre class="code-block">
+xf0r3m@gitlab:~$ sudo gitlab-ctl reconfigure
+</pre>
+			</li>
+		</ol>
+		<p>
+			Po zakończeniu rekonfiguracji GitLab powinien być dostępny pod adresem jaki podaliśmy w zmiennej <code class="code-inline">EXTERNAL_URL</code>, po protokole HTTPS.
+		</p>
+		<p>
+			Kolejnym oprogramowaniem umożliwiającym nam łatwe utworzenie ogólnodostępnego zdalnego repozytorium Git-a będzie <strong>Gogs</strong>.
+		</p>
+		<p>&nbsp;</p>
+		<h2>Gogs</h2>
+		<p>
+			Instalacje Gogs-a w naszym systemie <strong>rozpoczynamy od zainstalowania jakiegoś pakietu bazodanowego</strong> np. MySQL.
+		</p>
+<pre class="code-block">
+xf0r3@gogs:~$ sudo apt install mysql-server mysql-client
+</pre>
+		<p>
+			Następnie pobieramy najnowszą paczkę z Gogs-em z <a href="https://gogs.io/docs/installation/install_from_binary">https://gogs.io/docs/installation/install_from_binary</a>
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ wget https://dl.gogs.io/0.12.1/gogs_0.12.1_linux_amd64.tar.gz
+</pre>
+		<p>
+			Po pobraniu rozpakowujemy paczkę.
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ tar -xzvf gogs_0.12.1_linux_amd64.tar.gz
+</pre>
+		<p>
+			W katalogu <em>gogs/scripts</em> będzie plik o nazwie <em>mysql.sql</em>. Otwieramy go i dopisujemy dwie linie.
+		</p>
+<pre class="code-block">
+CREATE USER 'gogs'@'localhost' IDENTIFIED BY 'Trudn3Hasl0DOMysql';
+GRANT ALL ON gogs.* TO 'gogs'@'localhost';
+</pre>
+		<p>
+			Zapisujemy zmiany w pliku, następnie tworzymy bazę dla Gogs.
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~/gogs/scripts$ sudo mysql &lt; mysql.sql
+</pre>
+		<p>
+			Teraz tworzymy nowego użytkownika np. o nazwie <em>git</em>. To na jego katalogu domowym będą tworzone repozytoria użytkowników oraz to z jego uprawnieniami będzie uruchamiany Gogs.
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ sudo adduser git
+</pre>
+		<p>
+			Kopiujemy na jego katalog domowy naszą paczkę z Gogs.
+		</p>
+<pre class="code-block">
+xf0r3@gogs:~$ sudo cp gogs_0.12.1_linux_amd64.tar.gz /home/git
+</pre>
+		<p>
+			Przechodzimy na jego katalog domowy, albo przez <code class="code-inline">sudo su</code> i następnie <code class="code-inline">su git</code> lub bezpośrednio <code class="code-inline">su git</code>. Tam wypakowujemy naszą paczkę.
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ su git
+Password:
+git@gogs:~$ tar -xzvf gogs_0.12.1_linux_amd64.tar.gz
+</pre>
+		<p>
+			Teraz możemy uruchomić nasz serwer. <strong>Uwaga! </strong>Jeśli uruchamiamy naszego Gogs-a w środowisku produkcyjnym, to przed pierwszym uruchomieniem serwera należy wykonać czynność opisane poniżej, w przeciwnym wypadku możemy przejść do uruchomienia serwera.
+		</p>
+		<p>
+			Poniżej przedstawię jak należy skonfigurować <strong>Nginx</strong> jako <strong>reverse proxy</strong>, aby nasz serwer Gogs był widoczny pod konkretnym adresem oraz pod klasycznym portem HTTPS.
+		</p>
+		<p>
+			Na początku w katalogu <em>/etc/ssl</em> tworzymy katalog o nazwie <em>gogs.</em>
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ sudo mkdir -p /etc/ssl/gogs
+</pre>
+		<p>
+			Następnie kopiujemy do niego pliki certyfikatu
+		</p>
+<pre class="code-block">
+xf0r3@gogs:~$ sudo cp *.pem /etc/ssl/gogs
+</pre>
+		<p>
+			Teraz instalujemy <em>nginx</em>.
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ sudo apt install nginx
+</pre>
+		<p>
+			Po zainstalowaniu pakietu, w katalogu <em>/etc/nginx/sites-enabled</em> tworzymy plik o nazwie <em>gogs</em> następnie w nim wklejmy poniższą konfiguracje.
+		</p>
+<pre class="code-block">
+server {
+    listen 443 ssl;
+    server_name git.example.com;
+		root /var/www/html/system/nginx-root; # Used for acme.sh SSL verification (https://acme.sh)
+
+		location / {
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Host $http_host;
+        proxy_pass http://127.0.0.1:3000;
+		}
+
+    ssl on;
+    ssl_certificate /etc/ssl/gogs/fullchainX.pem;
+    ssl_certificate_key /etc/ssl/gogs/privkeyX.pem;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+
+    ssl_session_timeout 5m;
+    client_max_body_size 50m;
+}
+</pre>
+		<p>
+			W pliku zmieniamy:
+		</p>
+		<ul>
+			<li><strong>server_name</strong> - podajemy nazwę, pod którą Gogs będzie widoczny.</li>
+			<li><strong>proxy_pass</strong> - podajemy adres oraz port, na którym nasłuchuje główny proces serwera Gogs</li>
+			<li><strong>ssl_certificate </strong>- podajemy ścieżkę do pliku certyfikatu</li>
+			<li><strong>ssl_certificate_key</strong> - podajemy ścieżkę do pliku klucza prywatnego certyfikatu.</li>
+		</ul>
+		<p>
+			Restartujemy nginx:
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ sudo systemctl restart nginx
+</pre>
+		<p>
+			Sprawdzamy czy serwer wystartował prawidłowo:
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ sudo systemctl status nginx
+</pre>
+		<p>
+			Jeśli nginx wystartował poprawnie lub uruchamiamy gogs dla celów testowych to możemy, uruchomić serwer a następnie instalacje Gogs, na którą wchodzimy przez adres zdefiniowany w parametrze <code class="code-inline">server_name</code>.
+		</p>
+<pre class="code-block">
+git@gogs:~$ gogs/gogs web
+2020/09/13 08:54:43 [ WARN] Custom config "/home/git/gogs/custom/conf/app.ini" not found. Ignore this warning if you're running for the first time
+2020/09/13 08:54:43 [TRACE] Log mode: Console (Trace)
+2020/09/13 08:54:43 [ INFO] Gogs 0.12.1
+2020/09/13 08:54:43 [TRACE] Work directory: /home/git/gogs
+2020/09/13 08:54:43 [TRACE] Custom path: /home/git/gogs/custom
+2020/09/13 08:54:43 [TRACE] Custom config: /home/git/gogs/custom/conf/app.ini
+2020/09/13 08:54:43 [TRACE] Log path: /home/git/gogs/log
+2020/09/13 08:54:43 [TRACE] Build time: 2020-08-27 07:07:30 UTC
+2020/09/13 08:54:43 [TRACE] Build commit: 43fc8260850090b55d4ee2586a819b3b6c016279
+2020/09/13 08:54:43 [ INFO] Run mode: Development
+2020/09/13 08:54:43 [ INFO] Listen on http://0.0.0.0:3000
+</pre>
+		<p>
+			Do stworzenia w dużej mierze (90 kilku %) Gogs wykorzystano język programowania Go. Dlatego podobnie do aplikacji stworzonych w Node.js, Gogs startuje na wysokim porcie, aby mógł wystartować na porcie poniżej 1024 musi zostać uruchomiony jako <em>root</em>, co nie jest zalecane. Adres z portem 3000 na końcu przepiszemy do naszej przeglądarki zamiast zer, podstawimy adres naszej maszyny.
+		</p>
+		<p>
+			Po wpisaniu naszego zmienionego adresu w przeglądarkę, wyświetli nam się strona instalacyjna. Co zmieniamy?
+		</p>
+		<ul>
+			<li>Hasło MySQL do użytkownika Gogs - musimy podać hasło jakie podaliśmy przy zakładaniu bazy.</li>
+			<li>Nazwa aplikacji - według uznania. </li>
+			<li>Domena - podajemy adres IP maszyny (w przypadku środowiska testowego) lub domenę (w przypadku środowiska produkcyjnego).</li>
+			<li>Adres URL aplikacji - podobnie do domeny (w przypadku środowiska testowego) lub https://git.naszadomena.org (w przypadku środowiska produkcyjnego)</li>
+		</ul>
+		<p>
+			Po zainstalowaniu zostaniemy przyniesieni nas stronę logowania. <strong>Jednak naszą pracę z Gogs-em zaczniemy od utworzenia konta. Pierwszy zarejestrowany użytkownik dostaje uprawnienia administracyjne.</strong> Pod formularzem logowania znajduje się odnośnik kierujący nas do formularza rejestracji. Wypełniamy wszystkie pola i rejestrujemy użytkownika, po zarejestrowaniu zostaniemy przeniesieni z powrotem na stronę logowania, logujemy się nowo utworzonym użytkownikiem i mamy Gogs-a do dyspozycji.
+		</p>
+		<p>
+			Powiedzmy że mamy zainstalowany Gogs (w wersji produkcyjnej) i musimy wyłączyć nasz serwer. Po jego ponownym uruchomieniu i próbie połączenia z Gogs otrzymujemy błąd "502 Bad Gateway". Oznacza on mniej więcej tyle że proxy nie ma gdzie przekierować danych ponieważ usługa na podanym przez nas adresie i porcie nie odpowiada. Gogs nie został uruchomiony po starcie systemu. Musimy go uruchomić ręcznie. Jednak uruchamianie Gogs-a po każdym resecie serwera nie jest raczej mile widziane. Współczesne systemy, tak jak w moim przypadku Ubuntu posiadają bardzo zaawansowaną obsługę poziomów uruchomienia systemu jednym z nich jest <strong>systemd</strong>. Za uruchomienie konkretnych usług w danym momencie odpowiadają specjalne skrypty systemd, Gogs w swoich plikach instalacyjnych również posiada taki skrypt.
+		</p>
+		<p>
+			<strong>
+			Aby dodać Gogs do autostartu, wystarczy że skopiujemy plik <em>gogs.service</em> z katalogu <em>gogs/scripts/systemd</em> do <em>/etc/systemd/system</em> następnie wydamy polecenie:
+			</strong>
+		</p>
+<pre class="code-block">
+xf0r3m@gogs:~$ sudo systemctl enable gogs.service
+</pre>
+		<p>
+			W pliku nie musimy nic zmieniać, ponieważ tak zainstalowaliśmy Gogs-a, że nasze ścieżki do danych Gogs pokrywają się tymi w pliku usługi. To polecenie spowoduje zarejestrowanie nowej usługi na danym poziomie uruchomienia.
+		</p>
+		<p>
+			Ostatnim pakietem jaki będziemy instalować jest <strong>Gitea</strong>. Jej instalacja jest bardzo podobna do Gogs-a.
+		</p>
+		<p>&nbsp;</p>
+		<h2>Gitea</h2>
+		<p>
+			A więc <strong>instalacje Gitei rozpoczynamy od zainstalowania na serwerze systemu bazodanowego</strong> może być to MySQL może być to MariaDB lub PostgreSQL.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo apt install mysql-client mysql-server
+</pre>
+		<p>
+			Następnym krokiem jest stworzenie bazy danych.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo mysql
+mysql&gt; CREATE DATABASE gitea;
+-- ciach --
+mysql&gt; CREATE USER 'gitea'@'localhost' IDENTIFIED BY '2up3rT4jn3H4s|_0';
+-- ciach --
+mysql&gt; GRANT ALL ON gitea.* TO 'gitea'@'localhost';
+</pre>
+		<p>
+			Kolejną czynnością jest utworzenie użytkownika, z którego uprawnieniami będziemy uruchamiać Giteę. W tym przypadku stworzymy użytkownika systemowego poniższym poleceniem.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo adduser --system --shell /bin/bash --group --disable-password --home /home/git git
+</pre>
+		<p>
+			Po stworzeniu użytkownika, możemy utworzyć niezbędne dla Gitei katalogi.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo mkdir -p /home/git/{custom,data,log}
+xf0r3m@gitea:~$ sudo chown -R git:git /home/git
+xf0r3m@gitea:~$ sudo chmod -R 750 /home/git
+xf0r3m@gitea:~$ sudo mkdir /etc/gitea
+xf0r3m@gitea:~$ sudo chown root:git /etc/gitea
+xf0r3m@gitea:~$ sudo chmod 770 /etc/gitea
+</pre>
+		<p>
+			<strong>Po instalacji będziemy, musieli pamiętać o odebraniu uprawnień do zapisu w katalogu <em>/etc/gitea</em> oraz w pliku <em>/etc/gitea/app.ini</em></strong>.
+		</p>
+		<p>
+			Teraz przelogujemy się na użytkownika git.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo su
+root@gitea:/home/xf0r3m# su git
+</pre>
+		<p>
+			Bezpośrednio do katalogu domowego ściągamy plik binarny Gitei. Kiedy plik znajdzie się już na serwerze możemy go uruchomić i zainstalować Giteę.
+		</p>
+<pre class="code-block">
+git@gitea:~$ GITEA_WORK_DIR=/home/git ./gitea web -c /etc/gitea/app.ini
+</pre>
+		<p>
+			Nie musimy przejmować się brakiem pliku <em>/etc/gitea/app.ini</em>. Zostanie on utworzony podczas instalacji. Kiedy nasz serwer wystartuje możemy przejść pod <em>http://&lt;ip_serwera&gt;:3000</em>. Naszym oczom ukaże się strona startowa, podobna do tej, którą znamy z Gogs. Wygląda to trochę jakby nie trzeba było tego instalować, mamy w prawym górnym rogu dwa odnośniki <em>Zaloguj się </em>oraz <em>Zarejestruj się</em>, z racji tego iż musimy zarejestrować pierwszego użytkownika (pierwszy zarejestrowany użytkownik zyskuje uprawnienia administracyjne) <strong>klikamy w odnośnik <em>Zarejestruj sie</em> i wyświetla nam się stroną instalacji, którą już znamy z Gogs</strong>. Uzupełniamy lub zmieniamy te pola, jakie zostały wymienione przy okazji Gogs-a. Po zainstalowaniu zostaniemy przekierowani na stronę logowania, klikamy odnośnik pod przyciskiem aby zarejestrować pierwszego użytkownika. Następnie możemy się już logować.
+		</p>
+		<p>
+			Dla Gitei również dostępny jest plik usługi po tym adresem <a href="https://github.com/go-gitea/gitea/blob/master/contrib/systemd/gitea.service">https://github.com/go-gitea/gitea/blob/master/contrib/systemd/gitea.service</a>, w którym musimy zmienić parę opcji, m.in. wskazać jakiego systemy bazodanowego użyliśmy, aby wstrzymać uruchamianie Gitei do momentu  uruchomienia bazy danych. Poniżej znajduje się zawartość pliku <em>gitea.service</em> przygotowana dla przedstawionej tutaj instalacji Gitei.
+		</p>
+<pre class="code-block">
+[Unit]
+Description=Gitea (Git with a cup of tea)
+After=syslog.target
+After=network.target
+###
+# Don't forget to add the database service requirements
+###
+#
+Requires=mysql.service
+#Requires=mariadb.service
+#Requires=postgresql.service
+#Requires=memcached.service
+#Requires=redis.service
+#
+###
+# If using socket activation for main http/s
+###
+#
+#After=gitea.main.socket
+#Requires=gitea.main.socket
+#
+###
+# (You can also provide gitea an http fallback and/or ssh socket too)
+#
+# An example of /etc/systemd/system/gitea.main.socket
+###
+##
+## [Unit]
+## Description=Gitea Web Socket
+## PartOf=gitea.service
+##
+## [Socket]
+## Service=gitea.service
+## ListenStream=&lt;some_port&gt;
+## NoDelay=true
+##
+## [Install]
+## WantedBy=sockets.target
+##
+###
+
+[Service]
+# Modify these two values and uncomment them if you have
+# repos with lots of files and get an HTTP error 500 because
+# of that
+###
+#LimitMEMLOCK=infinity
+#LimitNOFILE=65535
+RestartSec=2s
+Type=simple
+User=git
+Group=git
+WorkingDirectory=/home/git
+# If using Unix socket: tells systemd to create the /run/gitea folder, which will contain the gitea.sock file
+# (manually creating /run/gitea doesn't work, because it would not persist across reboots)
+#RuntimeDirectory=gitea
+ExecStart=/home/git/gitea web --config /etc/gitea/app.ini
+Restart=always
+Environment=USER=git HOME=/home/git GITEA_WORK_DIR=/home/git
+# If you want to bind Gitea to a port below 1024, uncomment
+# the two values below, or use socket activation to pass Gitea its ports as above
+###
+#CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+#AmbientCapabilities=CAP_NET_BIND_SERVICE
+###
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+		<p>
+			<strong>Ten plik umieszczamy w katalogi <em>/etc/systemd/system</em></strong> następnie wydajemy polecenie:
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo systemctl enable gitea.service
+</pre>
+		<p>
+			Jeśli jeszcze tego zrobiśmy to teraz zatrzymamy naszą ręcznie uruchomioną Giteę, naciskając w oknie połaczonego z serwerem terminala <em>Ctrl+c</em>. Następnie wydajemy poniższe polecenia. Te polecenia zmieniają uprawnienia do pliku konfiguracyjnego Gitei.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo chmod 750 /etc/gitea
+xf0r3m@gitea:~$ sudo chmod 640 /etc/gitea/app.ini
+</pre>
+		<p>
+			Na końcu możemy uruchomić naszą usługę z Giteą.
+		</p>
+<pre class="code-block">
+xf0r3m@gitea:~$ sudo systemctl start gitea.service
+</pre>
+		<p>
+			Jeśli chcemy Giteę uruchomić w środowisku produkcyjnym, to przydałby się HTTPS. <em>Reverse proxy</em> dla Gitei uruchomiamy identycznie jak dla Gogs. Nawet możemy użyć tego samego pliku konfiguracyjnego.
+		</p>
+		<p>&nbsp;</p>
+		<h2>Podsumowanie</h2>
+		<p>
+			Pomiędzy tymi trzema, który wybrać. Osobiście jeśli potrzebujemy na wczoraj skonfigurować ogólnodostępnego prostego zdalnego Gita, to wybrał bym Gogsa. Instaluje się go szybko i bez wiekszych problemów, prawdopodbnie zawiera wszystko co potrzeba.
+		</p>
+		<p>
+			Jeśli jesteśmy na prawdę dużymi leniami, lub nie dysponujemy żadną mocą obliczeniową, którą możemy swobodnie zarządzać z Internetu, to czwartą opcją najmniej bolesną pozostaje konto na <strong>GitHub</strong>.
+		</p>
+		<p>
+			~xf0r3m
+		</p>
+	</div>
+<p style="margin: 0; padding: 0; outline: 0;">
+2021; COPYLEFT; ALL RIGHTS REVERSED
+</p>
+		</body>
+	</html>

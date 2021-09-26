@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Instalacja Sandstorm.io</h1>
+		<p>
+			<strong>Sandstorm.io</strong> jest platformą do samodzielnego hostowania popularnych aplikacji internetowych i współdzielenia ich z innymi, usprawniając tym pracę zespołów. Do zainstalowania mamy 78 różnych aplikacji, dostępnych po tym adresem <a href="https://apps.sandstorm.io/">https://apps.sandstorm.io/</a>. Warto dodać że te aplikacje są specjalnie przygotowanymi na potrzeby platformy obrazami. Nie są to pełne aplikacje, jakie otrzymalibyśmy przy samodzielnej instalacji na jednym z naszych serwerów, dlatego też używanie sandstorm jako platformy testowej dla aplikacji mija się z celem. Sama instalacja nie jest trudna, składa się ona w pierszym etapie z wyboru trybu instalacji, czy jest to <strong>instalacja normalna</strong>, po której nasz serwer będzie widoczny w Internecie pod podaną przez nas subdomeną czy <strong>instalacja developerska</strong>, instalowana lokalnie na komputerze, dostępna pod adresem "local.sandstorm.io:6080", dzięki czemu uzyskamy możliwośc przetestowania aplikacji, niestety lokalnie. Drugi etap instalacji będzie polegać na wyborze sposobu logowania zespołu do platformy czy ustawień skrzynki mailowej dla powiadomień. Tutaj opiszę instalajcję normalną, ma ona jednak spore wymagania jak stały publiczny adres IP czy też użycie maszyny wirtualnej lub fizycznego serwera.
+		</p>
+		<ol>
+			<li>Pobranie skryptu oraz instalacja usługi na serwerze.
+				<p>
+					Instalacja sandstorm najlepiej rozpocząć od zalogowania sie jako administrator (<em>root</em>) na serwerze przeznaczonym pod jego instalację. Na stronie <a href="https://sandstorm.io/install">https://sandstorm.io/install</a>, w okienku "HTTPS-verified install" znajduje się polecenie, które kopiujemy do naszego terminala. Pobrany zostanie skrypt instalacyjny, który zaraz po automatycznym uruchomieniu zapyta się o tryb instalacji w tym wypadku wybieramy opcje nr. 1. Wpisując po prostu '1'. W trakcie czynności przeprowadzanych przez instalator zostaniemy zapytani o subdomenę, jaka ma działać pod domeną '.sandcats.io' oraz o adres email, który zostanie wykorzystany do generowania certyfikatu Let's Encrypt oraz
+					uwierzytelnienia w razie potrzeby odzyskania domeny w trakcie ewentualnej migracji na inny serwer. Reszta czynności wykonuje się automatycznie, po zakończeniu pracy zostanie nam zwrócony link, pod który nalezy się udać aby skonfigurować naszą platformę.
+				</p>
+			</li>
+			<li>Konfiguracja serwera.
+				<p>
+					Pierwszą rzeczą jaką będziemy musieli skonfigurować jest metoda logownia. Do wyboru mamy kilka, jednak jedna wydaje się posiadać gwarancję działania oraz jest w miarę łatwa do skonfigurowania - Google. Kiedy wybierzemy logowanie za pomocą konta Google to cała procedura konfiguracji zostanie wypisana powyżej niezbędnych do konfiguracji pól. Jedyną czekającą na nas tutaj zagadką może być nazwa aplikacji w ekranie akceptacji OAUTH, możemy wpisać cokolwiek, np. sandstorm. Po uzyskaniu potrzebnych informacji, przechodzimy dalej. Jeśli komuś potrzebne są następne konfiguracje może je ustawić wedle uznania. Po zakończeniu konfiguracji nie pozostało nam nic innego jak tylko przejść do instalacji aplikacji i zaproszenia naszych znajomych do korzystania z usług.
+				</p>
+			</li>
+		</ol>
+		<p>
+			Korzystając z Sandstorm przez krótki okres czasu miałem mieszane odczucia. Jedna z aplikacji, która była odpowiedzialna za przechowywanie plików nie chciała ich uploadować do podfolderów, jedynie do głównego katalogu. Może zrezyngnowałem z tej platformy ponieważ nie wykorzystywałem jej zgodnie z przeznaczniem a żądałem platformy do hostowania aplikacji w Internecie, a nie kilku usług dostępnych dla wąskiego grona odbiorców. Jednak mylący może być fakt, że <strong>Ghost</strong> system CMS do hostowania blogów, wspiera (obraz na tej platformie) udostepnienie tej aplikacji w sieci (pozwolenie na dostęp do treści tam umieszczonych poza logowanie do platformy). Teraz patrząc na to z boku, używanie sandstorm może prostym sposobem na wdrożenie intranetu. Sandstorm jest złym rozwiązaniem dla ludzi szukających łatwego hostingu usług w siecie, ale świetnym rozwiązaniem dla zespołów, które chcą mieć wszystko w jedym miejscu.
+		</p>
+		<p>
+			~xf0r3m
+		</p>
+		<p>
+			P.S. Jeśli kogoś interesuje instalacja platformy Sandstorm, to pod tym linkiem, znajduje się dość ciekawy wpis na serwisie Reddit: <a href="https://www.reddit.com/r/selfhosted/comments/bsoduu/about_sandstormio/">https://www.reddit.com/r/selfhosted/comments/bsoduu/about_sandstormio/</a>, który może zaważyć na tym czy dalej będziemy chcieli ją instalować.
+		</p>
+	</div>
+	<p style="margin: 15px; padding: 0; outline: 0;">
+		2021; COPYLEFT; ALL RIGHT REVERSED;
+	</p>
+</body>
+</html>

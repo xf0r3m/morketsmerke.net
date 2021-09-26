@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+        <h1 style="text-align: center;">Generowanie certyfikatu SSL Self-Signed za pomocą pakietu OpenSSL</h1>
+        <p>
+            <strong>Jednym z założeń używania certyfikatów SSL jest uwierzytelnienie serwera przed klientem</strong>, innymi słowy - przedstawienie podmiotu zarządzającego maszyną, po to aby klient miał pewność że połączył się z właściwym serwerem. Takie certyfikaty są wydawane przez firmy trzecie, które są w stanie poświadczyć że witryna www.example.com należy do firmy Example Inc. Wydanie takiego certyfikatu może kosztować grube pieniądze w zależności od tego co dany certyfikat oferuje. Komercyjny certyfikat często wyświetla się w przeglądarce jako zielona kłódka przy adresie strony. W dziesiejszych czasach wystarczy dysponować domeną, aby móc posiadać "zieloną kłódkę" na swojej stronie. Takie certyfikaty wystawiane są przez <strong>Let's Encrypt</strong> i każdy, dosłonie każdy może sobie taki certyfikat wyrobić. A co jeśli nie posiadamy żadnej domeny i chcemy np. zabezpieczyć nasz serwer www, za pomocą <strong>certyfikatu SSL</strong> (protokołu HTTPS, certyfikat jest tylko narzędziem), którego zawsze pierwszorzędnym celem jest zabezpieczenie transmisji pomiędzy klientem a serwerem. Możemy:
+        </p>
+        <ul style="list-style-type: upper-alpha;">
+                <li>Użyć certyfikatu wbudowanego w serwer Apache, o ile używamy tego programu jako serwera WWW oraz mamy zaufanie do tego certyfikatu.</li>
+                <li>Wygenerować własny certyfikat wraz parą kluczy RSA. Klucze są niezbędne do wygenerowania certyfikatu, których np długość możemy ustawić. Od długości klucza zależy bezpieczeństwo naszej transmisji.
+                </li>
+        </ul>
+        <p>
+            Aby utworzyć swój własny certyfikat SSL wydajemy poniższe polecenie.
+        </p>
+<pre class="code-block">
+$ sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt
+</pre>
+    <p>
+        Z względu na to gdzie chcemy ten certyfikat zapisać musimy wydać to polecenie z odpowiednimi uprawnieniami. <code class="code-inline">req</code> oznacza że <strong>OpenSSL</strong> bedzie używać modułu do podpisu żądań certyfikatu schematu <em>X.509</em> zapisanego w formacie <em>PKCS#10</em>, jest klasyczny moduł do obsługi certyfikatów wykorzystywanych przez HTTPS, <code class="code-inline">-x509</code> spowoduje że wygenerowany certyfikat będzie miał strukturę schematu x509, a nie klasycznego certyfikatu, <code class="code-inline">-nodes</code> wyłącza szyfrowanie klucza prywatnego, dzieki czemu nie będzie potrzebne hasło klucza podczas każdego restartu certyfikatu (niestety, klucz nie jest przez to zbyt bezpieczny). <code class="code-inline">-days 365</code> ustala przez ile dni certyfikat będzie ważny. Wartością tej opcji może być wyłącznie dodatnia liczba całkowita. Wraz z certyfikatem generujemy potrzebną parę kluczy.
+				Za pomocą opcji <code class="code-inline">-newkey</code>, tworzymy nową parę kluczy, jako wartośc dla tej opcji podajemy algorytm wykorzystywany do wygenerowania kluczy w tym przypadku jest <code class="code-inline">rsa</code> po dwukropku (<strong>:</strong>) podana jest długość klucza tutaj <code class="code-inline">2048</code> bitów co jest standardem na dziesiejsze czasy, krótszych kluczy sam OpenSSL nie będzie chciał stworzyć. Opcja <code class="code-inline">-keyout</code> wskazuje miejsce gdzie klucz ma zostać zapisany, a opcja <code class="code-inline">-out</code>, wskazuje miejsce zapisu wygenerowanego certyfikatu. Te dwie scieżki należy zapisać będą potrzebne do wskazania plików certyfikatu w pliku konfiguracyjnym serwera WWW.
+    </p>
+    <p>
+        Kiedy wygenerowaliśmy i wdrożyliśmy nasz certyfikat przejdź do strony, którą nim zabezpieczyliśmy. Do wiemy się z infomacji zwróconych przez przeglądarkę że nasz nie jest godny zaufania, a kłódka będzie posiadać znak ostrzegawczy. Dlaczego tak się dzieje ? Każda przeglądarka posiada własną bazę zaufanych wystawców certyfikatów. Jeśli certyfikat jakim serwer operuje nie posiada znaczników, którego kolwiek z nich wtenczas wyświetli nam się taka informacja. Wystawcy certyfikatów zwani również urzędami certyfikacji, posiadają własne certyfikaty służące do podpisu wniosków certyfikacyjnych, na ich podstawie generowane są certyfikaty. Jest wielce prawdopobne że urzędy wykorzystują to samo oprogramowanie co my. Nic nie stoi na przeszkodzie aby utworzyć sobie swój własny urząd certyfikacyjny i podpisywać za jego pomocą swoje certyfikaty. Niestety nie jest tak kolorowo jakby się mogło wydawać.
+				Aby przeglądarka traktowała nasze certyfikaty jako zaufane musi posiadać w swojej bazie certyfikat naszego urzędu certyfikacji. Możemy zaimportować taki certyfikat do naszego systemu, wtedy po wejściu na strona kłódka będzie zielona. Niestety kłódka będzie zielona tylko tam gdzie zaimpotowalśmy certyfikat naszego urzędu.
+    </p>
+    <p>
+        Obecnie rzadko zdarza się potrzeba wygenerowania tego typu certyfikatów. Ale jeśli zajdzie taka potrzeba to teraz wiadmo, możemy to zrobić za pomocą pojedyńczego polecenia.
+    </p>
+    <p>~xf0r3m</p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+		</body>
+	</html>

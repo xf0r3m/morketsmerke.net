@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://file.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Przekierowanie portów do kontenerów LXD</h1>
+        <p>
+            Gdzieś w tej kategorii znajduje się materiał odnośnie instalacji i inicjalizacji środowiska kontenerów LXD/LXC. Kiedy już nacieszyliśmy się tymi kontenerami, to czas zagonić je do pracy. Jak pamiętamy z wyżej wymienionego materiału podczas konfiguracji umożliwiliśmy komunikacje z Internetem oraz siecią lokalną serwera hostującego przez NAT. Stan komunikacji wygląda na taki jak że kontenery mogą komunikować z kim kolwiek, a z nimi nikt poza serwerem hostującym. A jeśli mają one dla nas hostować jakieś usługi to musimy mieć możliwość połączenia się z nimi. NAT w przypadku opartych na Debianie dystrybucji jest realizowany przez <em>iptables</em>. Warto zauważyć, że wewnątrz serwera hostującego zrobiła się taka mikrosieć, gdzie nasz interfejs mostu jest tym interfejsem wewnętrzny a główny interfejs sieciowy serwera, interfejsem zewnętrznym.
+						Czyli <strong>aby nasze kontenery mogły świadczyć usługi w Internecie trzeba dopuścić do nich ruch na wybranych portach</strong>, tak jakby było serwerami w klasycznej sieci lokalnej. Dowiadując się z tego materiału jak przekierować porty z interfejsu serwera do poszczególnych kontenerów, będziemy wiedzieć jak przekierować porty z interfejsu zewnętrzego naszej sieci do konkretnych serwerów, oczywiście o ile w naszej sieci wykorzystujemy bramkę opartą o iptables.
+        </p>
+<pre class="code-block">
+# iptables -t nat -I PREROUTING -i enp1s0 -p tcp -d 192.168.1.6 --dport 80 -j DNAT --to-destination 192.168.56.2:80
+</pre>
+		<p>
+			W tablicy <code class="code-inline">nat</code>, w łańcuchu <code class="code-inline">PREROUTING</code> wstawiliśmy regułę, która przekieruje wszystkie pakiety, zaadresowane do naszego serwera kontenerów na porcie <code class="code-inline">80</code> do kontenera o adresie <code class="code-inline">192.168.56.2</code> na port <code class="code-inline">80</code>, za pomocą <strong>DNAT</strong> - zamiany adresu docelowego, w tym przypadku z adresu serwera na adres kontenera.
+		</p>
+		<p>
+			Za pomocą pojedyńczego polecenia umożliwiliśmy połączenie dowolnego komputera w sieci z serwerem WWW uruchomionym na naszym kontenerze. Aby dostosować tę regułę do "port forwardingu" w naszej sieci opartej o bramkę z GNU/Linux-em, wystartczy zmienić interfejs i adresy, ewentualnie porty i protokół jeśli chcemy wypuścić coś innego niż HTTP.
+		</p>
+		<p>
+			~xf0r3m
+		</p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+	</body>
+</html>

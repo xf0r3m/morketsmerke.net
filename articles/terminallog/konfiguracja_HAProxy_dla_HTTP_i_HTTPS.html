@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+					text-align: left;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				ul {
+					text-align: left;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+ _                      _             _ _
+| |_ ___ _ __ _ __ ___ (_)_ __   __ _| | | ___   __ _
+| __/ _ \ '__| '_ ` _ \| | '_ \ / _` | | |/ _ \ / _` |
+| ||  __/ |  | | | | | | | | | | (_| | | | (_) | (_| |
+ \__\___|_|  |_| |_| |_|_|_| |_|\__,_|_|_|\___/ \__, |
+			                        |___/
+</pre>
+			<p style="margin: 0; padding: 0; outline: 0; font-size: 18pt;">
+				&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+			</p>
+			<div style="margin-left: auto; margin-right: auto; width: 80%;">
+				<h2 style="text-align: center;">Konfiguracja HAProxy dla HTTP 
+					oraz HTTPS</h2>
+				<p>
+				<strong>HAProxy</strong> jak podaje Wikipedia jest
+				load-balancerem oraz serwerem proxy dla połączeń TCP oraz
+				aplikacji HTTP. Dla mnie jest program, który zrobił robotę
+				jeśli chodzi o hosting aplikacji internetowych na
+				kontenerach. Bez <em>HAProxy</em>, aplikacje WWW na
+				innych fizycznych serwerach musiały mieć odzielny publiczny
+				adres IP. To się zmieniło, właśnie dzięki temu oprogramowaniu. Ten
+				materiał pojawia się na "terminallog", bo jest o stricte
+				jednym programie bez wskazania konkrenej platformy czy
+				systemu operacyjnego.
+				</p>
+				<p>
+				Ja <em>HAP-a</em> konfigurowałem na Ubuntu 18.04 oraz 20.04. 
+				Jednak, tak jak już wspomniałem możemy sobie nawet go 
+				skonfigurować na OpenBSD. Mój wybór wtedy padł na Ubuntu, gdyż
+				dopiero co zaznajomiłem się technologią kontenerów LXD.
+				</p>
+				<p>
+				Przejdźmy może już do konfiguracji. Ten materiał będzie
+				składał się w bardzo dużej części z listingów plików konfiguracyjnych
+				oraz ich opisów. Takie informacje na szybko, bez zbędnej
+				teorii.
+				</p>
+				<p>
+				Rozpoczniemy od proxy dla HTTP, poniżej znajduje się 
+				konfiguracja dostarczana wraz z pakietem.
+				</p>
+<pre class="code-block">
+global
+	log /dev/log	local0
+	log /dev/log	local1 notice
+	chroot /var/lib/haproxy
+	stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+	stats timeout 30s
+	user haproxy
+	group haproxy
+	daemon
+
+	# Default SSL material locations
+	ca-base /etc/ssl/certs
+	crt-base /etc/ssl/private
+
+	# Default ciphers to use on SSL-enabled listening sockets.
+	# For more information, see ciphers(1SSL). This list is from:
+	#  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+	# An alternative list with additional directives can be obtained from
+	#  https://mozilla.github.io/server-side-tls/ssl-config-generator/?server=haproxy
+	ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:
+	ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS
+	ssl-default-bind-options no-sslv3
+
+defaults
+	log	global
+	mode	http
+	option	httplog
+	option	dontlognull
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+	errorfile 400 /etc/haproxy/errors/400.http
+	errorfile 403 /etc/haproxy/errors/403.http
+	errorfile 408 /etc/haproxy/errors/408.http
+	errorfile 500 /etc/haproxy/errors/500.http
+	errorfile 502 /etc/haproxy/errors/502.http
+	errorfile 503 /etc/haproxy/errors/503.http
+	errorfile 504 /etc/haproxy/errors/504.http
+
+</pre>
+			<p>
+				<em>Wartość opcji <code class="code-inline">
+				ssl-default-bind-ciphers</code> złamano tylko i wyłączenie
+				dla celów estetycznych strony.</em>
+			</p>
+			<p>
+			Kolejny listing przestawia już gotową konfigurację HTTP
+			</p>
+<pre class="code-block">
+	global
+	log /dev/log	local0
+	log /dev/log	local1 notice
+	chroot /var/lib/haproxy
+	stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+	stats timeout 30s
+	user haproxy
+	group haproxy
+	daemon
+
+	# Default SSL material locations
+	ca-base /etc/ssl/certs
+	crt-base /etc/ssl/private
+
+	# Default ciphers to use on SSL-enabled listening sockets.
+	# For more information, see ciphers(1SSL). This list is from:
+	#  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+	# An alternative list with additional directives can be obtained from
+	#  https://mozilla.github.io/server-side-tls/ssl-config-generator/?server=haproxy
+	ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:
+	ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS
+	ssl-default-bind-options no-sslv3
+
+defaults
+	log	global
+	mode	http
+	option	httplog
+	option	dontlognull
+	option	forwardfor
+	option	http-server-close
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+	errorfile 400 /etc/haproxy/errors/400.http
+	errorfile 403 /etc/haproxy/errors/403.http
+	errorfile 408 /etc/haproxy/errors/408.http
+	errorfile 500 /etc/haproxy/errors/500.http
+	errorfile 502 /etc/haproxy/errors/502.http
+	errorfile 503 /etc/haproxy/errors/503.http
+	errorfile 504 /etc/haproxy/errors/504.http
+
+frontend www_front
+	bind *:80
+	acl host_stronya hdr(host) -i example.edu.pl www.example.edu.pl
+	
+	use_backend stronaa if host_stronya
+
+
+backend stronaa
+	http-request set-header X-Client-IP %[src]
+	server stronaa 192.168.56.2:80 check
+
+</pre>
+			<p>
+				<em>Wartość opcji <code class="code-inline">
+				ssl-default-bind-ciphers</code> złamano tylko i wyłączenie
+				dla celów estetycznych strony.</em>
+			</p>
+			<p>
+			Więc, co się zmieniło względem konfiguracji bazowej? W konfiguracji domyślnej 
+			<code class="code-inline">defaults</code> 
+			zmieniono dwie opcje:
+				<ul>
+					<li><code class="code-inline">option forwardfor</code> - 
+					dzięki, której włączono wstawianie nagłówka 
+					<em>X-Forwarded-For</em> do żądań wysyłanych do
+					serwera. Dzięki temu nagłówku do logów serwera trafi
+					prawdziwy adres IP klienta a nie adres <em>HAP-a</em>,</li>
+					<li><code class="code-inline">option http-server-close</code> - 
+					włącza zamykanie połączeń przez serwer. Użycie tej
+					opcji ma na celu zmniejszyć zużycie zasobów
+					serwera.</li>
+				</ul>
+			Dodano sekcję <code class="code-inline">frontend</code>.
+			Zawiera ona opcje uruchomieniowe proxy takie jak port, na 
+			którym <em>HAP</em> ma nasłuchiwać oraz reguły, według których należy
+			traktować spływające do usługi dane. Na przykład do jakiego
+			serwera przekierować żądanie na konkretny adres. W 
+			przypadku proxy dla HTTP, wystarczą tylko poniższe opcje:
+				<ul>
+					<li>
+						<code class="code-inline">
+						acl host_stronya hdr(host) -i example.edu.pl www.example.edu.pl
+						</code> - <em>ACL-ele</em> są warunkami, które
+						określają kryteria przekazywania danych przez proxy.
+						Te warunki użwane są np. przez polecenia wskazujące
+						na konkretny serwer. Sama reguła <em>ACL</em>
+						składa się w tym przypadku z:
+							<ul>
+								<li>Słowa kluczowego: 
+								<code class="code-inline">acl</code>,
+								</li>
+								<li>nazwy:
+								<code class="code-inline">host_stronya</code>,
+								</li>
+								<li>kryterium:
+								<code class="code-inline">hdr(host)</code> - 
+								To kryterium może być niezrozumiałe. W konteście
+								<em>ACL</em> polega ono na przyrównaniu zawartości
+								nagłówka <em>host</em> żądania z wartościami na końcu
+								reguły,
+								</li>
+								<li>flagi:
+								<code class="code-inline">-i</code> -
+								brak czułości na wielkość znaków,
+								</li>
+								<li>wartości do przyrównania:
+								<code class="code-inline">example.edu.pl www.example.edu.pl</code>
+								</li>
+							</ul>
+					</li>
+					<li>
+						<code class="code-inline">
+							use_backend stronaa if host_stronya
+						</code> - polecenie wskazujące na serwer, którego
+							deklaracja znajduje się w sekcji <code class="code-inline">
+							backend</code> o nazwie <code class="code-inline">
+							stronaa</code> na podstawie <em>ACL-ki</em>
+							<code class="code-inline">host_stronya</code>.
+					</li>
+				</ul>
+			Jeśli chodzi o HTTP, to tak naprawdę tyle. Ta konfiguracja
+			powinna bez trudu działać. 
+			</p>
+			<p>
+			Konfigurację <em>HAProxy</em> możemy przetestować przed 
+			uruchomieniem za pomocą poniższego polecenia:
+			</p>
+<pre class="code-block">
+$ sudo haproxy -f &lt;ścieżka_do_pliku_konfiguracyjnego&gt; -c
+</pre>
+			<p>
+			Użycie <em>HAProxy</em> dla HTTPS, wydaje się być jeszcze
+			prostsze. Poniżej znajduje się listing konfiguracji dla HTTPS
+			jednak w tym przypadku jest <em>TCP/443</em>.
+			</p>
+<pre class="code-block">
+global
+	log /dev/log	local0
+	log /dev/log	local1 notice
+	chroot /var/lib/haproxy
+	stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
+	stats timeout 30s
+	user haproxy
+	group haproxy
+	daemon
+
+	# Default SSL material locations
+	ca-base /etc/ssl/certs
+	crt-base /etc/ssl/private
+
+	# Default ciphers to use on SSL-enabled listening sockets.
+	# For more information, see ciphers(1SSL). This list is from:
+	#  https://hynek.me/articles/hardening-your-web-servers-ssl-ciphers/
+	# An alternative list with additional directives can be obtained from
+	#  https://mozilla.github.io/server-side-tls/ssl-config-generator/?server=haproxy
+	ssl-default-bind-ciphers ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:
+	ECDH+AES128:DH+AES:RSA+AESGCM:RSA+AES:!aNULL:!MD5:!DSS
+	ssl-default-bind-options no-sslv3
+
+defaults
+	log	global
+	mode	tcp
+	option	tcplog
+	option	dontlognull
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+	errorfile 400 /etc/haproxy/errors/400.http
+	errorfile 403 /etc/haproxy/errors/403.http
+	errorfile 408 /etc/haproxy/errors/408.http
+	errorfile 500 /etc/haproxy/errors/500.http
+	errorfile 502 /etc/haproxy/errors/502.http
+	errorfile 503 /etc/haproxy/errors/503.http
+	errorfile 504 /etc/haproxy/errors/504.http
+
+frontend port443
+	mode tcp
+	bind *:443
+	tcp-request inspect-delay 5s
+	tcp-request content accept if { req_ssl_hello_type 1 }
+	use_backend www if { req_ssl_sni -i www.example.edu.pl }
+	use_backend www if { req_ssl_sni -i example.edu.pl }
+	
+backend www 
+	mode tcp
+	server www 192.168.56.2:443
+
+</pre>
+			<p>
+				<em>Wartość opcji <code class="code-inline">
+				ssl-default-bind-ciphers</code> złamano tylko i wyłączenie
+				dla celów estetycznych strony.</em>
+			</p>
+			<p>
+			Jeśli przyrównamy sobie konfiguracje dla HTTP oraz TCP (HTTPS),
+			to pierwszą rzeczą, która będzie rzucać się nam w oczy będzie
+			zmiana trybu w sekcji <code class="code-inline">defaults</code>
+			</p>
+<pre class="code-block">
+defaults
+...
+	mode tcp
+	option tcplog
+...
+</pre>
+			<p>
+			Z tej sekcji usunięto również opcje 
+			<code class="code-inline">forwardfor</code> oraz 
+			<code class="code-inline">http-server-close</code>, ponieważ
+			są to ustawienia trybu <code class="code-inline">http</code>
+			</p>
+			<p>
+			W sekcji <code class="code-inline">frontend</code> nie ma
+			już <em>ACL-elek</em> są warunki są używane bezpośrednio
+			przez polecenie <code class="code-inline">use_backend</code>,
+			więc po kolei:
+				<ul>
+					<li><code class="code-inline">mode tcp</code> - 
+					ustawienie trybu TCP,</li>
+					<li><code class="code-inline">bind *:443</code> - 
+					ustawienie nasłuchiwania na porcie 443 na wszystkich
+					adresach w systemie,</li>
+					<li><code class="code-inline">tcp-request inpspect-delay 5s</code> - 
+					Maksymalny czas oczekiwania na dane podczas 
+					sprawdzania zawartości. Ustawiany w celu oczekiwania na przesłanie
+					przez klienta danych <em>SSL hello</em>,</li>
+					<li><code class="code-inline">tcp-request content accept if { req_ssl_hello_type 1 }</code> - 
+					Zaakceptowanie zawartości żądania o ile przesłana 
+					przez klienta wiadomość <em>SSL hello</em> jest typu
+					 nr. 1.</li>
+				</ul>
+			Kolejnymi liniami tej sekcji są już polecenia <code class="code-inline">
+			use_backend</code>, które przekazują żądania do konkretnego
+			serwera na podstawie warunku. Tym warunkiem jest przypasowanie
+			wartości <em>SSL SNI</em> do ciągu znaków (w tym przypadku
+			<code class="code-inline">www.example.edu.pl</code>) bez 
+			rozróżniania wielkości znaków (flaga <code class="code-inline">-i</code>).
+			</p>
+<pre class="code-block">
+use_backend www if { req_ssl_sni -i www.example.edu.pl }
+</pre>
+			<p>
+			Po sekcji <code class="code-inline">frontend</code> występują
+			już sekcje <code class="code-inline">backend</code>, wewnątrz
+			sekcji znajduje się ustawienie trybu TCP oraz opcja 
+			<code class="code-inline">server</code> wraz z adresem IP oraz
+			portem serwera.
+			</p>
+<pre class="code-block">
+backend www 
+	mode tcp
+	server www 192.168.56.2:443
+</pre>
+			<p>
+			To już jest wszystko co trzeba zrobić, aby skonfigurować
+			<em>HAProxy</em> w podstawowy sposób. Te konfiguracje 
+			przedstawiają <em>HAP-a</em> jako proxy, które może zastąpić
+			<em>reverse-proxy</em> lokalnie instalowane na serwerach
+			przy pomocy NGINX czy Apache2. Wystarczy tylko skonfigurować
+			aplikacje tak, aby nasłuchiwały na wszystkich interfejsach
+			systemu.
+			</p>
+			<p>
+			~xf0r3m
+			</p>
+			</div>
+			<p style="margin: 15px; padding: 0; outline: 0;">
+				2021; COPYLEFT; ALL RIGHT REVERSED;
+			</p>
+		</body>
+	</html>

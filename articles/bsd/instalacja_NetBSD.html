@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+
+
+		<body style="font-family: monospace;" >
+<pre>
+88                             88
+88                             88
+88                             88
+88,dPPYba,  ,adPPYba,  ,adPPYb,88
+88P'    "8a I8[    "" a8"    `Y88
+88       d8  `"Y8ba,  8b       88
+88b,   ,a8" aa    ]8I "8a,   ,d88
+8Y"Ybbd8"'  `"YbbdP"'  `"8bbdP"Y8
+</pre>
+
+		<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+			&#9760;&nbsp;<a href="https://morketsmerke.net/">morketsmerke</a>&nbsp;&#9760;
+		</p>
+
+		<div style="margin-left: auto; margin-right: auto; width: 80%;">
+			<h1 style="text-align: center;">Instalacja NetBSD</h1>
+			<p>
+			System <strong>NetBSD</strong> ma jedną bardzo ważną cechę, został przygotowany i jest nadal utrzymywany dla bardzo wielu platform. 
+			To sprawiło, że 
+			zainteresowałem się nim przy chęci wykorzystania go na starym serwerze Sun Microsystems. Jako jedyny z wiodącej trójki systemów
+			BSD poprawnie zainstalował się i uruchomił na wspomnianym serwerze. Obecnie zapewnia dostęp do usług poczty elektronicznej.
+			Jedną z jego wad jest dość długa i mająca tendencje do niepowdzenia instalacja, przynajmniej w 
+			przypadku platformy Sparc64. Poniżej za pomocą zrzutów ekranu oraz krótkich opisów postaram się przybliżyć instalację. Instalowałem 
+			większość dystrybucji BSD i nie wliczając GhostBSD oraz nomadBSD, ten system ma chyba najbardzie user-friendly instalator, 
+			pasujący bardziej do GNU/Linux-ów.
+			</p>
+			<p>
+			Płytka w napędzie? No to jadziem!
+			</p>
+			<p>
+			Instalację rozpoczynamy od wyboru języka instalatora. Chyba jedyna dystrybucja BSD z polskim językiem instalatora (potrzebne źródło).
+			Wybieramy opcje <code class="code-inline">e: Komunikaty instalacyjne w języku polskim</code>.
+			<p>
+			<p>
+			Z poziomu instalatora możemy np. zaktualizować zainstalowany już system. Póki co to nie mamy nawet tego, więc wybieramy 
+			<code class="code-inline">a: Zainstaluj NetBSD na twardym dysku</code>. Fun fact o tym instalatorze: możemy poruszać po nim znacznie
+			szybciej naciskając na klawiaturze te literki po lewej stronie opcji.
+			</p>
+			<p>
+			Standardowe pytanie o to czy rzeczywiście chcemy instalować ten system. Wybieramy <code class="code-inline">b: Tak</code>, chyba że
+			zmieniliśmy zdanie.
+			</p>
+			<p>
+			Wybieramy docelowy dysk dla systemu. W moim przypadku jest to <code class="code-inline">a: wd0 (8.0G)</code>.
+			</p>
+			<p>
+			Następnie ustalamy sposób partycjonowania, możemy wyczyścić dysk i ustawić partycje ręcznie lub automatycznie. Póki co 
+			wybierzemy <code class="code-inline">b: Użyj domyślnych rozmiarów partycji</code>.
+			</p>
+			<p>
+			Zatwierdzamy ustawione przez instalator partycje, <code class="code-inline">x: Rozmiary partycji w porządku</code>.
+			</p>
+			<p>
+			Póki co nie zostały wprowadzane żadne zmiany na dysku, dopiero wybranie opcji <code class="code-inline">b: Tak</code>, spowoduje
+			ustawienie partycji i sformatowanie pod określony system plików.
+			</p>
+			<p>
+			Instalacja NetBSD jest podzielona na trzy główne kolekcje. Dla serwera wystarczy 
+			<code class="code-inline">b: Instalacja bez X11</code>.
+			</p>
+			<p>
+			NetBSD można zainstalować z wielu źródeł. Na serwerze, na którym próbowałem zainstalować NetBSD z płyty to był wielki problem,
+			bo system nie mógł dobrać poziomu <em>DMA</em> dla napędu więc użyłem <code class="code-inline">b: HTTP</code>.
+			</p>
+			<p>
+			Teraz mamy możliwość ustawienia mirror-u. Wykorzystanie źródła <em>HTTP</em> wymaga skonfigurowania sieci, dlatego też wybieramy
+			opcje <code class="code-inline">j: Skonfiguruj siec</code>.
+			</p>
+			<p>
+			Wybieramy kartę sieciową, w moim przypadku jest to <code class="code-inline">a: hme0</code>
+			</p>
+			<p>
+			Typ interfejsu sieciowego pozostawiamy domyślnie czyli <code class="code-inline">autoselect</code>, następnie decydujemy czy wybrać 
+			autokonfigurację - pobrać z dhcp.
+			</p>
+			<p>
+			Po pobraniu konfiguracji zostaniem zapytani o nazwę domeny, jeśli serwer nie będzie dostępny pod żadną możemy wpisać cokolwiek.
+			Po zatwierdzeniu pokaże nam się podsumowanie konfiguracji i zapytanie czy te dane są poprawne.
+			</p>
+			<p>
+			Po potwierdzeniu konfiguracji, wracamy do ustawień źródła pakietów dystrybucji. Teraz wybieramy opcje 
+			<code class="code-inline">x: Ściągnij dystrybucje</code>. A samo pobranie dystrybucji w raz z instalacją pobranych paczek może
+			chwilę potrwać.
+			</p>
+			<p>
+			Konfiguracja sieci z pobierania dystrybucji może zostać zapisana jako stała konfiguracja sieciowa systemu, teraz możemy o tym 
+			zdecydować. Jeśli maszyna znajduje się już w docelowej sieci i nadaliśmy mu już przeznaczony dla niego adresu, badź zrobił to serwer 
+			DHCP możemy zapisać konfiguracje <code class="code-inline">b: Tak</code>.
+			</p>
+			<p>
+			Teoretycznie to system jest już zainstalowany jednak nie uruchomi się bez konfiguracji w plikach <em>rc</em>. Ustawiamy:
+			</p>
+			<ul>
+				<li>
+				Strfę czasową ustawiamy na <code class="code-inline">Poland</code> lub <code class="code-inline">Europe/Warsaw</code>
+				</li>
+				<li>Powłokę <em>roota</em>, na <em>/bin/ksh</em>.</li>
+				<li>Hasło <em>roota</em>.</li>
+				<li>Włączamy <em>sshd</em></li>
+				<li>Właczamy <em>ntpdate</em> (dla <em>ntpdate</em>, potrzebny będzie jeszcze serwer, z którego synchonizował będzie date i 
+					czas, ale to już ustawia sie po pierwszym załadowaniu systemu.</li>
+				<li>Tworzymy zwykłego użytkownika, dodajemy go do grupy <em>wheel</em>. Grupa <strong>wheel</strong>, umożliwią należącym
+					do niej użytkownikom na wykonanie polecenia <code class="code-inline">su root</code>.</li>
+
+
+			</ul>
+			<p>
+			Teraz możemy zakończyć konfigurację poinstalacyjną wybierając opcje <code class="code-inline">x: zakończ konfigurację</code>.
+			Zostanie nam wyświetlony komunikat o tym że zainstalowaliśmy NetBSD, za pomocą klawisza <em>enter</em> wracamy do menu gdzie
+			wybieraliśmy tryb instalacji.
+			</p>
+			<p>
+			Teraz możemy uruchomić ponownie nasz komputer wybierając opcję <code class="code-inline">d: Zrestartuj komputer</code>.
+			</p>
+		</div>
+
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+		</body>
+	</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+					text-align: left;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				ul {
+					text-align: left;
+				}
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+ _                      _             _ _
+| |_ ___ _ __ _ __ ___ (_)_ __   __ _| | | ___   __ _
+| __/ _ \ '__| '_ ` _ \| | '_ \ / _` | | |/ _ \ / _` |
+| ||  __/ |  | | | | | | | | | | (_| | | | (_) | (_| |
+ \__\___|_|  |_| |_| |_|_|_| |_|\__,_|_|_|\___/ \__, |
+			                        |___/
+</pre>
+<p style="margin: 0; padding: 0; outline: 0; font-size: 18pt;">
+	&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+</p>
+	<div style="margin-left: auto; margin-right: auto; text-align: justify; width:80%; ">
+		<h1 style="text-align: center;">Laboratorium sieci VPN</h1>
+		<!--<p>15.05.2021
+			<strong>Z racji tego iż https://vpn.wiki.morketsmerke.net nie jest już dostępna, artykuł wymaga uaktualnienia.</strong>
+		</p>-->
+		<p>
+    	Laboratorium sieci prywatnych, powstało w celu sprawdzenia wartości merytorycznej, materiału Sieci VPN w kategorii terminallog.
+		</p>
+		<p>
+    	Z tego co udało mi się zaobserwować to że mamy cztery główne metody realizacji, takich sieci czy też połączeń.
+		</p>
+		<ul>
+			<li>program Stunnel,</li>
+			<li>protokół SSH,</li>
+			<li>program OpenVPN,</li>
+			<li>protokół IPSec (w implementacji libreswan),</li>
+		</ul>
+		<p>
+    	W zależności od naszych potrzeb możemy użyć, któregoś z powyższych narzędzi. Jeśli musimy zabezpieczyć połączenie punkt-punkt dla jednej usługi, to możemy kłaniać się ku dwóm pierwszym rozwiązaniom. Oczywiście wszystko ma swoje wady. Dla programu Stunnel, potrzebować będziemy certyfikatów, oczywiście wystawionych przez wiarygodne źródło certyfikacji, nic nie stoi na przeszkodzie, abyśmy sami stworzyli nasze własne CA.
+		</p>
+		<p><em>Stunnel wymagania:</em></p>
+		<ul>
+			<li>certyfikaty x509,</li>
+			<li>urząd certyfikacji CA,</li>
+			<li>Najlepiej gdyby serwer nasłuchiwał na pętli zwrotnej,</li>
+		</ul>
+		<p>
+			Wadą protokołu <em>SSH</em> jest to, że potrzebujemy serwera <em>SSH</em> gdzieś w Internecie.
+		</p>
+		<p>
+			<em>SSH wymagania:</em>
+		</p>
+		<ul>
+			<li>Serwer <em>SSH</em> gdzieś w internetach.</li>
+		</ul>
+		<p>
+			Zaletami tych dwóch rozwiązań są kolejno:
+		</p>
+		<p>
+			<em>Zalety Stunnel:</em>
+		</p>
+		<ul>
+			<li>Samowystarczalne wymagania</li>
+		</ul>
+		<p>
+			<em>Zalety SSH:</em>
+		</p>
+		<ul>
+			<li>Realizuje połączenia, które z racji konfiguracji sieci nie mogłyby być
+    zrealizowane (robi magiczne sztuczki)</li>
+		</ul>
+		<p>
+    	Co można rozumieć przez "samowystarczalne wymagania", otóż są to wymogi które możemy zrealizować samodzielnie, bez angażowania osób trzecich lub dodatkowych środków pieniężnych. Jeśli jesteśmy spłukani i możemy sobie pozwolić na konto shell, z możliwością tunelowania (większość darmowych zabrania tunelowania). Pozostaje na jedyne wyjście <em>Stunnel</em>.
+		</p>
+			<h2>Stunnel</h2>
+		<p>
+    	Naszą przygodę rozpoczynamy od czystej maszyny wirtualnej, najlepiej z jakiś bezpiecznym Linuksem. Ja wybrałem do tego celu, i nie tylko jak się przekonamy później, dystrybucje Alpine Linux. Instaluje się ją jakieś 5 min. Opis instalacji znajdziemy pod tym <a href="https://morketsmerke.net/instalacja-alpine-linux/" target="_blank">adresem</a>. Po zainstalowaniu już systemu, tworzymy nasze nowe CA (urząd certyfikacji).
+		</p>
+		<p>
+			Edytujemy plik <em>/etc/ssl/openssl.cnf.</em> Odnajdujemy sekcję <em>[ CA_default ]</em> ustawiamy tylko opcje <em>dir</em>, tak aby wskazywała na <em>/etc/ssl</em>. Zapisujemy plik. Tworzymy pusty plik <em>index.txt</em>, inicjujemy plik <em>serial</em> za pomocą ciągu '00' (dwa zera), tworzymy katalogi <em>crl</em> i <em>newcerts</em> oraz tak jak plik <em>serial</em> inicjujemy plik <em>crlnumber</em> za pomocą dwóch zer.
+		</p>
+		<p>
+    	Teraz generujemy klucz prywatny oraz certyfikat dla CA, dzięki niemu będziemy mogli, podpisywać certyfikaty. Polecenie odnośnie generowania klucza znajdują się pod tym <a href="https://vpn.wiki.morketsmerke.net/index.php/SSL">linkiem</a>. Pamiętając zarazem aby nazwy plików były takie jak w pliku konfiguracyjnym <em>openssl</em>. W <em>Common Name</em> wpisujemy FQDN hosta CA.
+		</p>
+		<p>
+    	W na końcach poleceń na wiki znajduje się przy niektórych liczba 1024, jest długość klucza. Ponieważ, obecnie klucze poniżej 2048 bitów są uznawane za niebezpieczne, warto pominąć tę wartość. W pliku <em>/etc/ssl/openssl.cnf</em> wartość wskazująca na domyślną długość klucza ustawiona jest 2048 bity.
+		</p>
+		<p>
+    	Korzystając z poleceń na wiki, generujemy certyfikat CA oraz klucz prywatny serwera, po wygenerowaniu klucza, przechodzimy do wygenerowania wniosku dla serwera. W polu <em>Common Name</em> wpisujemy FQDN serwera. Teraz dopiero ustawienia CA w pliku konfiguracyjnym <em>OpenSSL</em> zostaną zweryfikowane. Wszystkie błędy zwracane są dość zrozumiałe. Więc nie powinno być problemów z ich identyfikacją i naprawą. Po wygenerowaniu certyfikatu warto zdjąć hasło, z klucza prywatnego serwera, będzie to konieczne, gdy nasz tunel będzie zestawiany wraz ze startem systemu, ponieważ oczekiwanie na hasło klucza będzie wstrzymywać start systemu i może go unieruchomić, jeśli pracujemy gdzieś zdalnie. Jednak nie należy tego robić na CA, ale na hoście docelowym gdzie Stunnel będzie pracować.
+		</p>
+		<p>
+    	Akurat to nie <em>Stunnel</em> zwrócił mi uwagę na ten problem, nie mniej jednak warto wyrobić w sobie pewne nawyki.
+		</p>
+		<p>
+    	Teraz przechodzimy do dość trudnego zdania, generalnie na wiki jest napisane, aby stworzyć CA  na jakimś bezpiecznym komputerze, najlepiej nie podłączonym do sieci. Ja mam dwie wariacje na ten temat. Otóż możemy wykorzystać do tego celu <em>Raspberry Pi 0</em>, które hardwarowo jest offline, i komunikować się tylko z naszym komputerem za pomocą protokołu <em>RNDIS</em>, lub skorzystać z maszyny wirtualnej, tak jak w tym przypadku. Gdzie tworzymy maszynę z natywnym dostępem do internetu. Sprawdzamy czy mamy pakiet <em>OpenSSL</em>, jeśli nie to go instalujemy. Po zainstalowaniu lub upewnieniu się że pakiet jest obecny w systemie, wyłączamy maszynę. Ustawiamy interfejsy na nie podłączone, lub je usuwamy.
+			Teraz do sedna, zanim włączymy maszynę ustawiamy jej katalog współdzielony na jeden z katalogów na naszym komputerze. Uruchamiamy maszynę, po jej uruchomieniu montujemy, katalog współdzielony, metoda na zamontowanie katalogu współdzielonego hipernadzorcy VirtualBox w Alpine Linux, znajduje się <a href="https://morketsmerke.net/virtualbox-shared-folder-na-alpine-linux/">tutaj</a>. Tam możemy przekopiować wygenerowane przez nas certyfikaty. Następnie przenieść je na inną maszynę.
+		</p>
+		<p>
+			Obecnie w większości dystrybucji Linux, stunnel występuje pod nazwą stunnel4 (gdzie 4 oznacza wersję protokołu IP z jaką pracuje). Stunnel, możemy zainstalować z paczki systemowej, lub skompilować samodzielnie. Po zainstalowaniu programu w przypadku systemu Alpine Linux w katalogu <em>/var/run</em> pojawia się katalog <em>stunnel</em> oraz jeden dodatkowy użytkownik, jednak konfiguracje rozpoczynamy od przygotowania pliku certyfikatu. Tworzymy nowy plik w <em>/etc/stunnel</em> przekierowując zawartość pliku klucza prywatnego. Następnie do owego pliku dodajemy linję ze samą spacją, przekierowując wyjście polecenia <em>echo </em>oraz dopisując do wszystkiego zawartość pliku z certyfikatem z serwera. Dla danego pliku ustawiamy odpowiednie uprawnienia <em>600</em> oraz właściciela i grupę na <em>root</em>. Teraz tworzymy w katalogu <em>/var/run/stunnel</em>, katalog wraz z podkatalogiem mianowicie <em>var/log</em>, tam będą umieszczane nasze logi z połączenia.
+			 Wracamy do katalogu <em>/etc/stunnel</em> tworzymy plik konfiguracyjny wg. wzorca. Teraz możemy uruchomić nasz tunel, wzór pliku konfiguracyjnego oraz      uruchomienie tunelu znajdują się <a href="https://vpn.wiki.morketsmerke.net/index.php/Stunnel">tutaj</a>. Pamiętajmy dwie rzeczy, że bezpiecznie byłoby zmusić demona naszej zabezpieczanej usługi do nasłuchu tylko i wyłącznie na pętli zwrotnej o ile <em>stunnel</em> uruchamianym bezpośrednio na serwerze. Można go również uruchomić na routerze, opis znajduje się <a href="https://vpn.wiki.morketsmerke.net/index.php/Stunnel">tutaj</a>, oraz żeby zmienić porty i adresy na te które mamy tunelować, a nie kopiuj-wklej konfiguracje, a potem płacz że coś nie działa.
+		</p>
+			<h2>SSH</h2>
+		<p>
+    	Tunele <em>SSH</em> są o tyle proste, że ich konfiguracja sprowadza się do wydania jednego polecenia. Oczywiście musimy mieć gdzieś w sieci serwer z <em>SSH</em>. Za pomocą tych tuneli możemy rozwiązać trzy konkretne problemy:
+		</p>
+		<ul>
+    	<li>
+        	<p>
+            Problem 1. Zabezpieczenie transmisji protokołów które, szyfrowania nie oferują. Problem ten technicznie nazywamy tunelem lokalnym. Np. mamy na naszym serwerze <em>SSH</em> również serwer <em>SAMBA</em>, i chcielibyśmy z niej w bezpieczny sposób skorzystać. To w tym celu wydajemy poniższe polecenie:
+        	</p>
+<pre class="code-block">
+$ ssh username@server.example.com -L 11445:127.0.0.1:445
+</pre>
+        	<p>
+            Kolejno znaczenie:<br />
+            <ul>
+                 <li>
+                    <code class="code-inline">-L</code> - Oznacza że tunel będzie, tunelem lokalnym. Tunelem pomiędzy klientem (osobą inicjującą tunel), a serwer SSH.
+                </li>
+                <li>
+                    <code class="code-inline">11445:</code> - Oznacza port otwierany na pętli zwrotnej komputera klienta.
+                </li>
+                <li>
+                    <code class="code-inline">127.0.0.1</code> - Adres pętli zwrotnej.
+                </li>
+                <li>
+                    <code class="code-inline">445</code> - tunelowany port (port po stronie serwera z którym zestawiany jest tunel)
+                </li>
+            </ul>
+        	</p>
+        	<p>
+            Problem jest identyczny jaki rozwiązuje stunnel. Jednak z wykorzystaniem protokołu SSH. Po wywołaniu polecenia zostaniemy poproszeni o hasło lub nie, o ile importowaliśmy wcześniej klucz publiczny na nasz serwer. Normalnie zostaniemy zalogowani na serwerze Musimy pamiętać aby nie zamykać lub nie wylogowywać, tak jak długo jesteśmy zalogowani. Tyle trwa tunel. Aby teraz połączyć z sambą łączymy sie z 127.0.0.1:11445.
+        	</p>
+    	</li>
+    	<li>
+        	<p>
+            Problem 2. Chcemy połączyć się z jakąś usługą, jednak port został zablokowany przez administratora. Ten problem możemy rozwiązać za pomocą portów dynamicznych. Porty dynamiczne polegają na przekazywaniu połączeń za pomocą proxy <em>SOCKSv5</em> przez nasz serwer <em>SSH</em>. Aby uruchomić porty dynamiczne wydajemy następujące polecenie:
+        	</p>
+<pre class="code-block">
+$ ssh username@server.example.com -D 8080
+</pre>
+        	<p>
+            Gdzie:
+            <ul>
+                <li>
+                    <code class="code-inline">-D</code> - oznacza uruchomienie dynamicznych portów
+                </li>
+                <li>
+                    <code class="code-inline">8080</code> - oznacza port otwierany po stronie klienta dla proxy.
+                </li>
+            </ul>
+        	</p>
+        	<p>
+            Przy używaniu portów dynamicznych należy pamiętać o tym że adresem na jakim nasłuchuje proxy jest adres pętli zwrotnej. Najprostszą metodą użycia jest skonfigurowanie proxy <em>SOCKSv5</em> w przeglądarce Firefox, lub użycie któregoś z programów opisanego <a href="https://wiki.archlinux.org/index.php/Proxy_server#Using_a_SOCKS_proxy">tutaj</a>.
+        	</p>
+    	</li>
+    	<li>
+        	<p>
+            Problem 3. Musimy otworzyć port dla usługi, jednak nasza sięć jest skonfigurowana w taki sposób, że nie mamy dostępu aby taki port otworzyć. Problem ten jest często spotykany w sieciach osiedlowych, gdzie na interfejsie WAN naszego routera dostajemy adres sieci prywatnej oznacza to ni mniej ni więcej, że gdzieś znajduje się router nadrzędny, i to na nim należało by takiego przekierowania portów dokonać. Jednak jest prawie nie możliwe, abyśmy załatwili sobie coś takiego na telefon, często gdy naszym usługodawcą internetowym jest jakaś korporacja. Dlatego jednym z najciekawszych rozwiązań dostarczanych przez <em>SSH</em> jest zdalny tunel z przekazywaniem. Tutaj aby się nie pogubić użyjemy przykładu z Bobem i Alice.
+        </p>
+        <p>
+            <p>
+            	Powiedzmy że Bob, chce udostępnić zdalny pulpit na swoim domowym komputerze Alice, jednak po telefonie i 10 minutowej rozmowie z Kobietą z wyraźnym wschodnim akcentem, nie dowiedział się niczego nowego. Zatem przy kolej na plan B, otóż Bob miał w zanadrzu jeszcze dostęp do maszyny, która pracowała sobie spokojnie na farmie serwerów, z którą łączył się za pomocą protokołu <em>SSH</em>. Więc Bob po uruchomieniu usługi zdalnego pulpitu wydaje następujące polecenie otwierając port zdalny.
+<pre class="code-block">
+$ ssh bob@server.bogobo.org -R 11111:127.0.0.1:3389
+</pre>
+            Gdzie:<br />
+                <ul>
+                    <li><code class="code-inline">-R</code> - uruchamia tunel zdalny</li>
+                    <li><code class="code-inline">11111</code> - port tunelu zdalnego - otwierany na serwerze</li>
+                    <li><code class="code-inline">127.0.0.1</code> - adres pętli zwrotnej zrówno serwera jak i klienta</li>
+                    <li><code class="code-inline">3389</code> - port lokalnej usługi komputera zestawiającego tunel</li>
+                </ul>
+            </p>
+            <p>
+            	Teraz Bob instruuje Alice, aby wpisała poniższe polecenie w swoim terminalu, jednocześnie przekazując jej hasło do konta <em>SSH</em>. Polecenie Alice to (opis opcji znajduje się przy pierwszym problemie):
+            </p>
+<pre class="code-block">
+$ ssh bob@server.bogobo.org -L 13389:127.0.0.1:11111
+</pre>
+            <p>
+            	Zatem tunel zdalny z przekazywaniem polega na otwarciu portu na serwerze, z którym zestawiany jest połączenie z lokalną usługą otwierającego tunel. Możemy stwierdzić że Bob za pomocą tunelu zahostował RDP swojego domowego komputera. Kiedy tunel jest otwarty, Alice otwiera tunel lokalny na port serwera <code class="code-inline">11111</code> ze swoim portem <code class="code-inline">13389</code> oczywiście na pętli zwrotnej. Dzięki czemu, może teraz połączyć się z komputerem Boba przez 127.0.0.1:13389 za pomocą aplikacji wbudowanej w systemie. Cała sztuczka polega na tym że jednym jawnym zdalnym połączeniem Alice i Boba jest połączenie z portem SSH serwera Boba.
+            </p>
+            <p>
+							<strong>Ważna uwaga, należy wybierać numery portów powyżej 1024, w innym, przypadku będziemy potrzebować konta użytkownika root, inaczej tunel nie dojdzie do skutku. Najlepiej używać portów powyżej 10000.</strong>
+						</p>
+        	</p>
+    	</li>
+		</ul>
+			<h2>OpenVPN</h2>
+    <p>
+    	OpenVPN jest chyba najpopularniejszą metodą zdalnego dostępu, i o dziwo korzystając z przykładów z książki, opisanych po tym adresem: <a href="https://morketsmerke.net/site/articles/terminallog/sieci_VPN#openvpn">https://morketsmerke.net/site/articles/terminallog/sieci_VPN#openvpn</a>. Gdzie przetestowano zdalny dostęp do zasobów dla pracowników firmy oraz łączenie odziałów firmy to działa to bez zarzutu. Rzeczami, na które warto zwrócić uwagę jest to że musiałem co restart systemu tworzyć urządzenie TUN, (jedno polecenie, również znajduje się na wiki), może być to wina mojego systemu operacyjnego (Alpine Linux), na Lubuntu tego problemu nie było. I jeśli mamy ściągnąć hasło z klucza dla serwera, to zróbmy to już na docelowym hoście, ponieważ kiedy ja ściągałem hasło na CA, potem przeniosłem ten plik okazało się że jest on niezdatny do użycia. Więc to kolejna rzecz. Przy łączeniu oddziałów firmy, zmodyfikowałem scenariusz pod siebie, nie przepuszczałem całego ruchu, z oddziału przez siedzibę tylko za pomocą tras udostępniłem połączanie pomiędzy komputerami siedziby oraz oddziału. Trasy są bardzo proste.
+    </p>
+    <p>
+        Router w oddziale:
+<pre class="code-block">
+ip route add 192.168.20.0/24 via 10.3.0.2
+</pre>
+        Router w siedzibie:
+<pre class="code-block">
+ip route add 192.168.30.0/24 via 10.3.0.1
+</pre>
+        Gdzie klasy należą do poszczególnych podsieci X.Y.20.0/24 należy do klasy w siedzibie firmy, natomiast X.Y.30.0/24 należy
+        do klasy w oddziale. Adres <code class="code-inline">10.3.0.2</code> adres TUN w oddziale, a <code class="code-inline">10.3.0.1</code> to adres TUN w siedzibie.
+    </p>
+    <p>
+        Myślę że w ta wariacja, jest bardziej aktualna do dzisiejszych czasów, gdzie dysponuje się naprawdę szybkimi łączami
+        i nie potrzeba przepuszczać przez VPN, ruchu Pani Moniki, która lubi czytać pudelka do śniadania. Ponieważ opisy
+        konfiguracj
+				i na wiki działają tu je pominę.
+    </p>
+		<p>
+			<h2>IPSec</h2>
+		</p>
+		<p>
+			Sporym nadużyciem było by napisanie że IPSec jest bardziej przezroczystym OpenVPN. OpenVPN to pakiet oprogramowania realizujący połaczenia punkt-punkt. IPSec to zbiór protokołów. Przez zawiłą historię twórców implementacji OpenSWAN, (pakiet który jest opisywany na wiki), opis na wiki jest nieaktualny. Powszechnie jeśli mówimy o IPSec w Linux mamy na myśli pakiet LibreSWAN, który na swojej stronie zawiera gotowe HOW-TO's połączeń host-host oraz podsieć-podsieć. Problem w tym że to nie działa. Znalazłem tutorial na howtoforge.com. Na którym działają obie metody uwierzytelnienia.
+		</p>
+		<p>
+    	Konfiguracja LibreSWAN opiera się na dwóch plikach: <em>/etc/ipsec.conf</em> oraz <em>/etc/ipsec.secrets</em>. W pierwszym znich znajduje się właściwa konfiguracja natomiast w drugim znajduje się PSK. Typowe dla IPSec jest to że nie mamy klienta oraz serwera, oczywiście w ramach własnych oznaczeń, możemy nazwać którąś ze stron klientem a którąś serwerem. W IPSec mamy stronę lewą (<em>left</em>) oraz stronę prawą (<em>right</em>). Strona lewa jest tak jakby stroną naszą, czy też lokalną natomiast prawa - stroną obcą, odległa. Po obu stronach musi widnieć ta sama konfiguracja tunelu, jednak z odniesieniem stron, tj. dla strony lewej, to jest tak jak konfigurujemy, natomiast w konfiguracji strony prawej, to ona jest stroną lewą, a lewa prawą. To tak samo jak z ludźmi, kiedy stoją do siebie na przeciwko. Mamy do dyspozycji w IPSec dwa modele połączeń. Jest połączenie punkt-punkt, czy jak to woli host-host lub sieć-sieć.
+		</p>
+		<p>
+    	Przed przystąpieniem do konfiguracji, nie twórzmy nowych plików, wykorzystajmy te które są dostarczone wraz pakietem LibreSWAN, tylko zakomentujmy ostatnia dyrektywę <em>include</em> (include /etc/ipsec.d/*.conf), w pliku <em>/etc/ipsec.conf</em> oraz jedyną dyrektywę <em>include</em> (include /etc/ipsec.d/*.secrets) w pliku <em>/etc/ipsec.secrets</em>. Konfiguracje przy użyciu uwierzytelnienia PSK wygląda następująco:
+		</p>
+		<p>
+    	Strona lewa:<br />
+    	Plik: ipsec.conf<br />
+		</p>
+<pre class="code-block">
+config setup
+protostack=netkey
+
+conn mytunnel
+
+	ike=aes256-sha256;modp4096
+	phase2alg=aes256-sha256;modp4096
+	left=172.16.2.144
+	leftsubnet=192.168.20.0/24
+	right=172.16.2.154
+	rightsubnet=172.16.2.154/32
+	authby=secret
+	type=tunnel
+  auto=start
+</pre>
+    <p>
+        Plik: ipsec.secrets
+		</p>
+<pre class="code-block">
+172.16.2.144 172.16.2.154: PSK "1234vpn_test1234"
+</pre>
+    <p>
+    	Strona prawa:
+    	Plik: ipsec.conf
+		</p>
+<pre class="code-block">
+config setup
+protostack=netkey
+
+conn mytunnel
+
+    ike=aes256-sha256;modp4096
+    phase2alg=aes256-sha256;modp4096
+    left=172.16.2.154
+    leftsubnet=172.16.2.154/32
+    right=172.16.2.144
+    rightsubnet=192.168.20.0/24
+    authby=secret
+    type=tunnel
+    auto=start
+
+</pre>
+    <p>
+    Plik: ipsec.secrets
+		</p>
+<pre class="code-block">
+172.16.2.154 172.16.2.144: PSK "1234vpn_test1234"
+</pre>
+		<p>
+    	Powyższa konfiguracja przedstawia moją wariację na temat możliwych modeli połączeń. Na pierwszy rzut oka wygląda jak połączenie sieć-sieć, jednak w prawej podsieci znajduje się tylko jeden komputer. A więc można uznać że jest to połączenie sieć-host patrząc od lewej. Nie wiem czy ma sens, opis tych opcji, jeśli ktoś byłby zainteresowany, to use GOOGLE. Ważna rzecz, jeśli chodzi o IPSec. Jeśli korzystamy z pakietów LibreSWAN wbudowanych w system, to należy upewnić się czy mają identyczne wersje, w przeciwnym razie tunel inicjuje strona, która ma nowszą wersję oprogramowania. W przypadku tych samych wersji nie ma znaczenia, która inicjuje tunel. Aby uruchomić tunel, najpierw musimy uruchomić sługę IPSec poleceniem (na obu stronach):
+		</p>
+<pre class="code-block">
+# ipsec setup start
+</pre>
+		<p>
+    	Po uruchomieniu usługi możemy dodać nasze połączenie (na obu stronach) poleceniem (podajemy nazwę połączenia, nazwa połączenia znajduje sie po słowie <em>conn</em>):
+		</p>
+<pre class="code-block">
+# ipsec auto --add mytunnel
+</pre>
+		<p>
+    	Po dodaniu przez obie strony połączenia, jedna z nich (ta z wyższą wersją oprogramowania, jeśli po obu stronach są równe to bez znaczenia która) inicjuje tunel:
+		</p>
+<pre class="code-block">
+# ipsec auto --up mytunnel
+</pre>
+		<p>
+    	Tunel zatrzymujemy poleceniem:
+		</p>
+<pre class="code-block">
+# ipsec auto --down mytunnel
+</pre>
+		<p>
+    	Warto pamiętać o tym, że w pliku konfiguracyjnym mamy opcje <code class="code-inline">auto</code> ustawioną na <code class="code-inline">start</code> oznacza to że po dodaniu połączenia, będzie ono automatycznie zestawiane przy każdym starcie usługi ipsec. Poniżej przedstawię konfigurację z wykorzystaniem kluczy RSA do uwierzytelnienia. Poniższe kroki wykonujemy na obu komputerach. Te konfigurację zaczynamy od usunięcia obecnych plików <em>/etc/ipsec.secrets</em>. Następnie generujemy klucze właśnie do pliku poleceniem:
+		</p>
+<pre class="code-block">
+# ipsec newhostkey --output /etc/ipsec.secrets
+</pre>
+    	Zawartość pliku powinna wyglądać mniej więcej tak:
+<pre class="code-block">
+: RSA   {
+        # RSA 3216 bits   a   Thu May 21 19:34:25 2020
+        # for signatures only, UNSAFE FOR ENCRYPTION
+        #ckaid=69f3a4f8d322f423033de7ef0acc3a600a351f43
+        #pubkey=0sAwEAAa235arqmgpHM21of9l7KagM4kOTZQ7VKjOwhPKdW/t+Lgo1Qp5RXcga9ENcIRUDMP3U2iqG8wOFeM0YmwsbMw58zcuTPodjjisuh4HZDf6LBvOfnG47P3mes1AJNdsDHJl96EFlrXpb3QHqK3caH9uX5qPsaiydc6ThjpYtOUyFqBkqBilg6XhO
+        Modulus: 0xadb7e5aaea9a0a47336d687fd97b29a80ce24393650ed52a33b084f29d5bfb7e2e0a35429e515dc81af4435c21150330fdd4da2a86f3038578cd189b0b1b330e7ccdcb933e87638e2b2e8781d90dfe8b06f39f9c6e3b3f799eb3500935d
+        PublicExponent: 0x010001
+        }
+# do not change the indenting of that "}"
+</pre>
+		<p>
+    	Musimy pobrać do notatnika wartość <code class="code-inline">#pubkey</code>, z jednego i drugiego hosta. Następnie musimy je umieścić na pliku <em>/etc/ipsec.conf</em> jako wartości dla poszczególnych opcji. Więc <code class="code-inline">leftrsasigkey</code>, dla lewej strony oraz <code class="code-inline">rightrsasigkey</code> dla strony prawej na lewym hoście na prawym zaś odwrotnie. Konfiguracja wygląda zatem tak:
+		</p>
+		<p>
+        Strona lewa
+		</p>
+<pre class="code-block">
+config setup
+    protostack=netkey
+
+conn vpn_rsa
+
+    ike=aes256-sha256;modp4096
+    phase2alg=aes256-sha256;modp4096
+    left=172.16.2.156
+    right=127.16.2.157
+    authby=rsasig
+    leftrsasigkey=0sAwEAAa235arqmgpHM21of9l7KagM4kOTZQ7VKjOwhPKdW/t+Lgo1Qp5RXcga9ENcIRUDMP3U2iqG8wOFeM0YmwsbMw58zcuTPodjjisuh4HZDf6LBvOfnG47P3mes1AJNdsDHJl96EFlrXpb3QHqK3caH9uX5qPsaiydc6ThjpYtOUyFqBkqBi
+    rightrsasigkey=0sAwEAAfVs/GW0tllOWsFf9SrXh8w/Nt99a8+HaY7mw0BvtnYRZol+8DOwEpgwkeAMD0A2L02EpFGj8fv3DgVOvrFK3/bI67XeR7K3/m55jhloYT97RrinQGXFoqWxpAQP6TQFADHjjNypn/vHWgncuH8yfBKlsxNSUgmd1ii+ohGK15J8OS9s6
+    type=tunnel
+    auto=start
+</pre>
+			<p>
+        Strona prawa
+			</p>
+<pre class="code-block">
+config setup
+    protostack=netkey
+
+conn vpn_rsa
+
+    ike=aes256-sha256;modp4096
+    phase2alg=aes256-sha256;modp4096
+    left=172.16.2.157
+    right=127.16.2.156
+    authby=rsasig
+    leftrsasigkey=0sAwEAAfVs/GW0tllOWsFf9SrXh8w/Nt99a8+HaY7mw0BvtnYRZol+8DOwEpgwkeAMD0A2L02EpFGj8fv3DgVOvrFK3/bI67XeR7K3/m55jhloYT97RrinQGXFoqWxpAQP6TQFADHjjNypn/vHWgncuH8yfBKlsxNSUgmd1ii+ohGK15J8OS9s6
+    rightrsasigkey=0sAwEAAa235arqmgpHM21of9l7KagM4kOTZQ7VKjOwhPKdW/t+Lgo1Qp5RXcga9ENcIRUDMP3U2iqG8wOFeM0YmwsbMw58zcuTPodjjisuh4HZDf6LBvOfnG47P3mes1AJNdsDHJl96EFlrXpb3QHqK3caH9uX5qPsaiydc6ThjpYtOUyFqBkqBi
+    type=tunnel
+    auto=start
+</pre>
+		<p>
+    Tunel uruchamiamy wg. powyższych poleceń.
+		</p>
+			<h2>Podsumowanie</h2>
+		<p>
+    Przedstawione zostały tu cztery sposoby, na zabezpieczenie transmisji danych, dzięki którym możemy bez obaw korzystać z usług, które takich mechanizmów nie oferują. Jeśli jeszcze nie zdecydowaliśmy czego powinniśmy użyć. Osobiście polecił bym SSH do zabezpieczania pojedynczych połączeń oraz OpenVPN dla całych sieci. Głównymi wadami, które rzutowały na ten wybór pośród pozostałych to dla Stunnela - dodatkowo potrzebne certyfikaty, a dla IPSec - potrzeba jawnych adresów IP, dokumentacja (żeby na stronie projektu przykłady konfiguracji nie działały, no to coś jest nie halo), gdyby nie te adresy, to dało by się to jakoś znieść, tunel IPSec jest przezroczysty i to jest mega. Nie trzeba ustawiać nawet routingu. Dla mnie prostota i szybkość konfiguracji to ważne rzeczy, nikt nie lubi się bawić całych dzień z daną rzeczą. Istotna jest multiplatformowość dla OpenVPN, który występuje np. na OpenBSD. Oczywiście jest to moje w pełni subiektywne zdanie.
+		</p>
+	</div>
+	<p style="margin: 15px; padding: 0; outline: 0;">
+		2021; COPYLEFT; ALL RIGHT REVERSED;
+	</p>
+		</body>
+	</html>

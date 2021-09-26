@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____      _       ___
+ |  ___|    / \     / _ \
+ | |_      / _ \   | | | |
+ |  _|    / ___ \  | |_| |
+ |_|     /_/   \_\  \__\_\
+
+</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Frequently Asked Questions</h1>
+		<p>&nbsp;</p>
+    <div>
+      <h2 id="mutt_config">Jak skonfigurować program pocztowy MUTT?</h2>
+      <p>
+  			Klient pocztowy <strong>MUTT</strong>, do proste w obsłudze narzędzie umożliwiające korzystanie z popularnych skrzynek mailowych z poziomu terminala czy konsoli serwera. Sprawdza się on wśród hackerów (like a Stallman not Mitnick) oraz osób chcących odbierać powiadomienia z serwera na swoją skrzynkę, ponieważ wysyłanie maili w skryptach w przypadku MUTT jest bardzo proste. Tutaj pokaże wam jak wygląda integracja z MUTT z GMail-em. Jednak na początku musimy na naszej skrzynce.
+  			<ul>
+  				<li>Wyłączyć uwierzytelnianie dwuskładnikowe o ile mamy je włączone,</li>
+  				<li>Włączyć dostęp do skrzynki z mniej bezpiecznych aplikcji.</li>
+  			</ul>
+  			Przygotowując plik konfiguracyjny korzystałem z dystrybucji GNU/Linux Debian, zatem instalacje przeprowadzę z poziomu managera pakietów tej dystrybucji. Ten materiał mógł znajdować się w kategorii Linux, jednak opiera się o program, który do zainstalowania jest na wiekszości popularnych platform. Przed instalacją jakiego kolwiek oprogramowania zawsze zalecam zaktualizować system.
+  		</p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+$ sudo apt install mutt
+</pre>
+  		<p>
+  			Po zainstalowaniu upewnijmy się czy został stworzony ukryty katalog <em>.mutt</em> na katalogu domowym użytkownika, w przeciwym wypadku należy taki katalog stworzyć. Poniżej znajduje się plik konfiguracyjny. Możemy go sobie skopiować do edytora, wpisać wymagane rzeczy ujęte w ostre nawiasy (<strong>&lt; &gt;</strong>) i zapisać w <em>$HOME/.mutt/.muttrc</em>. Pod wstawionym listingiem znajduje się opis poszczególnych opcji.
+  		</p>
+<pre class="code-block">
+set ssl_starttls=yes
+set ssl_force_tls=yes
+set imap_user='&lt;nazwa_użytkownika&gt;@gmail.com'
+set imap_pass='&lt;hasło_do_konta&gt;'
+set from='&lt;nazwa_użytkownika&gt;@gmail.com'
+
+set realname='&lt;RN&gt;'
+set folder=imaps://imap.gmail.com/
+set spoolfile=imaps://imap.gmail.com/INBOX
+set postponed="imaps://imap.gmail.com/[Gmail]/Drafts"
+
+set header_cache="~/.mutt/cache/headers"
+set message_cachedir="~/.mutt/cache/bodies"
+set certificate_file="~/.mutt/certificates"
+
+set smtp_url="smtps://&lt;nazwa_użytkownika&gt;@gmail.com@smtp.gmail.com"
+set smtp_pass='&lt;hasło_do_konta&gt;'
+set move = no
+set imap_keepalive = 900
+</pre>
+  		<p>
+  			Warto zaznaczyć że przed pierszym uruchomieniem MUTT, <code class="code-inline">header_cache, message_cachedir, certificate_file</code> muszą istnieć w systemie.
+  		</p>
+  		<ul>
+  			<li><code class="code-inline">ssl_starttls</code> - wykorzystanie STARTTLS,</li>
+  			<li><code class="code-inline">ssl_force_tls</code> - wymaganie szyfrowania wszystkich połączeń pomiędzy serwerem a klientem,</li>
+  			<li><code class="code-inline">imap_user</code> - nazwa użytkownika serwera IMAP,</li>
+  			<li><code class="code-inline">imap_pass</code> - hasło użytkownika serwera IMAP,</li>
+  			<li><code class="code-inline">from</code> - domyślny adres email nadawcy, będzie wyświetlał się w polu 'Od:' wiadomości,</li>
+  			<li><code class="code-inline">realname</code> - Nazwa personalna nadawcy,
+  				najczęściej imię i nazwisko, wykorzystywana w celu prezentacji nadawcy, np. w skrzynce odbiorczej,</li>
+  			<li><code class="code-inline">folder</code> - domyślna lokalizacja głównej skrzynki mailowej (jak katalog / [root]), w tym przypadku jest serwer IMAP GMail-a.</li>
+  			<li><code class="code-inline">spoolfile</code> - lokalizacja skrzynki odbiorczej,</li>
+  			<li><code class="code-inline">postponed</code> - lokalizacja skrzynki z kopiami (wersjami) roboczymi,</li>
+  			<li><code class="code-inline">header_cache</code> - plik pamięć podręcznej zawierający nagłówki wiadomości,</li>
+  			<li><code class="code-inline">message_cachedir</code> - katalog na pamięć podręczną zawierającą wiadomości,</li>
+  			<li><code class="code-inline">certificate_file</code> - plik zawierający zaakceptowane przez nas certyfikaty,</li>
+  			<li><code class="code-inline">smtp_url</code> - adres serwera SMTP, w wewnątrz adresu zawarta jest już nazwa użytkownika,</li>
+  			<li><code class="code-inline">smtp_pass</code> - hasło do konta użytkownika na serwerze SMTP.</li>
+  			<li><code class="code-inline">move</code> - przenoszenie przeczytanych wiadomości ze skrzynki odbiorczej do skrzynki na przeczytane,</li>
+  			<li><code class="code-inline">imap_keepalive</code> - ilość czasu (w sekundach) utrzymania połączenia z serwerem IMAP, stosowane aby serwer przedwcześnie nie zamknął połączenia.</li>
+  		</ul>
+  		<p>
+  			Po skonfigurowaniu naszej skrzynki i pierwszym jej otwarciu w tym programie, MUTT jest gotowy do wysyłania maili z poziomu wiersza poleceń.
+  		</p>
+<pre class="code-block">
+$ cat message.txt | mutt -s "To jest temat maila" adresat@example.com
+</pre>
+  		<p>
+  			Przekierowując zawartość pliku tekstowego tworzymy treść wiadomości, którą wysyłamy na adres <code class="code-inline">adresat@example.com</code>, opisując całość tematem zawartym po przełączniku <code class="code-inline">-s</code>.
+  		</p>
+  </div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="vboxsf_alpine">Jak zamontować VirtualBox Shared Folder na Alpine Linux?</h2>
+		<p>
+			Pierwszą rzeczą jaką należy wykonać jest włączenie repozytoriów społeczności, w pliku <em>/etc/apk/repositories</em> usuwamy znak komentarza na początku linii zawierającej taki ciąg znaków 'v3.11/community', gdzie v3.11 to wersja systemu Alpine.
+		</p>
+<pre class="code-block">
+#/media/cdrom/apks
+http://ftp.icm.edu.pl/pub/Linux/distributions/alpine/v3.11/main
+http://ftp.icm.edu.pl/pub/Linux/distributions/alpine/v3.11/community
+#http://ftp.icm.edu.pl/pub/Linux/distributions/alpine/edge/main
+#http://ftp.icm.edu.pl/pub/Linux/distributions/alpine/edge/community
+#http://ftp.icm.edu.pl/pub/Linux/distributions/alpine/edge/testing
+</pre>
+		<p>
+			Zapisujemy zmiany, następnie instalujemy niezbędne oprogramowanie.
+		</p>
+<pre class="code-block">
+# apk add build-base virtualbox-guest-additions virtualbox-guest-modules-virt
+</pre>
+		<p>
+			Po instalacji restartujemy system.
+		</p>
+<pre class="code-block">
+# reboot
+</pre>
+		<p>
+			Kiedy system się załaduje, możemy dodać moduł do jądra.
+		</p>
+<pre class="code-block">
+# modprobe -a vboxsf
+</pre>
+		<p>
+			Jeśli dodanie modułu do jądra nie zwróci żadnych błędów, możemy przejść do montowania folderu współdzielonego VirtualBox.
+		</p>
+<pre class="code-block">
+# mount -t vboxsf vbox_share /media
+</pre>
+		<p>
+			Gdzie <code class="code-inline">vbox_share</code> to nazwa folderu współdzielonego.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="js_autoscroll">Jak wykonać Autoscroll na dół elementu w JavaScript?</h2>
+		<p>
+			<strong>Autoscroll</strong>, czyli automatyczne przewinięcie treści elementu, musi być wykonane w oparciu o jakieś zdarzenie. W funkcji zdarzenia dopisujemy poniższą linię.
+		</p>
+<pre class="code-block">
+&lt;zmienna_z_elementem&gt;.scrollTop = &lt;zmienna_z_elementem&gt;.scrollHeight;
+</pre>
+		<p>
+			Kiedy dojdzie do zdarzenia treść elementu zostanie przewinięta na sam dół.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="vbox_vnc">Jak uzyskać dostęp do ekranu maszyny wirtualnej VirtualBox uruchomionej w headless za pomocą protokołu VNC?</h2>
+		<p>
+			W przypadku zdalnych ekranów maszyn <em>VirtualBox</em> najważniejsze to posiadać zainstalowany <strong>VNC Extension Pack</strong> na komputerze, który tą maszynę uruchomił. W przeciwym wypadku maszynę należy wyłączyć a następnie zainstalować paczkę rozszerzeń <strong>Oracle VM VirtualBox Extension Pack</strong> i użyć protoku RDP, który wymaga do konfiguracji jedynie dwóch pierwszych poleceń czyli włączenia samego zdalnego dostępu oraz wybrania portu, oczywiście istnieje możliwość zabezpieczenia dostępu hasłem, w przeciwnym wypadku uwierzytelnienie działa na zasadzie kto pierwszy ten lepszy.
+		</p>
+<pre class="code-block">
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --vrde on
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --vrdeport &lt;port_rdp/vnc&gt;
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --vrdeproperty VNCPassword=&lt;hasło_dla_połaczenia&gt;
+</pre>
+		<p>
+			Po wykonaniu tych poleceń możemy uruchomić maszynę wirtualną. Do połączenia możemy wykorzystać np. program <em>Remmina</em>, który jest standardowym pakietem, odpowiedzialnym za połączenia RDP oraz VNC w systemach GNU/Linux. Wybieramy protokół, przez który będziemy się łączyć z maszyną. Następnie w adresie serwera podajemy adres IP, komputera który uruchomił maszynę lub localhost, po dwukropku (<strong>:</strong>) port. Podczas zestawiania połączenia zostaniemy zapytani o zdefiniowane w ostatnim poleceniu hasło, o ile użyliśmy VNC.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="symlinks_samba">Jak ustawić dowiązania symboliczne na udziale Samba?</h2>
+		<p>
+			W tym celu w pliku konfiguracyjnym <em>/etc/samba/smb.conf</em>, wpisujemy sekcji globalnej
+		</p>
+<pre class="code-block">
+allow insecure wide links = yes
+</pre>
+		<p>
+			Następnie przchodzimy do definicji udziału i dodajemy poniższe opcje.
+		</p>
+<pre class="code-block">
+follow symlinks = yes
+wide links = yes
+</pre>
+		<p>
+			Zapisujemy i zamykamy plik, następnie restartujemy usługę.
+		</p>
+<pre class="code-block">
+$ sudo systemctl restart smbd
+$ sudo systemctl restart nmbd
+</pre>
+		<p>
+			W sumie to tyle, jednak jeśli mamy zamiar wykorzystać nasz udział do tworzenia stron WWW, to warto dodać naszego użytkownika do grupy <em>www-data</em> i wymusić na udziale za pomocą poniższych opcji zmianę domyślnego właściciela oraz grupę dla nowo utworzonych plików.
+		</p>
+<pre class="code-block">
+force user = www-data
+force group = www-data
+</pre>
+		<p>
+			Jeśli to ustawimy, to należy ustawić grupę oraz właściciela katalogu głównego serwera WWW <em>/var/www</em> na <em>www-data</em>:<em>www-data</em> oraz zmienić maski na udziale na <code class="code-inline">0775</code>.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="php_sprintf">Co robić jeśli sparsowane SQL Query przez sprintf to bool(false) w PHP ?</h2>
+		<p>
+			Instrukcja <code class="code-inline">sprintf</code> zwraca <em>FALSE</em>, w razie błedu podczas parsowania. Najczęstszą przyczyną jest za mało lub za dużo o jeden format (<code class="code-inline">%s</code>) albo argument (<code class="code-inline">mysqli_real_escape_string($connection, ...)</code>).
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="where_is_samba">Gdzie znajdę zamontowany udział Samba?</h2>
+		<p>
+			Udział montowany jest na ścieżce <em>/run/user/&lt;uid&gt;/gvfs/smb-share:&lt;SERWER&gt;,share:&lt;nazwa_udziału&gt;</em>.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="dirs_above_apache_root">Jak ustawić katalog hostingu WWW inny niż <em>/var/www</em>?</h2>
+		<p>
+			W pliku konfiguracyjnym hostingu dopisujemy poniższą dyrektywę katalogu.
+		</p>
+<pre class="code-block">
+&lt;Directory docelowy_katalog_witryny&gt;
+	Options Indexes FollowSymLinks Includes ExecCGI
+	AllowOverride All
+	Require all granted
+	Allow from all
+&lt;/Directory&gt;
+</pre>
+		<p>
+			Po tej deklaracji hosting tej strony będzie znajdował się w katalogu (ścieżce) podanym w polu <code class="code-inline">docelowy_katalog_witryny</code>.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="xvideos">Czy jest możliwe pobranie filmów z XVIDEOS.com</h2>
+		<p>
+			Możemy je pobrać za pomocą zwykłego terminala. URL do filmu znajduje się na stronie, wystarczy go wydobyć.
+		</p>
+<pre class="code-block">
+$ wget --no-check-certificate &lt;url z filmem&gt;
+$ url=$(cat &lt;plik_strony_z_filmem&gt; | grep "setVideoUrlHigh" | cut -d "'" -f 2);
+$ wget --no-check-certificate $url
+</pre>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="redirect_to_https">Jak przekierować HTTP na HTTPS za pomocą Apache 2?</h2>
+		<p>
+			W pliku hostingu HTTP, dopisujemy poniższe opcje.
+		</p>
+<pre class="code-block">
+RewriteEngine On
+RewriteCond %{HTTPS} !on
+RewriteRule (.*) https://${HTTP_HOST}%{REQUEST_URI}
+</pre>
+		<p>
+			Aby te opcje zadziałały, niezbędne jest włączenie modułu <em>rewrite</em>.
+		</p>
+<pre class="code-block">
+$ sudo a2enmod rewrite
+</pre>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="encrypt_archive">Jak można utworzyć szyfrowane archiwum za pomocą 7z</h2>
+<pre class="code-block">
+$ 7z a -t7z -mhe=on -p&lt;hasło&gt; &lt;nazwa_archiwum&gt; &lt;plik/pliki/katalog&gt;
+</pre>
+		<p>
+			<ul>
+				<li><code class="code-inline">a</code> - utworzenie archiwum,</li>
+				<li><code class="code-inline">-t7z</code> - ustawienie formatu archiwum jako 7-zip,</li>
+				<li><code class="code-inline">-mhe=on</code> - szyfrowanie nagłówków, dzięki temu hasło będzie wymagane nawet do otwarcia archiwum,</li>
+				<li><code class="code-inline">-p&lt;haslo&gt;</code> - hasło archiwum, używane do jego zaszyfrowania.</li>
+			</ul>
+			Reszta jest raczej czytelna i nie wymaga komentarza.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="vbox_cli">Czy jest jakiś sposób na szybkie utworzenie maszyny wirtualnej VirtualBox z poziomu terminala?</h2>
+		<p>
+			Nie wiem czy ten sposb jest szybki, ale chyba jedyny jaki przychodzi mi na myśl. Wykonując poniższą sekwencje poleceń możemy utworzyć VM z poziomu CLI.
+		</p>
+		<p>
+			Rozpoczniemy od utworzenia samej maszny, a następnie będziemy ją konfigurować.
+		</p>
+<pre class="code-block">
+$ vboxmanage --createvm --name &lt;nazwa_maszyny&gt; --ostype &lt;goszczony_system_operacyjny&gt; --register
+</pre>
+		<p>
+			W katalogu maszyny <em>$HOME/VirtualBox VMs/&lt;nazwa_maszyny&gt;</em>, utworzymy dysk.
+		</p>
+<pre class="code-block">
+$ vboxmanage createhd --filename &lt;nazwa_dysku&gt; --size &lt;rozmiar_dysku_w_MB&gt; --format VDI --variant Standard
+</pre>
+		<p>
+			Po utworzeniu dysku możemy przejść do utworzenia kontrolera dysków na maszynie.
+		</p>
+<pre class="code-block">
+$ vboxmanage storagectl &lt;nazwa_maszyny&gt; --name SATA0 --add sata
+</pre>
+		<p>
+			Kiedy mamy już dodany kontroler, możemy załadować dysk oraz obraz płyty, z którego będziemy instalować system.
+		</p>
+<pre class="code-block">
+#DYSK:
+$ vboxmanage storageattach &lt;nazwa_maszyny&gt; --storagectl SATA0 --port 0 --type hdd --medium &lt;nazwa_pliku/scieżka dysku&gt;
+
+#OBRAZ PŁYTY
+$ vboxmanage storageattach &lt;nazwa_maszyny&gt; --storagectl SATA0 --port 1 --type dvddrive --medium &lt;ścieżka_do_iso&gt;
+</pre>
+		<p>
+			Teraz możemy ustawić ilość pamięci (pamięć jest wyrażana w megabajtach) oraz interfejs sieciowy.
+		</p>
+<pre class="code-block">
+#Pamięć RAM:
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --memory 2048
+
+#Sieć NAT (jest ustawiana domyślnie podczas tworzeznia maszyny):
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --nic1 nat
+
+#Sieć Bridged:
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --nic1 bridged
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --bridgedadapter1 &lt;interfejs_sieciowy_komputera&gt;
+</pre>
+		<p>
+			Jeśli uruchamiamy maszynę gdzieś na serwerze i nie mamy dostępu do środowiska graficznego, wtedy możemy skorzystać z RDP. Jednak wymaga ono zainstalowania <strong>Oracle VM VirtualBox Extension Pack</strong>.
+		</p>
+<pre class="code-block">
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --vrde on
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --vrdeport &lt;port_dla_vrde&gt;
+</pre>
+		<p>
+			Teraz możemy wystartować maszynę, jeśli korzystamy z serwera to należy ją uruchomić w headless.
+		</p>
+<pre class="code-block">
+#Serwer zdalny bez GUI:
+$ vboxmanage startvm &lt;nazwa_maszyny&gt; --type headless
+#Normalna stacja robocza:
+$ vboxmanage startvm &lt;nazwa_maszyny&gt;
+</pre>
+	<p>
+		Jeśli nie podamy goszczonego systemu podczas rejestracji (tworzenia maszyny), to:
+		<ul>
+			<li>Dla systemu <strong>Windows</strong> należy ustawić te dwie rzeczy:
+<pre class="code-block">
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --chipset ich9
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --ioapic on
+</pre>
+			</li>
+			<li>Dla systemów <strong>BSD</strong> należy ustwić poniższą opcję:
+<pre class="code-block">
+$ vboxmanage modifyvm &lt;nazwa_maszyny&gt; --hwvirtex on
+</pre>
+			Jednakże przy wirtualizcji sprzętowej należy pamiętać że, jeśli chcemy jej użyć musi być ona wspierana przez procesor oraz włączona w BIOS.
+		</li>
+		</ul>
+	</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="js_dropzone">Jak zrealizować upload plików za pomocą obszaru dropzone w JavaScript?</h2>
+		<p>
+			Aby tego dokonać możemy użyć poniższego kodu.
+		</p>
+<pre class="code-block">
+&lt;script&gt;
+function uploadFiles(plik) {
+
+	var xhr = new XMLHttpRequest();
+	var fd = new FormData();
+
+	xhr.open("POST", '/service.php', true);
+	xhr.onload = function () {
+		if ( xhr.status === 200 ){
+	  	alert(xhr.responseText);
+		}
+	}
+	fd.append('pliki', plik);
+	xhr.send(fd);
+}
+
+var dropzone = document.getElementById("dropzone");
+
+dropzone.ondragover = dropzone.ondragenter = function (e) {
+	e.stopPropagation();
+	e.preventDefault();
+}
+
+dropzone.ondrop = function (e) {
+	e.preventDefault();
+	e.stopPropagation();
+	var plikiTab = e.dataTransfer.files;
+
+	for (var a=0; a &lt; plikiTab.length; a++) {
+		uploadFiles(plikiTab[a]);
+	}
+}
+&lt;/script&gt;
+&lt;div id="dropzone"&gt;Przeciągnij i upuść pliki tutaj.&lt;/div&gt;
+</pre>
+		<p>
+			Jedyne co musimy zrobić to przygotować plik PHP, który obsłuży na wysłany plik.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="js_workers">W jaki sposób uruchomić kod JavaScript w tle innego skryptu?</h2>
+		<p>
+			Możemy użyć techiki tzw. <em>Workerów</em>. Poniżej znajduje się kod, ustawiono w nim interwał, który uruchamia tą funkcję co jakiś czas w tym przypadku jest 0,5 sekundy.
+		</p>
+<pre class="code-block">
+//plik główny .js:
+var w = new Worker('&lt;plik_z_funkcją_działającą_w_tle&gt;');
+
+w.onmessage = function(e) {
+	//po uzyskaniu wyniku pracy funkcji w tle, zrób coś...
+}
+
+//plik z funkcją działającą w tle:
+
+function getMsgFromServer () {
+	//zrób cos ...
+	postMessage(wiadomosc_zwrotna);
+
+	//Uruchom funkcje po odczekaniu timeout-u 0,5 sek.
+	setTimeout("getMsgFromServer()", 500);
+}
+getMsgFromServer();
+</pre>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="ssh_rpi">Jak uruchomić SSH na Raspberry Pi?</h2>
+		<p>
+			Opcje są dwie. Kiedy urządzenie już działa możemy uruchomić SSH za pomocą polecenia <code class="code-inline">$ sudo raspi-config</code> -> <code class="code-inline">5. Interfaceing Options</code> -> <code class="code-inline">P2 SSH</code> -> <code class="code-inline">yes</code>.
+		</p>
+		<p>
+			Drugim rozwiązaniem jest utworznie pustego plik o nazwie <em>ssh</em> na partycji <em>boot</em> karty pamięci.
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="polish_in_mysql">Jak ustawić kodownie polskich znaków MySQL?</h2>
+		<p>
+			Kodowanie polskich znaków możemy ustawić poprzez dopisanie kilku opcji w pliku konfiguracyjnym MySQL. Plik znajduje się na ścieżce <em>/etc/mysql/conf.d/mysql.conf</em>, oczywiście tam gdzie serwer baz danych to MySQL a nie MariaDB. W pliku dopisujemy następujące opcje.
+		</p>
+<pre class="code-block">
+[mysql]
+default-character-set = utf8
+[mysqld]
+collation-server = utf8_polish_ci
+init-connect = 'SET NAMES utf8'
+character-ser-server = utf8
+</pre>
+		<p>
+			Restartujemy serwer.
+		</p>
+<pre code="code-block">
+$ sudo systemctl restart mysql
+</pre>
+		<p>
+			Po zrestartowaniu serwera możemy sprawdzić ustawienia za pomocą dwóch poleceń.
+		</p>
+<pre class="code-block">
+mysql> SHOW VARIABLES LIKE 'char%'
+</pre>
+	<p>
+		Powinniśmy zobaczyć, że każda zmienna jest ustawiona na <code class="code-inline">utf8</code>, poza jedną - ustawioną na <code class="code-inline">binary</code>.
+	</p>
+<pre class="code-block">
+mysql> SHOW VARIABLES LIKE 'colla%'
+</pre>
+	<p>
+		Pierwsza zmienna powinna mieć wartość <code class="code-inline">utf8_general_ci</code>, natomiast pozostałe <code class="code-inline">utf8_polish_ci</code>. Te zmiany spowodują wyświetlanie polskich znaków w konsoli MySQL. Także pozwolną na użycie modyfikatorów <code class="code-inline">ORDER BY</code> z polskimi znakami w operandach.
+	</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="delete_mdadm">Jak usunąć tablicę RAID mdadm?</h2>
+		<p>
+			Żeby usunąć tablicę RAID musimy na początku <strong>zatrzymać urządzenie RAID</strong> za pomocą poniższego polecenia.
+		</p>
+<pre class="code-block">
+$ sudo mdadm --stop &lt;urządzenie_RAID&gt;
+</pre>
+		<p>
+			Teraz możemy zainicjować dysk za pomocą polecenia <code class="code-inline">fdisk</code>, sformatować partycję i zacząć z niej korzystać.
+		</p>
+<pre class="code-block">
+$ sudo fdisk /dev/sdb
+> o
+> n
+> p
+> [ENTER]
+> [ENTER]
+> [ENTER]
+> w
+> quit
+
+$ sudo mkfs.ext4 /dev/sdb1
+
+$ sudo mount /dev/sdb1 /mnt
+</pre>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="php_rsync">W jaki sposób użyć polecenia rsync w PHP?</h2>
+		<p>
+			Użyć polecenia rsync możemy za pomocą instrukcji <code class="code-inline">exec()</code>, wartością zwracaną przez tą instrukcje są dane wyjściowe polecenia.
+		</p>
+		<p>
+			W celu uruchomienia polecenia <code class="code-inline">rsync</code>, należy pamiętać o wymianie kluczy między stronami oraz o tym aby użytkownik <em>www-data</em> posiadał w swoim katalogu domowym (zazwyczaj <em>/var/www</em>) katalog <em>.ssh</em> z kluczami. Katalog ten powinien mieć ustawionego właściciela na <em>www-data</em> oraz odpowienie uprawnienia (<em>644</em>, dla katalogu, <em>600</em> dla klucza prywatnego [plik bez rozszerzenia .pub]). Warto również użyć kilku opcji SSH (przez SSH <code class="code-inline">rsync</code> łączy się z serwerem) takich jak 'StrictHostKeyChecking' ustawione na 'no' (<code class="code-inline">StrictHostKeyChecking=no</code>) oraz 'UserKnowHostFile' ustawione na <em>/dev/null</em> (<code class="code-inline">UserKnownHostsFile=/dev/null</code>)
+			Aby w ogóle użyć opcji SSH w <code class="code-inline">rsync</code>, należy użyć przełącznika <code class="code-inline">-e</code> jako wartość tej opcji w podwójnych apostrofach podaje się polecenie <code class="code-inline">ssh</code> gdzie, każdą z opcji podaje się po przełączniku <code class="code-inline">-o</code>.
+		</p>
+<pre class="code-block">
+exec('rsync -re \"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null\" &lt;katalog_lokalny&gt; &lt;użytkownik_zdalny&gt;@&lt;adres_ip_serwera&gt;:&lt;katalog_zdalny&gt;');
+</pre>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="automount_linux">Co należy zrobić aby dysk montował się automatycznie w przy starcie systemu w GNU/Linux?</h2>
+		<p>
+		Dla takiego dysku należy utworzyć wpis w pliku <strong><em>/etc/fstab</em></strong>. Ten plik jest czytany podczas ładowania systemu, stąd wiadomo,
+		który dysk
+		należy podmontować jako "/" (<em>root</em> - główny system plików). Bardzo rzadko występuje tam standardowe nazewnictwo dla dysków, takie jak
+		na przykład <em>/dev/sda1</em>. Raczej występują tam UUID lub PARTUUID. Klasyczne oznaczenia bywają zwodniczne, mogą zmieniać się, kiedy podłączymy
+		kolejny dysk. Dostęp do UUID oraz PARTUUID uzyskujemy za pomocą polecenia <code class="code-inline">blkid</code>. Wywołanie tego polecenia, w 
+		niektórych distro możemy wymagać uprawnień <em>roota</em>.
+		</p>
+<pre class="code-block">
+$ sudo blkid
+/dev/sda1: UUID="240040b5-fda6-4540-95f2-ce02cfdc96b9" TYPE="ext4" PARTUUID="802e3498-01"
+...
+</pre>
+		<p>
+		Jeśli nie wiemy czy wybrać UUID lub PARTUUID, to spójrzmy na linię, która montuje glówny system plików. Na podstawie tego możemy zdecydować, którą z
+		tych informacji należy umieścić. Sam wpis wygląda następująco:
+		</p>
+<pre class="code-block">
+UUID="..."	/home	ext4	defaults	0	2
+</pre>
+		<p>
+		Gdzie:
+		<ul>
+			<li><code class="code-inline">UUID="..."</code> - UUID (identyfikator urządzenia) sciągnięty z wyniku polecenia 
+				<code class="code-inline">blkid</code>,</li>
+			<li><code class="code-inline">/home</code> - punkt montowania,</li>
+			<li><code class="code-inline">ext4</code> - montowany system plików</li>
+			<li><code class="code-inline">defaults</code> - opcje systemów plików, każdy system posiada swoje, <em>ext4</em> posiada opcję 
+				<em>defaults</em> dla domyślnego zestawu,</li>
+			<li><code class="code_inline">0</code> - oznacza ustawienie kopii zapasowej programu <em>dump</em>,</li>
+			<li><code class="code_inline">2</code> - oznacza ustawienie sprawdzania systemu plików przez program <em>fsck</em>. Wartość <em>2</em>
+				oznacza ze system będzie sprawdzany po głownym systemie plików.</li> 
+		</ul>
+		</p>
+	</div>
+	<p>&nbsp;</p>
+	<div>
+		<h2 id="vbox_rdp_password">Czy instnieje możliwość zabezpieczenia dostępu RDP do VirtualBox VM hasłem?</h2>
+		<p>
+		Jest tak możliwość, i to wbudowana w <em>VirtualBox</em>. Na wyłączonej maszynie musimy ustawić poniższe opcje:
+		</p>
+<pre class="code-block">
+vboxmanage setproperty vrdeauthlibrary "VBoxAuthSimple"
+vboxmanage modifyvm "&lt;nazwa_vm&gt;" --vrdeauthtype external
+vboxmanage internalcommands passwordhash &lt;hasło&gt;
+vboxmanage setextradata "&lt;nazwa_vm&gt;" "VBoxAuthSimple/users/&lt;nazwa_użytkownika&gt;" &lt;hash&gt;
+</pre>
+		<p>
+		Gdzie:
+		<ul>
+			<li><code class="code-inline">nazwa_użytkownika</code> - Możemy podać dowolny ciąg znaków. Ta wartość będzie sprawdzana z polem
+				"nazwa użytkownika" programu, z którego bedziemy się łączyć z maszyną.</li>
+			<li><code class="code-inline">hash</code> - hash wygenerowany przez polecenie 
+				<code class="code-inline">vboxmanage internalcommands passwordhash &lt;hasło&gt;</code></li>
+		</ul>
+		Jeśli wcześniej nie uruchamialiśmy maszyn z <em>VRDE</em> to upewnijmy się najpierw, że mamy zainstalowany <em>Extension Pack</em>.
+		Po wydaniu tych poleceń możemy uruchamiać maszynę. Więcej informacji pod adresem:
+		<a href="https://www.virtualbox.org/manual/ch07.html#vbox-auth">https://www.virtualbox.org/manual/ch07.html#vbox-auth</a>
+		</p>
+		<p>
+		Programy, przez które będzimy się łączyć z maszyną mogą nie zwrócić monitu o dane uwierzytelniające. Wyświetlą jedynie informacje o tym,
+		że nie udało się połączyć z danym serwerem. Wtedy należy utworzyć profil połączenia, i z tego poziomu powinno się już połączyć (przynajmniej
+		tak jest na <em>Remminie</em> na GNU/Linux Debian).
+		</p>
+	</div>
+</div>
+	<p style="margin: 15px; padding: 0; outline: 0;">
+		2021; COPYLEFT; ALL RIGHT REVERSED;
+	</p>
+
+</body>
+</html>

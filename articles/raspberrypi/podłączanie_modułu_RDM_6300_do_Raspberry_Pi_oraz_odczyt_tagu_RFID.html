@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align:center;">Podłączanie modułu RDM 6300 do Raspberry Pi oraz odczyt tagu RFID</h1>
+    <p>
+      Jedną z ciekawszych rzeczy jakie możemy podłączyć do Raspberry Pi jest <strong>moduł RDM6300 - RFID</strong>. Za jego pomocą możemy odczytać tag RFID ukryty na kartach lub brelokach, poźniej możemy go wykorzystać w innych programach. Przygotowałem materiał jak podłączyć czytnik i odczytać RFID tag.
+    </p>
+    <ol>
+      <li>Nagrywamy obraz z <em>RasPiOS</em> na kartę microSD.</li>
+      <li>Wkładamy kartę do urządzenia, podłaczamy i logujemy się czy to lokalnie czy przez SSH.</li>
+      <li>Uruchamiamy program konfiguracji Raspberry Pi za pomocą poniższego polecenia:
+<pre class="code-block">
+$ sudo rasp-config
+</pre>
+        <p>
+          Z opcji wybieramy kolejno <code class="code-inline">Interfacing Options</code> -> <code class="code-inline">P6 Serial</code> -> <code class="code-inline">TAK/Yes</code>. Na koniec potwierdzamy że chcemy zrestartować system.
+        </p>
+      </li>
+      <li>Podłączamy nasz moduł wg. poniższego schematu:<br />
+        <img src="https://files.morketsmerke.net/resources/Podłączanie RDM6300 do RPI.png" alt="Schemat podłączenia RDM6300 do Raspberry Pi"/>
+      </li>
+      <li>Jeśli mamy zainstalowany pakiet <em>picocom</em>, możemy sprawdzić czy nasz moduł działa poprawnie. Wydajmy polecenie:
+<pre class="code-block">
+$ sudo picocom /dev/serial0 -b 9600
+</pre>
+      <p>
+        Kiedy przyłożymy kartę czy brelok do anteny, powinniśmy na ekranie zobaczyć ciągi cyfr. Jeśli się wyświetlają oznacza to, że nasz moduł jest poprawnie podłączony i gotowy do pracy.
+      </p>
+      </li>
+      <li>Zanim przejdziemy do odczytu tagu z karty/breloka musimy zainstalować bibliotekę <em>python-serial</em>, która umożliwi użycie kodu Pythona do komunikacji z linią szeregową.
+<pre class="code-block">
+$ sudo apt install python-serial
+</pre>
+      </li>
+      <li>Aby odczytać jednokrotnie tag z naszej karty, potrzeby będzie nam kod napisany w Pythonie, ja znalazłem bardzo podbny skrypt na jedej ze stron poświęconych właśnie podłączeniu <em>RDM6300</em> do RPI. Lekko go przerobiłem, po to aby program oczekiwał na przyłożenie karty/breloka, odczytał <em>RFID</em> tag i zakończył działanie. Później taki możemy go wysłać np. potokiem do innego programu, w celu dalszego przetwarzania.
+<pre class="code-block">
+import time
+import serial
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BCM)
+
+PortRF = serial.Serial('/dev/serial0',9600)
+ID = ""
+read_byte = PortRF.read()
+if read_byte=="\x02":
+  for Counter in range(12):
+    read_byte=PortRF.read()
+    ID = ID + str(read_byte)
+
+print ID
+</pre>
+        <p>
+          Dla przykładu zapiszemy plik pod nazwą: <em>RFID.py</em>. Wywołanie programu jest banalnie proste wystarczy wydać polecenie.
+        </p>
+<pre class="code-block">
+$ sudo python RFID.py
+</pre>
+        <p>
+          Po przyłożeniu karty/breloka do anteny, powinniśmy zobaczyć tag RFID i program powinien zakończyć swoje działanie.
+        </p>
+      </li>
+    </ol>
+    <p>
+      Pomysł na RFID miał swój początek w pomyśle na manager haseł zbudowany na Raspberry Pi, hasła trzymałbym za pomocą programu pass, zaszyfrowane kluczem GPG. Hasłem do klucza byłby RFID TAG z breloka na przykład. Porzuciłem projekt, ale może kiedyś do niego wrócę.
+    </p>
+    <p>
+      ~xf0r3m
+    </p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+	</body>
+	</html>

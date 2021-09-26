@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+					text-align: left;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				ul {
+					text-align: left;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+ _                      _             _ _
+| |_ ___ _ __ _ __ ___ (_)_ __   __ _| | | ___   __ _
+| __/ _ \ '__| '_ ` _ \| | '_ \ / _` | | |/ _ \ / _` |
+| ||  __/ |  | | | | | | | | | | (_| | | | (_) | (_| |
+ \__\___|_|  |_| |_| |_|_|_| |_|\__,_|_|_|\___/ \__, |
+			                        |___/
+</pre>
+			<p style="margin: 0; padding: 0; outline: 0; font-size: 18pt;">
+				&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+			</p>
+			<div style="margin-left: auto; margin-right: auto; width: 80%;">
+				<h1 style="text-align: center;">GNU mailutils jako program mailowy</h1>
+        <p>
+          W niektórych UNIX-ach można napotkać polecenie <em>mail</em>.
+          Jest ono obecnie wykorzystywane do przesyłania wiadomości
+          w obrębnie jednego systemu, jednego serwera. Za pomocą kilku
+          dodatkowych programów można go skonfigurować do użytku z serwerami
+          konfigurowanymi na podstawie materiałów z tej strony oraz popularnymi
+          skrzynkami dostępnymi w internecie.
+        </p>
+        <p>
+          Przed każdą instalacją oprogramowania warto zaktualizować nie tylko
+          listy pakietów, ale i zainstalowany system. Ja używam greenOS
+          bazującego na GNU/Linux Debian, dlatego też przedstawiony tutaj 
+          menedżer pakietów to APT.
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+</pre>
+        <ol>
+          <li>
+            <strong>Instalacja oprogramowania</strong>
+            <p>
+              <em>GNU mailutils</em> nie jest sam w sobie klientem pocztowym
+              jakie wszyscy znamy, dlatego musimy go wspomóc kilkoma
+              programami, aby spełnił naszym oczekiwaniom.  Jeśli w naszym w 
+              systemie polecenie <em>mail</em>
+              nie występuje to należy również zainstalować pakiet 
+              <em>GNU mailutils</em>.
+            </p>
+<pre class="code-block">
+$ sudo apt install mailutils fetchmail procmail postfix libsasl2-2 ca-certificates libsasl2-modules
+</pre>
+            <p>
+              Podczas instalacji <em>Postfix</em>-a zostanie wyświetlone
+              okno dialogowe odnośnie jego konfiguracji, wybieramy
+              <em>Strona internetowa/Internet site</em>, w polu wpisujemy
+              FQDN swojego komputera.
+            </p>
+          </li>
+          <li>
+            <strong>Utworzenie skrzynki mailowej</strong>
+            <p>
+              Skrzynka mailowa na UNIX-ie jest zwykłym plikiem o nazwie
+              użytkownika, który powinien znajdować się w katalogu 
+              <em>/var/mail</em>, jeśli jednak musieliśmy zainstalować
+              <em>GNU mailutils</em>, to prawdobodobnie plik nie będzie
+              istnieć i trzeba go utworzyć.
+            </p>
+<pre class="code-block">
+$ sudo touch /var/mail/xf0r3m
+$ sudo chown xf0r3m:mail /var/mail/xf0r3m
+</pre>
+            <p>
+              Aby plik mógł być obsługiwany przez <em>mail</em>, musimy nadać
+              mu odpowiednie prawa własności - takie jak na powyższym
+              przykładzie.
+            </p>
+          </li>
+          <li>
+            <strong>Konfiguracja fetchmail - plik ~/.fetchmail</strong>
+            <p>
+              Kiedy plik skrzynki jest gotowy, możemy skonfigurować program,
+              który pobierze do niego maile z serwera. W pliku
+              <em>.fetchmailrc</em> w katalogu domowym użytkownika zapisujemy
+              poniższe opcje. 
+            </p>
+<pre class="code-block">
+set daemon 300
+set logfile fetchmail.log
+
+poll mail.example.com proto IMAP
+  user "xf0r3m" pass "passw0rd" is "xf0r3m" preconnect "date &gt;&gt; fetchmail.log"
+  ssl
+  fetchall
+  no rewrite
+  mda "/usr/bin/procmail -f %F -d %T";
+</pre>
+            <p>
+              Gdzie:
+              <ul>
+                <li>
+                  <code class="code-inline">set daemon 300</code> -
+                  uruchomienie <em>fetchmail</em> powoduje uruchomienie
+                  daemona, który pobiera maile następnie przechodzi w stan
+                  uśpienia, ta opcja ustawia co ile sekund daemon 
+                  <em>fetchmail</em> ma się wybudzać i pobierać pocztę.
+                </li>
+                <li>
+                  <code class="code-inline">set logfile fetchmail.log</code> - 
+                  wskazanie pliku dla logów programu.
+                </li>
+                <li>
+                  <code class="code-inline">
+                    poll mail.example.com proto IMAP
+                  </code> - wskazanie serwera oraz protokołu z jakiego ma
+                  korzystać.
+                </li>
+                <li>
+                  <code class="code-inline">
+                    user "xf0r3m" pass "passw0rd" is "xf0r3m" preconnect
+                    "date &gt;&gt; fetchmail.log"
+                  </code> - wskazanie użytkownika zdalnego wraz danymi
+                  uwierzytelniającymi, jawne przekazanie informacji do czyjej
+                  skrzynki mają trafić pobrane wiadomości
+                  (<code class="code-inline">is "xf0r3m"</code>), dyrektywa
+                  <code class="code-inline">preconnect</code> wykonuje podane
+                  jako argument polecenie przy każdym połączeniu z serwerem.
+                  W tym przypadku będziemy wiedzieć kiedy wiadomości zostały
+                  pobrane, lub coś poszło nie tak.
+                </li>
+                <li>
+                  <code class="code-inline">ssl</code> - fetchmail 
+                  wykorzysta SSL/TLS
+                  do połączenia się z serwerem, używając przy tym portów IMAPS
+                  lub POP3S. 
+                </li>
+                <li>
+                  <code class="code-inline">fetchall</code> - program będzie
+                  pobierać wszystkie maile jakie znajdzie w skrzynce tego
+                  użytkownika na serwerze. 
+                </li>
+                <li>
+                  <code class="code-inline">no rewrite</code> - opcja powoduje
+                  pozostawienie oryginalnych nagłówków, bez tej opcji mogły
+                  by zostać nadpisane przez fetchmail.
+                </li>
+                <li>
+                  <code class="code-inline">
+                    mda "/usr/bin/procmail -f %F -d %T";
+                  </code> - MDA (ang. <em>Mail Delivery Agent</em>) - program
+                  dostarczający pocztę, fetchmail po pobraniu przekaże maile
+                  do <em>procmail</em>, który dostarczy je do naszej skrzynki.
+                  Opcje procmaila: <code class="code-inline">-f %F</code> -
+                  zarejestruje w logach od kogo przychodzi wiadomość,
+                  <code class="code-inline">-d %T</code> - właśnie ta opcja
+                  umożliwia dostarczenie poczty do lokalnej skrzynki
+                  użytkownika.
+                </li>
+              </ul>
+            </p>
+          </li>
+          <li>
+            <strong>Zmiana uprawnień ~/.fetchmailrc</strong>
+            <p>
+              Daemon nie wystartuje jeśli plik ~/.fetchmailrc nie będzie
+              posiadał odpowiednich uprawnień.
+            </p>
+<pre class="code-block">
+$ chmod 700 ~/.fetchmailrc
+</pre>
+          </li>
+          <li>
+            <strong>Testowanie fetchmaila</strong>
+            <p>
+              Teraz możemy przestestować <em>fetchmail</em>, wysyłając 
+              testowego maila
+              na skrzynkę, z której program pobiera wiadomości. Zaraz po 
+              uruchomieniu
+              polecenia warto w drugim terminalu otworzyć sobie plik logów
+              <em>fetchmail</em> w podglądzie na żywo. Wydajemy polecenie:
+            </p>
+<pre class="code-block">
+$ fetchmail
+
+#w drugim terminalu:
+$ tail -f fetchmail.log
+</pre>
+            <p>
+              Jeśli jesteśmy pewni, że nowa wiadomość znajduje się na skrzynce
+              a <em>fetchmail</em> niczego nie pobrał, w logach wyświetla się
+              tylko data. Oznacza to, że program się zawiesił. Tak się dzieje
+              za pierwszym razem. W tej sytuacji zostaje zabicie procesu i 
+              uruchomienie go ponownie, jeśli to nie zadziała to należy
+              wyłączyć SSL, uruchomić ponownie <em>fetchmail</em> pobrać pocztę
+              i uruchomić SSL ponownie.
+            </p>
+          </li>
+          <li>
+            <strong>Konfiguracja Postfix, aby wysyłać maile przez GNU
+              mailutils</strong>
+            <p>
+              Załóżmy, że otrzymaliśmy maila i chcemy na niego odpowiedzieć,
+              aby wiadomość opuściła nasz komputer i została przesłana do
+              serwera SMTP musimy mieć skonfigurowany <em>Postfix</em>
+              jako przekaźnik (ang. <em>relay</em>).
+            </p>
+            <p>
+              W pliku <em>/etc/postfix/main.cf</em> odnajdujemy opcje
+              <code class="code-inline">relayhost</code> przypisujemy jej
+              adres serwera SMTP w nawiasach kwadratowych, za nawiasami po
+              dwukropku podajemy numer portu, pod którym SMTP jest dostępny
+              dla klientów.
+            </p>
+<pre class="code-block">
+relayhost = [mail.example.com]:587
+</pre>  
+            <p>
+              Aby można było przekazać wiadomości, które będą wysyłane za
+              pośrednictwem tego systemu, potrzeba jeszcze kilku ustawień, pod
+              <code class="code-inline">relayhost</code> zapisujemy
+              poniższe opcje.
+            </p>
+<pre class="code-block">
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_CAfile = /etc/postfix/cacert.pem
+smtp_use_tls = yes
+</pre>
+            <p>
+              Zapisujemy zmiany w pliku.
+            </p>
+          </li>
+          <li>
+            <strong>Utworzenie pliku z danymi uwierzytelniającymi i nadanie
+              mu odpowiednich uprawnień</strong>
+            <p>
+              Jak mogliśmy zauważyć w poprzednim punkcie, występuje tutaj plik 
+              mapowania, zawierający powiązania adresów 
+              serwerów z danymi uwierzytelniającymi. Plik tworzymy zgodnie ze
+              ścieżką podaną w opcji 
+              <code class="code-inline">smtp_sasl_password_maps</code>,
+              wewnątrz każda jedna linia to mapowanie. Na mapowanie składa się
+              adres serwera wraz z portem zapisane identycznie jak w opcji
+              <code class="code-inline">relayhost</code> oraz kombinacja nazwy
+              użytkownika z hasłem odseparowane dwukropkiem.
+            </p>
+<pre class="code-block">
+[mail.example.com]:587  xf0r3m:passw0rd
+</pre>
+            <p>
+              Uprawnienia jakie należy nadać są chyba najbardzie restrykcyjne w
+              całym systemie, bo tylko użytkownik z uprawnieniami
+              administracyjnymi będzie mógł w nim wprowadzać zmiany. Właściciel
+              bez podniesienia uprawień, będzie mógł jedynie przeczytać 
+              zawartość.
+              Grupa oraz pozostali nie będą mieć żadny praw.
+            </p>
+<pre class="code-block">
+$ sudo chmod 400 /etc/postfix/sasl_passwd
+</pre>
+          </li>
+          <li>
+            <strong>
+              Utworzenie bazy z pliku mapowania.
+            </strong>
+            <p>
+              Plik, aby był użyteczny przez <em>Postfix</em>, musi zostać
+              skonwertowany na format dla niego czytelny. Do konwersji posłuży
+              polecenie dostarczane wraz z <em>Postfix</em>.  
+            </p>
+<pre class="code-block">
+$ sudo postmap /etc/postfix/sasl_passwd
+</pre>
+          </li>
+          <li>
+            <strong>Plik /etc/postfix/cacert.pem</strong>
+            <p>
+              Jeśli wrócimy do konfiguracji <em>Postfix</em> to, że 
+              zauważymy
+              wartości opcji <code class="code-inline">smtp_tls_CAfile</code>
+              przypisana jest ścieżka. Ścieżka do pliku, który nie istnieje.
+              Plik ten jest certyfikatem urzędu certyfikacji - wystawcy
+              certyfikatu, który jest używany przez serwer SMTP, aby dowiedzieć
+              kto jest wystawcą certyfikatu dla serwera SMTP musimy się z nim
+              w odpowiedni sposób połączyć. Poniższe polecenie wskaże plik,
+              który należy skopiować do <em>/etc/postfix/cacert.pem</em>.
+            </p>
+<pre class="code-block">
+$ echo "/etc/ssl/certs/$(ls /etc/ssl/certs | grep "$(openssl s_client -showcerts
+-starttls smtp -connect mail.example.com:587 &lt; /dev/null 2&gt;1 | head -1 
+| cut -d "=" -f 5 | sed 's/ /_/g' | sed 's/_//')" | tail-1)"
+</pre>
+            <p>
+              <em>Polecenie zawinięto, aby zachować poprawne wyświetlanie layout strony</em>
+            </p>
+            <p>
+              Wyświetlony plik  należy skopiować na wyżej
+              wymienioną ścieżkę.
+            </p>
+<pre class="code-block">
+$ cat /etc/ssl/certs/IRSG_Root_X1.pem | sudo tee -a /etc/postfix/cacert.pem
+</pre>
+            <p>
+              Plik ten może przydać się przy potencjalnych problemach z 
+              rozpoznaniem certyfikatu.
+            </p>
+          </li>
+          <li>
+            <strong>Problem z adresem nadawcy</strong>
+            <p>
+              Ten punkt tyczy się głównie połączeń z serwerami SMTP, które były
+              konfigurowane za pomocą materiałów dostępnych na tej stronie.
+              Dla innych to już jest koniec, teraz można smiało czytać i pisać
+              maile za pomocą podstawowych UNIX-owych narzędzi.
+            </p>
+            <p>
+              Restrykcje
+              wprowadzone na serwerze wyrażają jasno, że by wysłać wiadomość
+              adres nadawcy musi zgadzać się z mapowaniem. Niestety
+              <em>GNU mailutils</em> automatycznie przypisuje adres nadawcy
+              składający się z nazwy użytkownika oraz nazwy komputera. W moim
+              przypadku było to <em>xf0r3m@e5270</em>, jest to 
+              niezgodne z mapowaniem i wiadomości zostaną odrzucone przez
+              serwer. Nie znalazłem sposobu, aby obejść to lokalnie
+              w obrębnie jednego użytkownika, jest możliwość ustawienia 
+              domyślnego adresu nadawcy w obrębie całego systemu. Tworzymy
+              plik <em>/etc/mailutils.conf</em>, i zapisujemy w nim poniższą
+              konfigurację.
+            </p>
+<pre class="code-block">
+program mail {
+
+  address {
+    email-addr xf0r3m@example.com;
+  }
+
+};
+</pre>
+            <p>
+              Teraz maile powinny się bez problemu wysyłać.
+            </p>
+          </li>
+        </ol>
+        <p>
+          Przestawione tutaj rozwiązanie, nie jest pozbawione wad. Mogą pojawić
+          się problemy ze znalezieniem serwera przez <em>Postfix</em>, ponieważ
+          faworyzuje on IPv6, można temu zaradzić ustawiając opcję 
+          <code class="code-inline">inet_protocols</code> na <em>ipv4</em>.
+          Po czym należy kompletnie zrestartować usługę za pomocą
+          polecenia <em>systemctl</em>.
+          Problemem też jest nierejestrowanie wiadomości wysłanych, co też
+          jest do rozwiązania poprzez ustawienie opcji <em>Postfix</em>
+          <code class="code-inline">always_bcc</code> na swój adres przez co
+          zaraz po wysłaniu maila dostaniemy zwrotkę z własną wiadomością. 
+          Kolejnym
+          problemem może być sama obsługa programu <em>mail</em>, po otrzymaniu
+          wiadomości dostaniemy powiadomienie najczęściej w terminalu. Po
+          sprawdzeniu tych wiadomości zostaną one przekopiowane do pliku
+          <em>mbox</em> w naszym katalogu domowym. A co jeśli odczytaliśmy
+          wiadomość, nie mogliśmy na nią wcześniej odpowiedzieć i chcemy to
+          zrobić teraz, to kiedy wpisujemy polecenie <em>mail</em> to okazuje
+          się że domyślna skrzynka jest pusta i musimy uruchomić program z 
+          odpowiednim przełącznikiem i wskazać mu plik skrzynki.
+        </p>
+<pre class="code-block">
+$ mail -f ~/mbox
+</pre>
+        <p>
+          Interaktywana praca z tym programem również, może przyprawić o ból
+          główy, jednak dawno temu nie jaki John Kerl odwalił kawał dobrej 
+          roboty opisując jak używać tego programu.
+        </p>
+        <p>
+          <a href="http://www.johnkerl.org/doc/mail-how-to.html">
+            http://www.johnkerl.org/doc/mail-how-to.html
+          </a>
+        </p>
+        <p>
+          Rozwiązanie to jest definitywnie hakerskie, dla ludzi nie bojących
+          pobrudzić sobie rączek. Taka gimnastyka dla mózgu z rana, kiedy
+          trzeba wysłać maila, będąc w powłowie jeszcze w łóżku.
+        </p>
+        <p>
+          ~xf0r3m
+        </p>
+			</div>
+			<p style="margin: 15px; padding: 0; outline: 0;">
+				2021; COPYLEFT; ALL RIGHTS REVERSED;
+			</p>
+		</body>
+	</html>

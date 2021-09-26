@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">Raspberry Pi Zero jako router 3G</h1>
+    <p>
+      Pomysł na to zrodził się w mojej głowie, kiedy szykowałem się do swojej pierwszej zagranicznej wycieczki, pandemia wszystko pokrzyżowała a projekt został. Jednak bez obudowy oraz schematu połączeń jest on jedynie systemem naczyń połączonych.
+    </p>
+    <ol>
+      <li><strong>Przygotowanie sprzętu.</strong>
+        <p>
+        <ul>
+          <li>Raspberry Pi Zero W,</li>
+          <li>Modem 3G (w moim przypadku użyłem Huawei E173s-2 [pełny model znajduje się pod klapką]),</li>
+          <li>Oficjalna klawiatura Raspberry Pi lub hub USB i zwykła klawiatura,</li>
+          <li>Karta sieciowa USB (JP1082 - niebieska, tania karta z allegro za 10 czy 20 zł),</li>
+          <li>Zasilacz,</li>
+          <li>Karta microSD z systemem (RasPiOS Lite),</li>
+          <li>Karta SIM z pakietem danych komórkowych, dedykowanego operatora dla modemu lub dowolnego jeśli modem nie posiada blokady simlock,</li>
+          <li>Adapter mini-HDMI,</li>
+          <li>Kabel OTG do podłączenia klawiatury lub huba,</li>
+          <li>Kabel do podłączenia RPI do Internetu.</li>
+        </ul>
+        </p>
+      </li>
+      <li><strong>Początkowa konfiguracja RPI oraz aktualizacja.</strong>
+        <p>
+          Uruchamiamy Raspberry Pi, następnie zmieniamy layout klawiatury na polski za pomocą narzędzia <code class="code-inline">raspi-config</code>. Wydajemy następujące polecenie:
+        </p>
+<pre class="code-block">
+$ sudo raspi-config
+</pre>
+        <p>
+          Z menu głównego programu wybieramy, kolejno <code class="code-inline">4. Localisation Options</code> -> <code class="code-inline">Change Keyboard Layout</code>, jeśli nie wyświetli nam się nic, skrypt poprostu wróci do menu, oznacza to że musimy przełączyć jeszcze <em>locale</em>, po ustawieniu ich na język polski, będziemy mogli zmienić layout klawiatury. <em>Locale</em> ustawia się z tej samej sekcji <code class="code-inline">4. Localisation Options</code> -> <code class="code-inline">Change Locale</code>, poźniej z długiej listy odznaczamy <code class="code-inline">en_GB</code> zaznaczamy <code class="code-inline">pl_PL</code> w wersji UTF-8.
+					Po ustawieniu <em>locale</em> oraz layoutu klawiatury należy zrestartować malinę, co sam będzie sugerować sam program. Po ponownym uruchomieniu urządzenia, możemy teraz przejść do aktualizacji wydajemy dwa następujące polecenia:
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+</pre>
+        <p>
+          Po zaktualizowaniu systemu możemy przejść do obsługi modemu 3G.
+        </p>
+      </li>
+      <li><strong>Modem.</strong>
+        <p>
+          Podpinamy modem do gniazda usb. Po wydaniu polecenia:
+        </p>
+<pre class="code-block">
+$ lsusb
+</pre>
+        <p>
+          (w moim przypadku) powinniśmy zobaczyć linię zawierającą napis <code class="code-inline">Huawei ...</code>, może on się nieco różnić. Przed przystąpieniem do konfiguracji należy upewnić się czy to urządzenie jest rzeczywiście rozpoznawany jako modem. Najprościej wydać polecenie:
+        </p>
+<pre class="code-block">
+$ ls /dev/ttyUSB*
+</pre>
+        <p>
+          Powinny pokazać nam się dwa urządzenia <em>/dev/ttyUSB0</em> oraz <em>/dev/ttyUSB1</em>, to teraz możemy być pewni (tak na 99%) że modem jest prawidłowo rozpoznawany w systemie. Jeśli chcemy być pewni na 100%, możemy doinstalować program, który pozwoli nam się połączyć z modemem za pomocą linii szeregowej. Wydajemy poniższe polecenia:
+        </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt install picocom
+</pre>
+        <p>
+          Po zainstalowaniu programu możemy się z nim połączyć wydając polecenie:
+        </p>
+<pre class="code-block">
+$ picocom /dev/ttyUSB0 -b 115200
+</pre>
+        <p>
+          W nie których przypadkach mogą być wymagane uprawnienia administratora. Jeśli nie pojawiły się żadne błędy, powinniśmy mieć możliwość porozmawiania z modemem, wystarczy że się przywitamy. Wpisujemy poniższy ciąg znaków:
+        </p>
+<pre class="code-block">
+AT
+</pre>
+        <p>
+          W odpowiedzi powinniśmy dostać <code class="code-inline">OK</code>. Teraz już możemy być w 100% pewni że modem jest dobrze wykrywany przez RPI. Połączenie możemy zakończyć klikając po sobie kombinację klawiszy <code class="code-inline">ctrl+a</code> oraz <code class="code-inline">ctrl+x</code>.
+          <strong>Jeśli karta SIM jest zablokowana kodem PIN</strong>, przy przepięciu modemu lub przy wyłączeniu Raspberry będzie musieli ją aktywować. Połączenia jak i odblokowywania karty będziemy dokonywać za pomocą programu <em>vwdial</em>, należy go zainstalować wraz z pakietem <em>ppp</em>.
+        </p>
+<pre class="code-block">
+$ sudo apt install wvdial ppp
+</pre>
+        <p>
+          Po zainstalowaniu pakietów przechodzimy do pliku <em>/etc/vwdial.conf</em>. Plik w domyślnie wygląda następująco:
+        </p>
+<pre class="code-block">
+  [Dialer Defaults]
+  Init1 = ATZ
+  Init2 = ATQ0 V1 E1 S0=0 &C1 &D2
+  Modem Type = Analog Modem
+  Baud = 9600
+  New PPPD = yes
+  Modem = /dev/ttyUSB0
+  ISDN = 0
+  ; Phone = &lt;Target Phone Number&gt;
+  ; Password = &lt;Your Password&gt;
+  ; Username = &lt;Your Login Name&gt;
+</pre>
+        <p>
+          Dla nas interesującą linią jest pierwsza linia. Ona tworzy sekcje konfiguracyjno-uruchomieniowe dla vwdial. Równie ciekawymi liniami są <code class="code-inline">Init1</code> i <code class="code-inline">Init2</code>, zawierają bowiem one polecenia <strong>AT</strong> dla modemu. Aby odblokować modem (jeśli jest zablokowany kodem PIN) należy dodać nową sekcję pod nazwą np. <code class="code-inline">pin</code>.
+        </p>
+<pre class="code-block">
+[Dialer pin]
+Init3 = AT+CPIN=0123
+</pre>
+        <p>
+          W miejsce <code class="code-inline">0123</code> podajemy swój kod PIN. Odblokowanie modemu następuje po wydaniu polecenia.
+        </p>
+<pre class="code-block">
+$ sudo vwdial pin
+</pre>
+        <p>
+          Następna sekcja w pliku konfiguracyjnym powinna być już sekcją połączenia.
+        </p>
+<pre class="code-block">
+  [Dialer play]
+  Init3 = AT+CGDCONT=1,"IP","internet"
+  Username = "internet"
+  Password = "internet"
+  Phone = "*99#"
+  Dial Command = ATDTW
+  New PPPD = yes
+  Stupid Mode = yes
+  Dial Attemps = 0
+</pre>
+        <p>
+          W linii <code class="code-inline">Init3</code> ostatnią wartością jest <em>APN</em>. Do wypełnienia użytkownikowi pozostaje właśnie wspomniany <code class="code-inline">APN</code>, <code class="code-inline">Username</code>, <code>Password</code>, <code class="code-inline">Phone</code> oraz <strong>nazwa dialera</strong>, choć nie jest to obowiązkowe. Reszta pozostaje bez zmian. Teraz wystarczy tylko się podłączyć wydając polecenie:
+        </p>
+<pre class="code-block">
+wvdial play&
+</pre>
+        <p>
+          Warto pamiętać o tym aby uruchomić połączenie w tle. Możemy spotkać się z taką sytuacją że modem nie będzie chciał się połączyć z Internetem. W takiej sytuacji należy spróbować ze 2-3 razy, następnie zmienić urządzenie, w sekcji <code class="code-inline">[Dialer Defaults]</code> z <code class="code-inline">Modem = /dev/ttyUSB0</code> na <code class="code-inline">Modem = /dev/ttyUSB1</code>. i wtedy spróbować się połączyć jeśli się to również nie powiedzie, to należy wrócić do poprzedniego urządzenia. W tym momemcie modem powinien się połączyć.
+        </p>
+      </li>
+      <li>Usługa wvdial w systemd
+        <p>
+          Aby wvdial uruchamiał się i łączył w raz ze startem systemu, należy utworzyć <strong>jednostkę systemd</strong>. Oczywiście można skorzystać z poniższego pliku.
+        </p>
+<pre class="code-block">
+[Unit]
+BindsTo=dev-ttyUSB0.device
+After=dev-ttyUSB0.device
+Description=Wvdial Connection
+Before=network.target
+Wants=network.target
+
+[Service]
+type=oneshot
+ExecStart=/usr/bin/wvdial play
+
+[Install]
+WantedBy=multi-user.target
+</pre>
+        <p>
+          Jeśli kartę sim trzeba odblokować kodem PIN. Należy stworzyć drugą jednostkę podobną do tej. Powiedzmy że mamy jednostkę służącą do połączenia nazwiemy ją <em>vwdial-connect.service</em>, oraz jedostkę służącą do odblokowania karty <em>vwdial-unlock.service</em> musimy zmienić dwie opcje w sekcji <code class="code-inline">[Unit]</code> mianowicie <code class="code-inline">Before</code> oraz <code class="code-inline">Wants</code>. Zmienimy również opcje <code class="code-inline">Description</code> aby była bardziej adekwatna do czynności wykonywanych przez daną jednostkę.
+        </p>
+<pre class="code-block">
+[Unit]
+BindsTo=dev-ttyUSB0.device
+After=dev-ttyUSB0.device
+Description=Wvdial SIM Card Unlock
+Before=wvdial-connect.service
+Wants=wvdial-connect.service
+
+[Service]
+type=oneshot
+ExecStart=/usr/bin/wvdial pin
+[Install]
+WantedBy=multi-user.target
+</pre>
+      <p>
+        Jednostka <em>wvdial-connect.service</em> zostanie opóźniona do momentu uruchomienia jednostki <em>wvdial-unlock.service</em>.
+      </p>
+    </li>
+    <li><strong>Adres dla interfejsu bezprzewodowego.</strong>
+      <p>
+        Konfiguracji interfejsu bezprzewodowego dokonujemy w pliku <em>/etc/dhcpcd.conf</em>. Dopisując poniższe linie na samym końcu pliku.
+      </p>
+<pre class="code-block">
+interface wlan0
+static ip_address=192.168.4.1/24
+nohook wpa_supplicant
+</pre>
+      <p>
+        Oczywiście klasę adresów należy ustawić według własnych preferencji.
+      </p>
+    </li>
+    <li><strong>Konfiguracja serwera dhcp.</strong>
+      <p>
+        Do konfiguracji DHCP na RPI wykorzystamy pakiet <em>dnsmasq</em>. Instalujemy go poleceniem.
+      </p>
+<pre class="code-block">
+$ sudo apt install dnsmasq
+</pre>
+      <p>
+        Po zainstalowaniu pakietu, zmieniamy nazwę pliku konfiguracyjnego na <em>dnsmasq.conf.bak</em>, następnie tworzymy nowy plik <em>/etc/dnsmasq.conf</em> i umieszczamy w nim poniższą konfigurację.
+      </p>
+<pre class="code-block">
+interface=wlan0
+dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
+</pre>
+      <p>
+        Zakresy i czas dzierżawy należy ustawić według własnych preferencji.
+      </p>
+    </li>
+    <li><strong>Konfiguracja sieci bezprzewodowej.</strong>
+      <p>
+        Aby Raspberry Pi mogło rozgłaszać sygnał sieci bezprzewodowej należy zainstalować odpowiedni pakiet. <em>Hostapd</em> pobieramy z repozytorium:
+      </p>
+<pre class="code-block">
+$ sudo apt install hostapd
+</pre>
+      <p>
+        Konfiguracja znajduje się w pliku <em>/etc/hostapd/hostapd.conf</em>. Jednak to nie jedyny plik w którym należy coś zmienić, aby uruchomić 'hostapd', drugim plikiem jest <em>/etc/default/hostapd</em> tam usuwamy znak komentarza sprzed opcji <code class="code-inline">DAEMON_CONF</code>. Natomiast w <em>/etc/hostapd/hostapd.conf</em> możemy wpisać konfigurację bazującą na poniższej.
+      </p>
+<pre class="code-block">
+interface=wlan0
+driver=nl80211
+ssid=test123
+hw_mode=g
+channel=6
+ieee80211n=1
+wmm_enabled=0
+macaddr_acl=0
+auth_algs=1
+ignore_broadcast_ssid=0
+wpa=2
+wpa_passphrase=12344321
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP
+rsn_pairwise=CCMP
+</pre>
+      </li>
+      <li><strong>Przekazywanie pakietów</strong>
+        <p>
+          Aby sprzęt podłączony do naszej sieci bezprzewodowej miał dostęp do Internetu potrzebne są dwe rzeczy. NAT oraz <strong>przekazywanie pakietów</strong>. NAT-em zajmiemy się w następnym punkcie. Aby skonfigurować przekazywanie pakietów na RasPiOS wystarczy odkomentować opcje <code class="code-inline">net.ipv4.ip_forward=1</code> w pliku <em>/etc/sysctl.conf</em>.
+        </p>
+      </li>
+      <li><strong>NAT</strong>
+        <p>
+          W każdym RasPiOS pre-instalowane jest <em>iptables</em> czyli jeden z pakietów firewall-a dostępnych na GNU/Linux. Jednak pre-instalowane nie jest oprogramowanie, które pozwala zachować wpisane do tablic reguły, aby ustawienia NAT-u, w iptables zostało zapisane na stałe w plikach systemu potrzebujemy pakietu <em>iptables-persistent</em> instalowanego za pomocą polecenia.
+        </p>
+<pre class="code-inline">
+$ sudo apt install iptables-persistent
+</pre>
+        <p>
+          <strong>NAT</strong> w przypadku tego systemu uruchamiamy następującym poleceniem:
+        </p>
+<pre class="code-block">
+$ sudo iptables -t nat -A POSTROUTING -o ppp0 -j MASQUERADE
+</pre>
+        <p>
+          Teraz kiedy jest on włączony, pozostaje tylko zapisać naszą tablicę, aby to zrobić musimy wykonać polecenia z uprawnieniami użytkownika <em>root</em> więc albo:
+        </p>
+<pre class="code-block">
+$ sudo su
+# iptables-save > /etc/iptables.ipv4.nat
+</pre>
+        <p>
+          lub:
+        </p>
+<pre class="code-block">
+$ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
+</pre>
+        <p>
+          Reguła NAT-u jest już trwała. Teraz kolejnym problem jest <strong>przywrócenie tej reguły podczas ładowania systemu</strong>. Najłatwiejszym sposobem jest dopisanie polecenia do pliku, który wyświetla nam adres IP zaraz przez logowaniem. Jest to plik <em>/etc/rc.local</em>, przed linią <code class="code-inline">exit 0;</code> dopisujemy następujące polecenie:
+        </p>
+<pre class="code-block">
+$ iptables-restore < /etc/iptables.ipv4.nat
+</pre>
+      </li>
+      <li><strong>Restart</strong>
+        <p>
+          Restarujemy malinke:
+        </p>
+<pre class="code-block">
+$ sudo reboot
+</pre>
+      </li>
+    </ol>
+    <p>
+      Jak możemy się przekonać to wszystko działa. Patrząc na to z perspektywy czasu to zmienił bym modem 3G na LTE i przylutował go pod gniazdo USB, wszystko zasilił bym modułem z powerbank-a z wymiennymi akumlatorami 3,7V. Na koniec zaprojektowałbym obudowę i wydrukował za pomocą drukarki 3D.
+    </p>
+    <p>
+      ~xf0r3m
+    </p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+	</body>
+	</html>

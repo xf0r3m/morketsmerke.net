@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	  <p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		  &#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	  </p>
+	  <div style="margin-left: auto; margin-right: auto; width: 80%;">
+      <h1 style="text-align: center;">Własne LiveCD z GNU/Linux Debian</h1>
+      <p>
+        Czasami może zadarzyć się taka sytuacja, że będziemy korzystać z wielu
+        różnych maszyn co jakiś czas. Jak pewnie zdajemy sobie sprawę z tego
+        ile czasu trzeba poświęcić na zainstalowanie systemu i przygotowanie go
+        do pracy, to w tym przypadku najlepiej jest przygotować LiveCD z
+        niezbędnymi programami oraz lekkim środowiskiem graficznym, aby
+        można było korzystać z niego nawet na starym sprzęcie. Jeśli chodzi o
+        dane, to najlepiej użyć SSHFS.
+      </p>
+      <p>
+        Wszystkie polecenia tutaj są wykonywane z poziomu użytkownika
+        <strong>root</strong> oraz w jego katalogu domowym, bezpośrednio z
+        terminala docelowego komputera. Jeśli mamy zamiar tworzyć obraz z
+        na serwerze to należy pamiętać aby robić to bezpośredio przez SSH
+        i nie używać programów typu <em>tmux</em> oraz <em>GNU Screen</em>,
+        ponieważ mogą wystąpić problemy podczas pobierania obrazu dystrybucji
+        z repozytorium.
+      </p>
+      <p>
+        Tworzenie LiveCD rozpoczniemy od zainstalowania odpowiedniego
+        oprogramowania.
+      </p>
+<pre class="code-block">
+# apt install debootstrap squashfs-tools xorriso isolinux syslinux-efi grub-pc-bin grub-efi-amd64-bin grub-efi-ia32-bin mtools
+</pre>
+      <p>
+        Po zainstalowaniu oprogramowania tworzymy katalog dla zachowania
+        porządku.
+      </p>
+<pre class="code-block">
+# mkdir debianCustomLiveCD
+</pre>
+      <p>
+        Teraz możemy pobrać obraz dystrybucji, dla zredukowania wielkości
+        należy wybrać wariant <strong>minbase</strong>.
+      </p>
+<pre class="code-block">
+# /sbin/debootstrap --arch=amd64 --variant=minbase bullseye /root/debianCustomLiveCD/chroot http://ftp.icm.edu.pl/debian
+</pre>
+      <p>
+        Następnie dokonujemy zmian na obrazie, nie które zmiany są niezbędny do
+        prawidłowego funkcjonowania systemu, inne są opcjonalne. Aby dokonać
+        zmian należy zmienić katalog główny na katalog obrazu.
+      </p> 
+<pre class="code-block">
+# chroot /root/debianCustomLiveCD/chroot /bin/bash
+</pre>
+      <p>
+        W tym momencie wszystkie czynności będą wykonywane wewnątrz obrazu nie
+        na prawdziwym systemie, dlatego też warto zaznaczyć sobie, że pracujemy
+        na zmienionym katalogu głównym.
+      </p>
+<pre class="code-block">
+# export PS1="(chroot) ${PS1}"
+</pre>
+      <p>
+        Odświerzamy listy pakietów na obrazie.
+      </p>
+<pre class="code-block">
+(chroot) # apt update
+</pre>
+      <p>
+        Instalujemy jądro, proces systemd oraz pakiet live-boot
+      </p>
+<pre class="code-block">
+(chroot) # apt install -y --no-install-recommends linux-image-amd64 live-boot systemd-sysv
+</pre>
+      <p>
+        Instalujemy wszystkie potrzebne nam programy. W tym podpunkcie zapisze
+        tylko te, które raczej powinny znaleźć się na obrazie aby można było
+        normalnie z niego korzystać.
+      </p>
+<pre class="code-block">
+(chroot) # apt install -y network-manager net-tools wireless-tools wpagui wget openssh-client blackbox xserver-xorg-core xserver-xorg xinit xterm vim
+</pre>
+      <p>
+        Po instalacji oprogramowania usuwamy pobrane pakiety, przez co obraz
+        będzie lżejszy.
+      </p>
+<pre class="code-block">
+# apt-get clean
+</pre>
+      <p>
+        Jak widać na powyższym przykładzie instalowany będzie menedżer okien
+        <em>BlackBox</em>, jednak nic nie stoi na przeszkodzie by zainstalować
+        dowolny inny. Po instalacji pakietów pozostanie jeszcze zmiana
+        hasła dla użytkownika <em>root</em>, aby można było się na jakiegoś
+        użytkownika zalogować.
+      </p>
+<pre class="code-block">
+(chroot) # passwd
+</pre>
+      <p>
+        <strong>Pozostałe konfiguracje są opcjonalne</strong>. Mają za zadanie 
+        jedynie
+        ustawienie polskiej lokalizacji. Nie będę opisywać każdej konfiguracji
+        krok po kroku, potrzebne opcję są dobrze opisane i łatwo jest się w 
+        nich połapać.
+      </p>
+<pre class="code-block">
+(chroot) # dpkg-reconfigure tzdata
+(chroot) # apt install locales
+(chroot) # dpkg-reconfigure locales
+(chroot) # apt install keyboard-configration console-setup 
+</pre>
+      <p>
+        Opuszczamy obraz.
+      </p>
+<pre class="code-block">
+(chroot) # exit
+</pre>
+      <p>
+        Tworzymy strukturę katalogową, która będzie potrzebna do utworzenia
+        obrazu. W zależności od tego dla jakiego systemu EFI (64 czy 32-bitowe)
+        będziemy tworzyć obraz wydajemy odpowiednie polecenie:
+      </p>
+      <p>
+        <u>64-bit EFI</u>
+      </p>
+<pre class="code-block">
+# mkdir -p /root/customDebianLiveCD/{staging/{EFI/boot,boot/grub/x86_64-efi,isolinux,live},tmp}
+</pre>
+      <p>
+        <u>32-bit EFI</u>
+      </p>
+<pre class="code-block">
+# mkdir -p /root/customDebianLiveCD/{staging/{EFI/boot,boot/grub/i386-efi,isolinux,live},tmp}
+</pre>
+      <p>
+        Na obrazach LiveCD, główny system plików znajduje się w pliku 
+        <em>squashfs</em>
+        i taki teraz utworzymy. Tworzenie pliku trochę trwa w zależności od
+        mocy obliczniowej maszyny.
+      </p>
+<pre class="code-block">
+# mksquashfs /root/customDebianLiveCD/chroot /root/customDebianLiveCD/staging/live/filesystem.squashfs -e boot
+</pre>
+      <p>
+        Do uruchomienia systemu potrzebne będzie jądro oraz plik ramdysku.
+        Możemy je przekopiować z pobranego wcześniej obrazu dystrybucji.
+      </p>
+<pre class="code-block">
+# cp /root/customDebianLiveCD/chroot/boot/vmlinuz-* /root/customDebianLiveCD/staging/live/vmlinuz
+# cp /root/customDebianLiveCD/chroot/boot/initrd.img-* /root/customDebianLiveCD/staging/live/initrd
+</pre>
+      <p>
+        System do bootowania w trybie BIOS, bedzie wykorzystywać program
+        <em>isolinux</em>, teraz stworzymy dla niego plik konfiguracyjny
+        <em>isolinux.cfg</em>.
+        Plik zapisujemy w katalogu
+         <em>/root/customDebianLiveCD/staging/isolinux</em>.
+      </p>
+<pre class="code-block">
+UI vesamenu.c32
+
+MENU TITLE Boot Menu
+DEFAULT linux
+TIMEOUT 600
+MENU RESOLUTION 640 480
+MENU COLOR border       30;44   #40ffffff #a0000000 std
+MENU COLOR title        1;36;44 #9033ccff #a0000000 std
+MENU COLOR sel          7;37;40 #e0ffffff #20ffffff all
+MENU COLOR unsel        37;44   #50ffffff #a0000000 std
+MENU COLOR help         37;40   #c0ffffff #a0000000 std
+MENU COLOR timeout_msg  37;40   #80ffffff #00000000 std
+MENU COLOR timeout      1;37;40 #c0ffffff #00000000 std
+MENU COLOR msg07        37;40   #90ffffff #a0000000 std
+MENU COLOR tabmsg       31;40   #30ffffff #00000000 std
+
+LABEL linux
+  MENU LABEL Custom Debian Live [BIOS/ISOLINUX]
+  MENU DEFAULT
+  KERNEL /live/vmlinuz
+  APPEND initrd=/live/initrd boot=live
+
+LABEL linux
+  MENU LABEL Custom Debian Live [BIOS/ISOLINUX] (nomodeset)
+  MENU DEFAULT
+  KERNEL /live/vmlinuz
+  APPEND initrd=/live/initrd boot=live nomodeset
+</pre>
+      <p>
+        Program ładującym dla EFI jest GRUB, poniżej znajduje się jego plik 
+        konfiguracyjny <em>grub.cfg</em>. Plik zapisujemy w katalogu
+        <em>/root/customDebianLiveCD/staging/boot/grub</em>. Aby GRUB
+        prawidłowo wyświetlał komunikaty jądra podczas ładowania systemu
+        potrzebny jest jeszcze jeden plik (<em>font.pf2</em>), który 
+        umieszczamy w tym samym katalogu. Plik możemy wyodrębnić z płyty
+        LiveCD Debiana lub pobrać z linku poniżej:
+	      <a href="https://files.morketsmerke.net/font.pf2">
+          https://files.morketsmerke.net/font.pf2
+        </a>
+     </p>   
+<pre class="code-block">
+if loadfont $prefix/font.pf2 ; then
+	set gfxmode=800x600
+	set gfxpayload=keep
+	insmod efi_gop
+	insmod efi_uga
+	insmod video_bochs
+	insmod video_cirrcus
+	insmod gfxterm
+	terminal_output gfxterm
+fi
+
+search --set=root --file /DEBIAN_CUSTOM
+
+set default="0"
+set timeout=30
+
+
+menuentry "Debian Live [EFI/GRUB]" {
+    linux ($root)/live/vmlinuz boot=live
+    initrd ($root)/live/initrd
+}
+
+menuentry "Debian Live [EFI/GRUB] (nomodeset)" {
+    linux ($root)/live/vmlinuz boot=live nomodeset
+    initrd ($root)/live/initrd
+}
+</pre>
+      <p>
+        Podczas instalacji GRUB-a, program instalujący będzie
+        potrzebował pliku, w którym zawarte są informacje o prefiksie
+        wykorzystywanym przez plik konfiguracji oraz o położeniu pliku
+        konfiguracyjnego. Plik <em>grub-standalone.cfg</em> zapisujemy w 
+        katalogu <em>/root/customDebianLiveCD/tmp</em>.
+      </p>
+<pre class="code-block">
+search --set=root --file /DEBIAN_CUSTOM
+set prefix=($root)/boot/grub/
+configfile /boot/grub/grub.cfg
+</pre>
+      <p>
+        Następnym krokiem jest utworzenie pliku, po którym GRUB uzna ten dysk
+        jako główny (<em>root</em>) dla ładowania tego systemu.
+      </p>
+<pre class="code-block">
+# touch /root/customDebianLiveCD/staging/DEBIAN_CUSTOM
+</pre>
+      <p>
+        Po utworzeniu pliku, należy przekopiować resztę plików <em>isolinux</em>.
+      </p>
+<pre class="code-block">
+# cp /usr/lib/ISOLINUX/isolinux.bin /root/customDebianLiveCD/staging/isolinux
+# cp /usr/lib/syslinux/modules/bios/* /root/greenOS/staging/isolinux
+</pre>
+      <p>
+        Pozostałe pliku GRUB, również należy przekopiować do katalogów obrazu.
+      </p>
+      <p><u>64-bit EFI</u></p>
+<pre class="code-block">
+# cp -r /usr/lib/grub/x86_64-efi/* /root/customDebianLiveCD/staging/boot/grub/x86_64-efi
+</pre>
+      <p><u>32-bit EFI</u></p>
+<pre class="code-block">
+# cp -r /usr/lib/grub/i386-efi/* /root/customDebianLiveCD/staging/boot/grub/i386-efi
+</pre>
+      <p>
+        Aby komputer wykorzystujący tryb UEFI mogł zbootować nasz obraz
+        potrzebny jest plik binarny programu ładującego, który teraz utworzymy
+      </p>
+      <p><u>64-bit EFI</u></p>
+<pre class="code-block">
+# grub-mkstandalone --format=x86_64-efi --output=/root/customDebianLiveCD/staging/EFI/boot/bootx64.efi --locales="" --fonts="" "/boot/grub/boot.cfg=/root/customDebianLiveCD/tmp/grub-standalone.cfg"
+</pre>
+      <p><u>32-bit EFI</u></p>
+<pre class="code-block">
+# grub-mkstandalone --format=i386-efi --output=/root/customDebianLiveCD/staging/EFI/boot/bootia32.efi --locales="" --fonts="" "/boot/grub/boot.cfg=/root/customDebianLiveCD/tmp/grub-standalone.cfg"
+</pre>
+      <p>
+        Wszystkie bootowalne obrazy LiveCD obsługujące UEFI posiadają
+        dodatkową partycję, to właśnie wniej będzie znajdować się utworzony
+        wcześniej plik bootloadera, i to jej będzie poszukiwać oprogramowanie
+        układowe podczas uruchamiania komputera z obrazu. Utworzenie i
+        skopiowanie danych będzie wymagać kilku czynności.
+      </p>
+      <p><u>64-bit EFI</u></p>
+<pre class="code-block">
+# cd /root/customDebianLiveCD/staging/boot/grub/
+# dd if=/dev/zero of=efiboot.img bs=1M count=20
+# mkfs.vfat efiboot.img
+# mmd -i efiboot.img efi efi/boot
+# mcopy -vi efiboot.img /root/customDebianLiveCD/staging/EFI/boot/bootx64.efi ::efi/boot
+</pre>
+      <p><u>32-bit EFI</u></p>
+<pre class="code-block">
+# cd /root/customDebianLiveCD/staging/boot/grub/
+# dd if=/dev/zero of=efiboot.img bs=1M count=20
+# mkfs.vfat efiboot.img
+# mmd -i efiboot.img efi efi/boot
+# mcopy -vi efiboot.img /root/customDebianLiveCD/staging/EFI/boot/bootia32.efi ::efi/boot
+</pre>
+      <p>
+        Kiedy mamy już utworzoną partycję. Przyszedł czas na wygenerowanie
+        właściwego obrazu płyty. W tym poleceniu będzie zawarte użycie 
+        <em>isolinux</em>, użycie alternatywnego bootloadera dla trybu EFI,
+        dołączona zostanie również partycja EFI.
+      </p>
+<pre class="code-block">
+# xorriso -as mkisofs -iso-level 3 -o "custom_debian.iso" -full-iso9660-filenames -volid "CUSTOM_DEBIAN" -isohybrid-mbr /usr/lib/ISOLINUX/isohdpfx.bin -eltorito-boot isolinux/isolinux.bin -no-emul-boot \
+-boot-load-size 4 -boot-info-table --eltorito-catalog isolinux/isolinux.cat-eltorito-alt-boot -e /boot/grub/efiboot.img -no-emul-boot -isohybrid-gpt-basdat \
+-append_partition 2 0xef /root/customDebianLiveCD/staging/boot/grub/efiboot.img "/root/customDebianLiveCD/staging"
+</pre>
+      <p>
+        Tak wygenerowany obraz możemy śmiało załadować na pendrive-a lub
+        wypalić na płycie i uruchomić na dowolnym (64-bitowym) komputerze. 
+        Mimo iż
+        przedstawiono tutaj wsparcie dla 32-bitowego EFI, to obraz jest będzie
+        64-bitowy. 32-bitowy obraz należało by wykonać na 32-bitowym systemie
+        operacyjnym, podczas pobierania obrazu trzeba by wybrać architekturę
+        32-bitową (<em>i386</em>), oraz podczas konfiguracji obrazu wybrać
+        odpowiedni pakiet jądra (<em>linux-image-686</em>).
+      </p>
+      <p>
+        Źródło: <a href="https://willhaley.com/blog/custom-debian-live-environment/">
+          https://willhaley.com/blog/custom-debian-live-environment/</a><br />
+      </p>
+      <p>
+         ~xf0r3m
+      </p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHTS REVERSED;
+		</p>
+  </body>
+</html>

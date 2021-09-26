@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+
+
+		<body style="font-family: monospace;" >
+<pre>
+88                             88
+88                             88
+88                             88
+88,dPPYba,  ,adPPYba,  ,adPPYb,88
+88P'    "8a I8[    "" a8"    `Y88
+88       d8  `"Y8ba,  8b       88
+88b,   ,a8" aa    ]8I "8a,   ,d88
+8Y"Ybbd8"'  `"YbbdP"'  `"8bbdP"Y8
+</pre>
+
+		<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+			&#9760;&nbsp;<a href="https://morketsmerke.net/">morketsmerke</a>&nbsp;&#9760;
+		</p>
+
+		<div style="margin-left: auto; margin-right: auto; width: 80%;">
+			<h1 style="text-aling: center;">Dziennik OpenBSD</h1>
+			<p>
+				<strong>Dzień 1 - Instalacja, fluxbox, dwa monitory, dźwięk, youtube-dl i usmb</strong> - <em>2021-04-08</em><br />
+				<br />
+				<p>
+				Do wykorzystania z OpenBSD wybrałem maszynę na której zainstalowełem oraz uruchomiłem system bez zarzutu. Czytając ostatni
+				akapit materiału o instalacji OpenBSD można dojść do wniosku, iż nie zawsze jest to takie banalne jakby się mogło wydawać. Ta
+				maszyna to składak z płytą ITX Sapphire PURE White IPC-E350M1W z procesorem AMD E-350, zintegrowaną grafiką Radeon HD 6310 i
+				małym dyskiem SSD Intela jeszcze na SATA II, Do PC-eta podłączyłem dwa monitory, tak jakoś mi się wygodniej pracuje na dwóch.
+				Po uruchomieniu systemu (podczas instalacji pozostawiłem włączone <strong>xenodm</strong>, więc system od razu uruchomił 
+				środowisko graficzne) byłem przekonany, że obraz będzie na obu i to w rozszerzeniu. Już kiedyś uruchamiałem OpenBSD na
+				laptopie z podłączonym dodatkowym monitorem, co ciekawe serwer <strong>x.org</strong> skonfigurował ten monitor jako
+				podstawowy. Nie zwracając uwagi na domyślne ustawienia skonfigurowałem polecenie <strong>doas</strong>, które jest 
+				odpowiednikiem 
+				linuxowego polecenia <em>sudo</em>. Poźniej zainstalowałem  <em>Firefox-a</em>, następnie wrzuciłem w 
+				wyszukiwarkę "How to install fluxbox on OpenBSD" przeszedłem na główną stronę projektu, oczywiście już nauczony 
+				wcześniejszymi instalacjami OpenBSD na laptopach, że <strong>fluxbox</strong> jest dostępny w repozytorium, nie pamiętałem 
+				jednak co należy zrobić aby <em>fluxbox</em> uruchamiał się po zalogowaniu, wykonałem więc czynności opisane na strone projektu 
+				(jaki błąd!). Po zrestartowaniu nie zadziałało po zalogowaniu uruchomił się <em>FWVM</em>, <em>fluxbox</em> uruchomiał się 
+				tylko na wyłączonym <em>xenodm</em> i uruchomianiu <em>X</em> z ręki przy użyciu polecnia <em>startx</em>. 
+				Wróciłem do przeglądarki. Na stronie wyników
+				wyszukiwania znalazłem podobnie brzmiący problem do mojego... Na <em>StackOverflow</em>, radzili użyć pliku 
+				<em>~/.xsession</em> a nie <em>~/.xinitrc</em>, tak też zrobiłem i zadziałało. Następną rzeczą jak postanowiłem zrobić to
+				zająć się ekranami, aby były identycznie ustawione jak monitory na biurku, wykorzystałem do tego te dwa poniższe polecenia,
+				które są wykonywane przed uruchomieniem <em>fluxboxa</em> w pliku <em>.xsession</em>.
+				</p>
+<pre class="code-block">
+xrandr --output DVI-0 --primary
+xrandr --output HDMI-0 --right-of DVI-0
+</pre>
+				<p>
+				Polecenie <code class="code-inline">xrandr</code> służy właśnie do sterowania ekranami środowiskach graficznych opartych 
+				o <em>X</em>. Ustawienie monitora podłączonego przez DVI jako podstawowy (stoi po mojej lewej) jest zrozumiałe, ale do czego
+				służy drugie polecenie? Kiedy przestawiłem monitor, okazało się (już wcześniej kiedy instalowałem <em>fluxbox</em>), że jeśli
+				chcemy przenieść kursor na drugi monitor musimy zrobić to przez jego lewą krawedź co jest nienaturalne, bo monitor stoi po 
+				prawej stronie ekranu podstawowego. Polecenie przestawia ekran <code class="code-inline">HDMI-0</code> na prawo od ekranu
+				<code class="code-inline">DVI-0</code> Kiedy monitory ogarnięte, to pora na doinstalowanie dodatkowego oprogramownia. 
+				Ja głównie
+				wykorzystuje terminal (<em>xterm</em> jako emulator), z pomocą <em>tmux</em> dziele go na trzy części jedna podstawowa z
+				<em>vim</em> oraz dwie mniejsze z odtwarzaczem <em>moc</em> oraz z wierszem polecenia, za pomocą którego np. obsługuje
+				repozytorium git. Jako managera plików wykorzystuje <em>mc</em>, może czasami być potrzeba aby otworzyć jakiś plik wideo, więc
+				<em>vlc</em>, generalnie chyba nie ma lepszego odtwarzacza od VLC ostatnim programem jest chyba <em>gkrellm</em> uruchamiany 
+				w dolnym prawym rogu dodatkowego ekranu.
+				</p>
+<pre class="code-block">
+$ doas pkg_add -iv mc vim moc vlc gkrellm
+</pre>
+				<p>
+				Kolejnym ciekawym epizodem, było sprawdzenie dźwięku (spoiler! Działa out-of-box, wystarczy zrobić głośniej). Żeby zrobić to
+				w miarę szybko stwierdziłem że wejdę na YT, i oh, boy! Ten komputer raczej do YT się nie nadaje, jako alternatywę wymyśliłem
+				że mogę użyć <em>smtube</em> i okazało się że w repozytorium jest zarówno <em>smtube</em> jak i <em>youtube-dl</em>. 
+				<em>Smtube</em> oczywiście nie działa, ale ja mam dla niego inne zastosowanie, skoro jest w stanie wyszukiwać rzeczy to można
+				użyć go jako wyszukiwarki bez używania <em>firefox-a</em>, potem możemy sobie to ściągnąć przy użyciu <em>youtube-dl</em>.
+				Oczywiście nie namawiam do piractwa.
+				</p>
+
+<pre class="code-block">
+$ doas pkg_add -iv smtube youtube-dl
+</pre>
+				<p>
+				Podgłaszanie z poziomu terminala (1 = 100%)
+				</p>
+<pre class="code-block">
+$ sndioctl output.level=1
+</pre>
+				<p>
+				Przypomniałem sobie że mam dużo muzyki (aż 19 dni) na moim lokalnym NAS-ie. Z NAS-em możemy połączyć się zapomocą SMB, tylko
+				jako to zrealizować w OpenBSD, na GNU/Linux wystarczy jedno polecenie, tutaj sprawa się komplikuje ponieważ nie ma
+				oficjalnego wsparcia dla CIFS/SMB, możemy zrobić dwa sposoby <s>taki że wylewu można dostać</s> hakerski lub wygodny. Ja
+				użyłem, wiadomo tego pierwszego i w pewnym momencie myślałem że zjem klawiaturę. Hakerski sposób wymaga pakietu 
+				<strong>usmb</strong>, oraz utworzenia specjalnej konfiguracji w pliku <em>~/.usmb.conf</em>:
+				</p>
+
+<pre class="code-block">
+&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+&lt;usmbconfig&gt;
+
+	&lt;credentials id="nas"&gt;
+		&lt;domain&gt;WORKGROUP&lt;/domain&gt;
+		&lt;username&gt;admin&lt;/username&gt;
+		&lt;password&gt;P4ssW0rD&lt;/password&gt;
+	&lt;/credentials&gt;
+
+	&lt;mount id="nas" credentials="nas"&gt;
+		&lt;server&gt;nas.morketsmerke.net&lt;/server&gt;
+		&lt;share&gt;nas&lt;/share&gt;
+		&lt;mountpoint&gt;/home/xf0r3m/NAS&lt;/mountpoint&gt;
+		&lt;options&gt;allow_other,uid=1000,gid=1000&lt;/options&gt;
+	&lt;/mount&gt;
+
+&lt;/usmbconfig&gt;
+</pre>
+				<p>
+				Po zapisniu konfiguracji w pliku musimy nadać mu odpowiednie uprawnienia, bo inaczej skrypt <s>się spruje</s> że, zwróci uwagę
+				nie są poprawne uprawnienia dla pliku konfiguracyjnego i zakończy działanie. Z racji tego że musimy uruchomić 
+				<em>usmb</em> jako <em>root</em>, to prawa własności musimy ustawić na poniższe:
+				</p>
+<pre class="code-block">
+$ doas chown root:wheel ~/.usmb.conf
+</pre>
+				<p>
+				To nie wszystko jeśli uprawnienia są za wysokie to skrypt znów <s>się spruje</s> nam zwróci uwagę na to że uprawnienia są
+				za wysokie i odmówi wykonania zadania. Prawidłowe uprawnienia ustawimy za pomocą poniższego polecenia:
+				</p>
+<pre class="code-block">
+$ doas chmod 600 ~/.usmb.conf
+</pre>
+				<p>
+				Kiedy już się uporamy z plikiem konfiguracyjnym, możemy wydać poniższe polecenie aby w końcu zamontować nasz udział w 
+				systemie:
+				</p>
+<pre class="code-block">
+$ doas usmb -c ~/.usmb.conf nas
+</pre>
+				<p>
+				Powiem tak... Montowanie udziału spełnia swoje podstawowe założenia pozwala na główne operacje na plikach. Jednak jak 
+				chcielibyśmy odtworzyć muzykę w <em>moc</em> bezpośrednio z serwera to się nie da, ponieważ wczytywanie plików odbywa
+				się bardzo wolno, na debug logu widać jak program się zapętla. Spróbuje jeszcze na innych odtwarzaczach, może to winna
+				<em>moc</em>, ale póki co to duży minus.
+				</p>
+			</p>
+			<p>&nbsp;</p>
+			<p>
+				<strong>Dzień 2 - Obsługa dysków, "Wykorzystanie systemu OpenBSD do codziennej pracy".</strong> - <em>2021-04-09</em><br />
+				<br />
+				<p>
+				Generalnie to chciałem zrobić dzisiaj porządek na dysku, podłączę sobie dysk i zagram wszystko co potrzebne na NAS-a.
+				Potem go przeformatuje. Jednak nie mogę ponieważ OpenBSD nie obsługuje systemu EXT4, generalnie kolejny minus. Jak się ich
+				zbierze dużo to można grać nimi w bierki. Dysk musiałem podłączyć do GNU/Linuxa. Jak wygląda montowanie partycji w systemie
+				OpenBSD. Za pomocą polecenia <code class="code-inline">dmesg</code> musimy namierzyć nasz dysk.
+				</p>
+<pre class="code-block">
+sd1 at scsibus4 targ 1 lun 0: &lt;SSDPR-CL, 100-240-G2, 0&gt; serial.174c1153201701000004
+sd1: 228936MB, 512 bytes/sector, 468862128 sectors
+</pre>
+				<p>
+				Jeden z moich dysków wygląda tak. Jak znalazłem dysk to jeszcze muszę wskazać partycję do montowania. Do listowania 
+				tablicy partycji (i nie tylko) służy polecenie <code class="code-inline">disklabel</code>
+				</p>
+<pre class="code-block">
+# /dev/rsd1c:
+type: SCSI
+disk: SCSI disk
+label: 100-240-G2      
+duid: 04289ed5badd948f
+flags:
+bytes/sector: 512
+sectors/track: 63
+tracks/cylinder: 255
+sectors/cylinder: 16065
+cylinders: 29185
+total sectors: 468862128
+boundstart: 0
+boundend: 468862128
+drivedata: 0 
+
+16 partitions:
+#                size           offset  fstype [fsize bsize   cpg]
+  c:        468862128                0  unused                    
+  i:        466860032             2048  ext2fs                    
+  j:          1996800        466864128 unknown                    
+</pre>
+				<p>
+				Kiedy chcę podmontować tą partycję to za pomocą poniższego polecenia otrzymuje tylko komunikat:
+				</p>
+<pre class="code-block">
+$ doas mount -t ext2fs /dev/sd1i /mnt
+mount_ext2fs: /dev/sd1i on /mnt: specified device does not match mounted device
+</pre>
+				<p>
+				Rozwinięcie tego komunikatu znajduje się w komunikatach systemowych dostępnych za pomocą polecenia <em>dmesg</em>.
+				</p>
+<pre class="code-block">
+ext2fs: unsupported incompat features: 64bit
+</pre>
+				<p>
+				Niestety nie podmontuje tego dysku. Lista kompatybilnych systemów plików z OpenBSD znajduje się poniżej:
+				</p>
+				<ul>
+					<li>cd9600</li>
+					<li>ext2fs (ext2)</li>
+					<li>msdos (FAT-y)</li>
+					<li>nfs</li>
+					<li>ntfs</li>
+					<li>tmpfs</li>
+					<li>udf</li>
+					<li>vnd</li>
+				</ul>
+				<p>
+				Czyli najlepszym systemem plików do przenoszenia danych między systemami zostanie <strong>FAT32</strong>. Na 
+				<em>Reddicie</em> poświęconym  powyższemu problemowi z obsługą systemów plików, jeden z użytkowników napisał, że on to 
+				korzysta głównie z <em>FAT32</em> do przenoszenia danych między OpenBSD a GNU/Linuxem, ale jest jeden haczyk system plików 
+				należy utworzyć pod OpenBSD a nie GNU/Linux-em, w przeciwnym razie partycja utworznona na GNU/Linux nie będzie chciała się 
+				montować w OpenBSD.
+				</p>
+				<p>
+				Po przygodach z dyskiem wpadłem na pomysł, aby spisywać dzień po dniu, to co robie w systemie, o ilę będę robić coś wartego
+				opisania, nie wiem jak to nazwać poki co robocza wersja "Wykorzystanie systemu OpenBSD do codziennej pracy", plik się nazywa
+				<em>dziennik_OpenBSD.html</em>, nazwę się jeszcze dopracuje. Pisanie zajmuje znacznie więcej czasu niż wykonywanie rzeczy,
+				więc mogę się nie wyrobić na "daily" upload. Pierwsze wersje zawsze piszę na brudno, potem trzeba to jeszcze redagować, ale
+				spróbuje. Ponieważ już jest dzień 3, a ja cały czas pisze dzień drugi wczoraj nie dałem rady fizycznie, nie zawsze też będzie
+				o czym pisać, więc mogą być przeskoki w dniach. Dziś jeszcze muszę przygotować materiał a mam godzinę czasu, jutro
+				ewentualnie dokończe dzień 3, przeredaguje te 3 dni i zrobię upload. Mam całą listę rzeczy do zrobienia, a ja sobie robie
+				"daily" z obsługi OpenBSD. Dobra, koniec dnia 2-go.
+				</p>
+			</p>
+			<p>&nbsp;</p>
+			<p>
+				<strong>Dzień 3 - dysk do wymiany danych pomiędzy Linux-em a OpenBSD, ustawienie tapety na fluxbox</strong> 
+				- <em>2021-04-10</em><br />
+				<br />
+				<p>
+				Po skończeniu redagowania dnia 2, i ekscesach z niekompatybilnością systemów plików przyszedł czas na kompromis w sprawie.
+				Stworzę partycję FAT32 na całej długości dysku pod OpenBSD (idąc za wskazówką z <em>Reddita</em>). Tworzenie partycji 
+				zaczynam od ustawienia odpowiedniej partycji za pomocą polecenia <code class="code-inline">disklabel</code> z przełącznikiem
+				<code class="code-inline">-E</code> aby uruchomić polecenie w trybie interaktywnym poniżej podałem wybierane polecenia.
+				</p>
+<pre class="code-block">
+$ doas disklabel -E sd1
+sd1&gt; z
+sd1*&gt; a a
+offset: [0]
+size: [468862128]
+FS type: [4.2BSD] msdos
+sd1*&gt; q
+</pre>
+				<p>
+				Po utworzeniu partycji, przychodzi czas na jej sformatowanie. Partycje w OpenBSD przygotowujemy za pomocą róznych wersji 
+				polecenia <code class="code-inline">newfs</code> wybrany system plików określamy poprzez przyrostek np. 
+				<code class="code-inline">_msdos</code> - <code class="code-inline">newfs_msdos</code>, polecenia <em>newfs</em> do 
+				określenia partycji
+				używają <strong>surowych urządzeń</strong> (raw devices) - <em>/dev/rsd1a</em>. Formatowanie może nie co potrwać, w 
+				zależności od wiekości dysku.
+				</p>
+<pre class="code-block">
+$ doas newfs_msdos /dev/rsd1a
+</pre>
+				<p>
+				Po sformatowaniu partycji, warto sprawdzić jeszcze raz jej tablice partycji. Ja miałem tak, że tworzyłem partycje o literze
+				<code class="code-inline">a</code>, kiedy już została sformatowana chciałem ją zamontować klasycznie:
+				</p>
+<pre class="code-block">
+$ doas mount -t msdos /dev/sd1a /mnt
+</pre>
+				<p>
+				Dostałem komunikat o tym, że urządznie jest nie skonfigurowane. 
+				</p>
+<pre class="code-block">
+mount_msdos: /dev/sd1a on /mnt: Device not configured
+</pre>
+				<p>
+				Coś poszło nie tak podczas formatowania? Pierwsze co zrobiłem to zajrzałem do tablicy partycji i okazało się, że po 
+				formatowaniu zmieniła się litera dysku.
+				</p>
+<pre class="code-block">
+# /dev/rsd1c:
+type: SCSI
+disk: SCSI disk
+label: 100-240-G2      
+duid: 0000000000000000
+flags:
+bytes/sector: 512
+sectors/track: 63
+tracks/cylinder: 255
+sectors/cylinder: 16065
+cylinders: 29185
+total sectors: 468862128
+boundstart: 0
+boundend: 468862128
+drivedata: 0 
+
+16 partitions:
+#                size           offset  fstype [fsize bsize   cpg]
+  c:        468862128                0  unused                    
+  i:        468862128                0   MSDOS                    
+</pre>
+				<p>
+				Więc kiedy poprawiłem literę w poleceniu, dysk został zamontowany.
+				</p>
+<pre class="code-block">
+$ doas mount -t msdos /dev/sd1i /mnt/disk
+</pre>
+				<p>
+				Przed zamontowaniem dysku utworzyłem podkatalog, ponieważ w OpenBSD <strong>nie można zmienić właściciela podkatalogów 
+				katalogu głównego, np. takiego jak <em>/mnt</em></strong>, a bez zmiany praw własności zwykły użytkownik nie będzie w 
+				stanie nic na dysku zapisać.
+				</p>
+				<p>
+				Kolejną rzeczą jaką zrobiłem to zmiana tapety, nie jest ona jakoś wybitnie skomplikowana. Po pierwsze trzeba
+				zainstalować pakiet <em>feh</em>, który jest bardzo lekką przeglądarką plików graficznych.
+				</p>
+<pre class="code-block">
+$ doas pkg_add -iv feh
+</pre>
+				<p>
+				Polecenie <code class="code-inline">fbsetbg</code> jest już wbudowane. Problem w tym, że raczej ono nie zadziała, ponieważ nie
+				ma w systemie zainstalowanych pewnych pakietów. Nie trzeba ich instalować. Wystarczy że odnajdziemy ww. polecenie:
+				</p>
+<pre class="code-block">
+$ which fbsetbg
+/usr/local/bin/fbsetbg
+</pre>
+				<p>
+				Rzeczony program do ustawiania tapety na <em>fluxbox</em> jest skryptem powłoki, więc aby program zaczął działać bez 
+				instalacji dodatkowych rzeczy zmieńmy w nim linię:
+				</p>
+<pre class="code-block">
+[ -n "$1" ] &amp;&amp; hash $1 2&gt; /dev/null
+</pre>
+				<p>
+				na:
+				</p>
+<pre class="code-block">
+which $1 2&gt;&amp;1 &gt; /dev/null
+</pre>
+				<p>
+				Po zapisaniu pliku możemy zmienić nareszcie tapetę.
+				</p>
+<pre class="code-block">
+$ fbsetbg -f ~/Obrazy/1920x1080_32bit.png
+</pre>
+				
+			</p>
+			<p>&nbsp;</p>
+			<p>
+				<strong>Dzień 5 - Laptop z OpenBSD</strong> - <em>2021-04-12</em><br />
+				<br />
+				<p>
+				Wieczorem dnia 4-tego stwierdziłem że zostawię laptop z GNU/Linux-em w domu a do pracy wezmę mojego rzęcha, którego kupłem za
+				pierwsze zarobione
+				pieniądze. Już kiedyś był zainstalowany na nim OpenBSD więc wiem że to działa. Ten laptop to Acer AspireOne D260, lekko go
+				zmodyfikowałem stary dysk HDD, wymieniłem na 240GB SSD GoodRam-a, zamiast 1GB RAM dałem 2GB i chyba najważniejsza zmiana to 
+				karta sieci bezprzewodowej Broadcom-a, z którym na Debianie miałem problem ze sterownikiem zmieniłem na kartę Atheros, która 
+				działa bez zarzutu z OpenBSD. Tak poza tym to klasyczna instalacja, póki co jestem w pracy i łącze się po kablu, ale może 
+				jutro pojawi się wpis z podłączaniem się do sieci bezprzewodowej.
+				</p>
+				<p>
+				Odnośnie dźwieku na tym laptopie, to domyślne wyjście jest ustawione na gniazdo słuchawkowe. To nawet lepiej, bo ja zazwyczaj
+				podłączam słuchawy albo Hi-Fi do laptopa.
+				</p>
+			</p>
+			<p>&nbsp;</p>
+			<p>
+				<strong>Dzień 6 - Get Wi-Fi connection and get back to work</strong> - <em>2021-04-13</em><br />
+				<br />
+				<p>
+				Instalując na laptopie OpenBSD musiałem wziąć pod uwagę to, że bedę musiał kiedyś skorzystać z sieci bezprzewodowej i warto było by
+				się dowiedzieć jak to zrobić. Dużo wiedzy na temat samej obsługi OpenBSD znajduje się na stronie FAQ projektu 
+				<a href="https://openbsd.org">openbsd.org</a>, tam też znalazłem tą na temat połączenia z siecią bezprzewodową. Oczywiście za
+				pomocą terminala. Pierwsze co należy zrobić to włączyć samą kartę.
+				</p>
+<pre class="code-block">
+$ doas ifconfig athn0 up
+</pre>
+				<p>
+				Po włączeniu karty musze znaleźć SSID mojej sieć, przeskanuje otoczenie.
+				</p>
+<pre class="code-block">
+athn0: flags=808843&lt;UP,BROADCAST,RUNNING,SIMPLEX,MULTICAST,AUTOCONF4&gt; mtu 1500
+	lladdr 74:f0:6d:39:2d:6a
+	index 2 priority 4 llprio 3
+	groups: wlan egress
+	media: IEEE802.11 autoselect (HT-MCS3 mode 11n)
+	status: active
+	ieee80211: nwid EnGenius578D00_1-2.4GHz chan 13 bssid 88:dc:96:57:8d:00 -50dBm wpakey wpaprotos wpa2 wpaakms psk wpaciphers ccmp wpagroupcipher ccmp
+		nwid EnGenius578D00_1-2.4GHz chan 13 bssid 88:dc:96:57:8d:00 -50dBm HT-MCS15 privacy,short_slottime,wpa2 
+		nwid 0x00000000 chan 2 bssid 14:dd:a9:73:15:a4 -86dBm HT-MCS15 privacy,short_slottime,wpa2 
+		nwid COMTREND-VI-3223u-5A8C chan 11 bssid d8:b6:b7:8e:5a:8d -87dBm HT-MCS15 privacy,short_slottime,wpa1 !wpaproto
+		nwid "DIRECT-95-HP M227f LaserJet" chan 6 bssid da:0f:99:3b:83:95 -93dBm HT-MCS15 privacy,spectrum_mgmt,short_slottime,wpa2 
+	inet 192.168.2.125 netmask 0xffffff00 broadcast 192.168.2.255
+</pre>
+				<p>
+				Po namierzeniu sieci mogę się już nią parować. Moja sieć jest zabezpieczona za pomocą WPA2, więc musze podać hasło po 
+				SSID-zie. Do sieci podłączam się za pomocą poniższego polecenia.
+				</p>
+<pre class="code-block">
+$ doas ifconfig athn0 nwid "EnGenius578D00_1-2.4GHz" wpakey 0xDEADBEEFx0
+</pre>
+				<p>
+				Po sparowaniu pobieram adres IP:
+				</p>
+<pre class="code-block">
+$ doas dhclient
+</pre>
+				<p>
+				Kiedy polecenie zwróci mi prompt sprawdzam za pomocą polecenia <code class="code-inline">ping</code> czy połączenie się 
+				powiodło.
+				</p>
+<pre class="code-block">
+$ ping wp.pl
+</pre>
+				<p>
+				Jeśli chciałbym zapisać sieć, po to aby system łączył się z nią automatycznie podczas ustawiania interfejsów sieciowych, to 
+				muszę stworzyć plik <em>/etc/hostname.athn0</em> (athn0 - nazwa interfejsu). W zależności od tego czy będzie to tylko jedna 
+				sieć:
+				</p>
+<pre class="code-block">
+nwid "SSID" wpakey WPA-PSK
+dhcp
+</pre>
+				<p>
+				lub wiele:
+				</p>
+<pre class="code-block">
+join morketsmerke.net wpakey 1234Test1234
+join EnGenius578D00_1-2.4GHz wpakey 0xDEADBEEFx0
+dhcp
+</pre>
+				<p>
+				Po podłączeniu się do sieci można wrócić do pracy. Moja praca polega w jakieś częsci na tworzeniu materiałów na tą stronę. 
+				Muszę od czasu do czasu obejrzeć wyniki klepanego HTML-a w przeglądarce, jednak pod OpenBSD <em>Firefox</em>, jest strasznie 
+				ogranicznony, bez pozwolenia wydanego w pliku konfiguracyjnym nie mogę sobie od tak przejść w dowolne miejsce w systemie 
+				plików nawet na swoim katalogu domowy, gdzie zapisane są moje materiały. Muszę najpierw w plikach 
+				<em>/etc/firefox/unveil.main</em>, <em>/etc/firefox/unveil.content</em> wpisać ścieżkę do konkretnego katalogu, następnie 
+				przypisać dla niego odpowiednie uprawnienia.
+				</p>
+<pre class="code-block">
+~/Cloud r
+</pre>
+				<p>
+				W obydwu plikach wpisałem identyczne ścieżki oraz uprawnienia. Po ponownym uruchomieniu <em>Firefox-a</em>, mam dostęp do 
+				plików poprzez wpisanie adresu <em>file:///home/xf0r3m/Cloud</em>, ale kiedy spróbuje przejść powyżej tego katalogu dostaje 
+				błąd <em>File not found</em>. Dla przeciętnego użytkownika jest to spore utrudnienie, ponieważ bez utworzenia katalogu 
+				<em>~/Downloads</em> nic nie można ścignąć a dla wrzucenia plików trzeba również określić jakiś katalog gdzie będą pliki 
+				przeznaczone do uploadu, a operowanie na wybiórczych katalogach nie jest wcale takie łatwe. Za pomocą magicznego znaku 
+				tyldy możemy w oknie dialogowym <em>Firefox-a</em> uruchomonić pasek adresu. Jednak patrząc na to jak wielkie są przeglądarki
+				w obecnych czasach - stają się subsystemami - myślę że lepsze to niż nic.
+				</p>
+			</p>
+			<p>&nbsp;</p>
+			<p>
+				<strong>Dzień 7 - Spotify na openbsd.</strong> - <em>2021-04-14</em>
+				<p>
+				Zainstalowanie Spotify na OpenBSD jest łatwiejsze niż na różnych GNU/Linux-ach konfigurowanych od zera. Realizowane jest to 
+				za pomocą pakietu <em>ncspot</em> z <strong>drzewa portów</strong>. Porty lub drzewo portów jest czymś w rodzaju repozytorium
+				<em>community</em>, tylko zamiast pre-kompilowanych binariów jak to jest w przypadku paczek z oficjalnego repo mamy kod 
+				źródłowy, przygotowany (na tyle ile się dało [aby dalej pozostawał kodem]) do kompilacji pod OpenBSD.
+				</p>
+				<p>
+				Cały proces kompilacji programu <em>ncspot</em> z portów jest opisany tutaj: 
+				<a href="https://ogrul.org/articles/spotify-on-openbsd.html">https://ogrul.org/articles/spotify-on-openbsd.html</a>.
+				Opisuje go tu tylko w celach kopii zapasowej, gdyby źródło stało się niedostępne.
+				</p>
+				<p>
+				Kompilację rozpocznę od pobrania paczki z portami z oficjalnego źródła, najlepiej do  <em>/tmp</em>
+				plik zniknie po restarcie nie pozostawiając po sobie bałaganu, a i tak będę musiał go rozpakować do <em>/usr</em>.
+				</p>
+<pre class="code-block">
+$ cd /tmp
+$ ftp https://cdn.openbsd.org/pub/OpenBSD/$(uname -r)/{ports.tar.gz,SHA256.sig}
+</pre>
+				<p>
+				Sprawdzam czy plik nie został podmieniony (jakimś cudem [jeśli ktoś podszył się pod źródło, z którego pobrałem porty]) na 
+				podstawie ściągniętej wraz z paczką sygnatury. 
+				</p>
+<pre class="code-block">
+$ signify -Cp /etc/signify/openbsd-$(uanem -r | cut -c 1,3)-base.pub -x SHA256.sig ports.tar,gz
+</pre>
+				<p>
+				W odpowiedzi dostałem coś takiego:
+				</p>
+<pre class="code-block">
+Signature Verified
+ports.tar.gz: OK
+</pre>
+				<p>
+				Po sprawdzeniu pliku, rozpakowuje paczkę z portami bezpośrednio w katalogu <em>/usr</em>.
+				</p>
+<pre class="code-block">
+$ cd /usr
+$ doas tar -xzvf /tmp/ports.tar.gz
+</pre>
+				<p>
+				Następnie w pliku <em>/etc/mk.conf</em> wskazuje katalogi robocze używane podczas kompilacji.
+				<p>
+<pre class="code-block">
+WRKOBJDIR=/usr/obj/ports
+DISTDIR=/usr/distfiles
+PACKAGE_REPOSITORY=/usr/packages
+</pre>
+				<p>
+				Przechodzę z powrotem do katalogu gdzie wypakowałem porty i wydaje polecenie:
+				</p>
+<pre class="code-block">
+$ doas make search key=ncspot
+</pre>
+				<p>
+				Polecenie za pierwszym razem zwróci błąd. Zawsze zwraca, do działania potrzebuje pakietu 
+				<code class="code-inline">portslist</code>.
+				</p>
+<pre class="code-block">
+$ doas pkg_add -iv portslist
+</pre>
+				<p>
+			 	Po zainstalowaniu pakietu ponownie wydaje polecenie <code class="code-inline">$ doas make search key=ncspot</code>, wynik 
+				polecenia powinien być następujący:
+				</p>
+<pre class="code-block">
+Port:	ncspot-0.2.2p0
+Path:	audio/ncspot
+Info:	ncurses Spotify client
+Maint:	Henrik Friedrichsen &lt;henrik@diff.cc&gt;
+Index:	audio lang/rust
+L-deps:	audio/portaudio-svn x11/dbus,-main
+B-deps:	STEM-&gt;=1.30:lang/rust devel/cargo-generate-vendor lang/rust
+R-deps:	
+Archs:	any
+</pre>
+				<p>
+				Żeby w ogóle rozpocząć proces kompilacji muszę zainstalować wszystko co znajduje się w polu 
+				<code class="code-inline">B-deps:</code> - zależności kompilacji. W tym konkretnym przypadku akurat mam szczęście, że te
+				programy znajdują się w repo i nie trzeba ich kompilować. Instalacja oprogramowania przez kompilację kodu to trochę
+				błędne koło, ponieważ musisz spełnić zależności kompilowanego programu, kiedy chcesz to zrobić i znów musisz 
+				kompilować wtedy wracamy do punktu wyjścia bo musimy znów spełnić zależności, zależności kompilacji programu macierzystego 
+				i być może znów będziemy musieli je kompilować. Kompilacja daje możliwość dostosowania oprogramowania do własnych potrzeb.
+				</p>
+<pre class="code-block">
+$ doas pkg_add -iv rust cargo-generate-vendor
+</pre>
+				<p>
+				Po zainstalowaniu zależności uruchamiam kompilacje. Ścieżka do kodu aplikacji jest wskazana przez pole 
+				<code class="code-inline">Path:</code> informacji zwracanych przez polecenie <code class="code-inline">make search</code>.
+				<p>
+<pre class="code-block">
+$ cd audio/ncspot
+$ doas make install
+</pre>
+				<p>
+				Po zbudowaniu projektu, co trochę trwa w zależności od mocy przerobowej komputera, mogę wreszcie uruchomić <em>ncspot</em>:
+				</p>
+<pre class="code-block">
+$ ncspot
+</pre>				
+				<p>
+				zalogować się i korzystać z usługi. Oczywiście jak wszystkie te aplikacje wykorzystujące API, potrzebne jest konto premium. 
+				Nie tyle o same Spotify chodziło, co o możliwie najprostrze przedstawienie systemu portów.
+				</p>
+			
+		</p>
+		<p>&nbsp;</p>
+		<p>
+			<strong>Dzień 9 - Płyty pod OpenBSD</strong> - <em>2021-04-17</em>
+			<p>
+			8-go dnia stwierdziłem że muszę zrobić porządek z płytami, na których miałem pozgrywaną muzykę żeby ją odtwarzać na wieży. Z racji 
+			tego że wieża wspierała zarówno format <em>Audio CD</em> jak zwykłe płyty nagrane jako "płyta z danymi" z plikami <em>MP3</em>, 
+			posiadałem płyty nagrane w różnych formatach. Podłączyłem napęd do komputera, włożyłem płytę i zacząłem szukać w necie jak to zrobić.
+			Pierwszą rzeczą jakiej  się dowiedziałem (nie z Internetu, a z autopsji) było rozpoznawanie płyt, które są nagrane w formacie 
+			<em>Audio CD</em>, a które z plikami <em>MP3</em>.
+			</p>
+<pre class="code-block">
+$ doas disklabel cd0
+</pre>
+			<p>
+			Jeśli jest to płyta z danymi to w tabeli partycji, pojawią się dwie partycje: <code class="code-inline">a</code> oraz 
+			<code class="code-inline">c</code>. Jeśli zaś jest to i <em>Audio CD</em> to tabela będzie pusta.
+			</p>
+			<p>
+			<u>MP3:</u>
+			</p>
+
+<pre class="code-block">
+# /dev/rcd0c:
+type: ATAPI
+disk: 110124_1858     
+label:                 
+duid: 0000000000000000
+flags:
+bytes/sector: 2048
+sectors/track: 100
+tracks/cylinder: 1
+sectors/cylinder: 100
+cylinders: 3390
+total sectors: 338911
+boundstart: 0
+boundend: 338911
+drivedata: 0 
+
+16 partitions:
+#                size           offset  fstype [fsize bsize   cpg]
+  a:           338911                0 ISO9660                    
+  c:           338911                0 ISO9660                   
+</pre>
+			<p>
+			<u>Audio CD:</u>
+			</p>
+<pre class="code-block">
+# /dev/rcd0c:
+type: ATAPI
+disk: ATAPI CD-ROM
+label: fictitious
+duid: 0000000000000000
+flags:
+bytes/sector: 2048
+sectors/track: 100
+tracks/cylinder: 1
+sectors/cylinder: 100
+cylinders: 1738
+total sectors: 173758
+boundstart: 0
+boundend: 0
+drivedata: 0 
+
+0 partitions:
+#                size           offset  fstype [fsize bsize   cpg]
+</pre>
+			<p>
+			Na podstawie tego, płytę z danymi montuje najzwyczajniej w świecie jak zwykły dysk. Trzeba jeszcze spojrzeć na system plików użyty na 
+			płycie. OpenBSD natywnie wspiera <em>ISO9660</em> oraz <em>UDF</em>. Na moich płytach z <em>MP3</em> używałem formatu 
+			<em>ISO9660</em>.
+			</p>
+<pre class="code-block">
+$ doas mount_iso9660 /dev/cd0a /mnt
+</pre>
+			<p>
+			Po skopiowaniu danych odmontowuje ją (<code class="code-inline">doas umount /mnt</code>).
+			</p>
+
+			<p>
+			W przypadku formatu <em>Audio CD</em> trzeba użyć innego narzędzia. Do obsługi tego typu płyt wykorzystuje się program 
+			<strong>cdio</strong>. Za pomocą tego programu można taką płytę odtworzyć lub zripować. Ten program potrafi np. połączyć się z 
+			bazą GNU i ściągnąć tagi dla ścieżek zapisanych na płycie. Poniżej znajdują się polecenia odtwarzania i ripowania.
+			</p>
+			<p>
+			<u>Odtworzenie Audio CD:</u>
+			</p>
+<pre class="code-block">
+$ doas cdio -f /dev/cd0c cdplay
+</pre>
+			<p>
+			<u>Ripowanie Audio CD:</u>
+			</p>
+<pre class="code-block">
+$ doas cdio -f /dev/cd0c cdrip
+</pre>
+			<p>
+			Warto dodać żeby uniknąć bałaganu, uruchamiałem polecenie do ripowania w przeznaczonym dla tej płyty katalogu. Jako bonus
+			polecenie do sprawdzenia płyty w gnudb.org
+			</p>
+<pre class="code-block">
+$ doas cdio -f /dev/cd0c cddbinfo
+</pre>
+			<p>
+			Wynik polecenia może być różny w zależności od tego co uda mu się znaleźć na płycie.
+			</p>
+		</p>
+		<p>&nbsp;</p>
+		<p>
+			<strong>Dzień 11 - Raspberry Pi Zero podłączone przez USB do laptopa z OpenBSD i torrenty z terminala</strong> - 
+			<em>2021.04.19</em>
+			<p>
+			Potrzebowałem serwera www najlepiej z Git-em, do pisania pewnych aplikacji. Mój Acer Aspire One, strasznie by się spocił przy 
+			hostowaniu maszyn wirtualnych, ale nie należało go skreślać bo kiedyś korzystałem z terminala HP z podobnym procesorem, który
+			hostował dwie maszyny wirtualne. Zużycie procesora 100% bez przerwy za nim coś zrobiłem to trochę minęło, ale jakoś jakoś
+			dawał radę. Miałbym go do dzisiaj gdyby nie zalało pomieszczenia, którym się znajdował, a że leżał na podłodze,
+			woda go uszkodziła i niestety trafił na złom. Wracając do głównego tematu. Pomyślałem, a co gdyby użyć RPI, trzeba by podłączać
+			to do sieci, nosić zasilacz lub używac powerbank-a. No dobra, a Raspberry Pi Zero? Podłączone do Acera... Tak tylko że na
+			tym laptopie jest przecież zainstalowane OpenBSD. No to mam problem.
+			</p>
+			<p>
+			Nie taki diabeł straszny jak go malują. Po zainstalowaniu obrazu na karcie przy użyciu tego laptopa, musiałem niestety użyć 
+			zewnętrznego czytnika kart, bo ten wbudowany nie miał generalnie wsparcia na systemach *BSD. Kolejny przeszkodą mogła być
+			konfiguracji <strong>RNDIS</strong>, bo trzeba to ustawić na karcie na partycji <em>Boot</em>, jednak <em>RasPiOS</em> 
+			wykorzystuje partycję <em>Boot</em> sformatowaną na <em>MSDOS</em> (<em>FAT32</em>). Na chwilę przeskoczę do tego jak w ogóle
+			zdobyłem obraz.
+			</p>
+			<p>
+			Obraz zdobyłem za pomocą sieci BitTorrent, nie miałem jednak wiedzy nt. klientów BT na OpenBSD. Sprawdziłem z ciekawości program,
+			który ożywam od lat <strong>Transmission</strong>. Ten program jest stworzony w architekturze klient-serwer i można go 
+			używać na wiele róznych sposobów za pomocą przeglądarki, klasycznego okna czy to na czym mi zależało z poziomu terminala. 
+			Więc wchodzę na stronę projektu <em>Transmission</em>, a tam pod OpenBSD widnieje napis "Official packages". I teraz wiem
+			że jestem w domu. Sciągam paczkę z <em>Transmission</em>.
+			</p>
+<pre class="code-block">
+$ doas pkg_add -iv transmission
+</pre>
+			<p>
+			Informacje o tym jak używać <em>Transmission</em> znalazłem za pomoc DuckDuckGo na tej stronie: 
+			<a href="https://cli-ck.io/transmission-cli-user-guide">https://cli-ck.io/transmission-cli-user-guide</a>
+			Po zainstalowaniu się pakietu, wskazuję daemonowi <em>Transmission</em> katalog dla pobranych.
+			</p>
+<pre class="code-block">
+$ transmissions-daemon --download-dir ~/Downloads
+</pre>
+			<p>
+			Daemona uruchamiamy tym samym poleceniem tylko bez żadnych przełączników czy opcji.
+			</p>
+<pre class="code-block">
+$ transmissions-daemon
+</pre>
+			<p>
+			Pliki <em>torrent</em> czy <em>magnet linki</em>, dodajemy za pomocą poniższego polecnia z wraz z opcją 
+			<code class="code-inline">-a</code>. 
+			</p>
+<pre class="code-block">
+$ transmission-remote -a &lt;plik_torrent/magnet_link&gt;
+</pre>
+			<p>
+			Do monitorowania daemona (sprawdzenia postępów ściągania) służy polecenie:
+			</p>
+<pre class="code-block">
+$ transmissions-remote -l
+</pre>
+			<p>
+			Po pobraniu, nagraniu obrazu na kartę oraz skonfigurowaniu systemu, przyszedł czas na podłączenie RPI do laptopa. 
+			Po podłączeniu w systemie pojawił się nowy interfejs sieciowy <strong>urndis0</strong> i nic poza tym. Każdy 
+			interfejs żeby mógł się komunikować z kimkolwiek musi mieć jakiś adres. Stworzyłem więc plik 
+			<em>/etc/hostname.urndis0</em> o takiej zawartości:
+			</p>
+<pre class="code-block">
+inet 192.168.56.1 255.255.255.0
+</pre>
+			<p>
+			Zrestartowałem sieć.
+			<p>
+<pre class="code-block">
+$ doas sh /etc/netstart
+</pre>
+			<p>
+			No tak, ja mam adres a Raspberry? Nope. Jak można nadać adres hostowi bez możliwości jakiej kolwiek konfiguracji?
+			Za pomocą DHCP. Utworzyłem konfigurację w <em>/etc/dhcpd.conf</em> z bardzo małym zakresem:
+			</p>
+<pre class="code-block">
+subnet 192.168.56.0 netmask 255.255.255.0 {
+
+	range 192.168.56.5 192.168.56.10;
+	option routers 192.168.56.1;
+	option domain-name "local";
+	option domain-name-servers 192.168.56.1;
+}
+</pre>
+			<p>
+			Uruchomiłem z reki daemona DHCP.
+			</p>
+<pre class="code-block">
+$ doas dhcpd urndis0
+</pre>
+			<p>
+			I czekałem na przydzielenie adresu sprawdzając co jakiś czas plik <em>/var/db/dhcpd.leases</em>, aż moim oczom ukazał
+			się taki o to wpis:
+			</p>
+<pre class="code-block">
+lease 192.168.56.7 {
+	starts 1 2021/04/19 07:32:45 UTC;
+	ends 1 2021/04/19 19:32:45 UTC;
+	hardware ethernet aa:9a:fc:ef:b5:83;
+	uid 01:aa:9a:fc:ef:b5:83;
+	client-hostname "raspberrypi";
+}
+</pre>
+			<p>
+			Teraz mogłem się połączyć z Raspberry. Żeby nie musieć za każdym razem uruchamiać DHCP, ustawiłem na nim statyczny
+			adres i tak byłby wymagany do <em>Gogs-a</em>. Oczywiście żeby zainstalować tym sprzęcie cokolwiek potrzebne jest
+			połączenie z Internetem. Musiałem przerobić tego laptopa na bramkę na żądanie, doinstalować dnsmasq (nie potrzeba
+			go konfigurować), na podstawie obecnego pliku PF, utworzyłem plik z regułą <strong>NAT-u</strong> oraz włączyć
+			przekazywanie pakietów.
+			</p>
+<pre class="code-block">
+$ doas pkg_add -iv dnsmasq
+
+pass out on alc0 from urndis0:network to any nat-to (alc0)
+
+sysctl net.inet.ip.forwarding=1
+</pre>
+			<p>
+			<code class="code-inline">Alc0</code> to interfejs przez, który mój laptop łączy się z siecią lokalną w budynku. Całość
+			skonfigurowałem wraz z instalacją <em>Gogs-a</em> i mimo <strong>LAMP Stacka</strong> to Raspberry Pi Zero radzi sobie
+			nadzwyczaj dobrze.
+			</p>
+
+		</p>
+		</div>
+
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+		</body>
+	</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+
+		<h1 style="text-align: center;">Instalacja Alpine Linux</h1>
+		<p>
+		<strong>Alpine Linux</strong> jest jedną z moich ulubionych dystrybucji. Lekki i bezpieczny system, który po niewielkiej konfiguracji może stać się systemem codziennego użytku. Dystrybcja dostaczona przez norweskich deweloperów znajduje zastosowanie na wielu platformach w tym <em>Raspberry Pi</em>. Cechami charakterystycznmi tej dystrybucji jest <strong>OpenRC</strong> jako program init, BusyBox oraz możliwość działania z pamięci RAM. Warto również wspomnieć że twórcy systemu wspierają również aplikację, która pozwala administrować systemem z poziomu przeglądarki WWW.
+		</p>
+		<ol>
+			<li><strong>Start</strong><br />
+				<p>
+					<strong>Po załadowaniu płyty, system wystartuje na zasadzie LiveCD. Poprosi nas o zalogowanie się. Logujemy się na konto użytkownika root bez hasła.</strong> Jeśli chcemu coś sprawdzić przed instalacją to jest najlepszy moment. Kiedy będziemy gotowi na instalację systemu wydajemy poniższe polecenie:
+				</p>
+<pre class="code-block">
+# setup-alpine
+</pre>
+			</li>
+			<li><strong>Układ klawiatury</strong><br />
+				<p>
+					Pierwszą rzeczą jaką musimy ustawić jest układ klawiatury. Na początku wybieramy układ na podstawie kraju, a następnie układy stostowane na obszarze danego kraju. Przeważnie naszym wyborem jest <code class="code-inline">pl</code>, <code class="code-inline">pl</code>.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_kbd_layo1.png" alt="Instalcja Alpine Layout klawiatury 1" />
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_kbd_layo2.png" alt="Instalacja Alpine Layout klawiatury 2" />
+				</p>
+			</li>
+			<li><strong>Nazwa komputera</strong><br />
+				<p>
+					Po wybraniu układu klawiatury instalator zapyta nas o nazwę dla naszego systemu, tutaj możemy wpisać co nam się podoba. Zazwyczaj możemy używać małych liter, cyfr oraz myślnika. Ja podałem nazwę dystrybucji w raz z wersją systemu tak zazwyczaj robię na maszynach wirtualnych, ale jeśli chodzi o fizyczne maszyny to wpisuje zazwyczaj model komputera.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_hostname.png" alt="Instalacja Alpine nazwa komputera" />
+				</p>
+			</li>
+			<li><strong>Inicjalizcja interfejsów</strong><br />
+				<p>
+					Teraz przyszedł czas na określnie konfiguracji sieciowej naszego Alpine-a. Z poziomu instalatora mamy duże możliwośći konfiguracji interfejsów, aby przygotować nasz system do pracy na urządzeniach sieciowych. Póki co przygotujemy system ogólnego użytku. Więc, na pocztku wybieramy interfejs do do incjalizacji.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_initinterfaces1.png" alt="Instalacja Alpine incjalizacja interfejsów1" />
+				</p>
+				<p>
+					Następnie zostaniemy zapytani o adres IP dla tego interfejsu. Tutaj warto na chwile zatrzymać się i pomyśleć na przeznaczeniem naszego systemu. Jeśli jest to maszyna wirtualna np. tylko do tego żeby sobie uruchomić ten system to może być dhcp, jeśli do czegoś innego np. do rzeczy dewelperskich to warto zastosować jakiś stały adres, poza pulą naszego sieciowego serwera DHCP. Dla bramki, adres zależy od interfejsu jaki inicjujemy. Sposób konfiguracji interfejsu zewnetrznego jest podyktowany przez ISP, a adresy wenętrzne zawsze maja stały adres pierwszego komputera w tej sieci. W moim przypadku jest środowisko emulacjyne QEMU (bez kvm), więc intefejs ustawiam na <code class="code-inline">dhcp</code>.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_initinterface2.png" alt="Instalacja Alpine inicjalizacja interfejsów2" />
+				</p>
+				<p>
+					Po konfiguracji interfejsu, jeśli w systemie znajdują się jeszcze jakieś nie skonfigurowane interfejsy sieciowe to instalator zapyta czy chcemy je skonfigurować. Tutaj możemy ustawić stałe adresy dla intefejsów wewnętrznych bramki.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_initinterface3.png" alt="Instalacja Alpine inicjalizacja interfejsów3" />
+				</p>
+			</li>
+			<li><strong>Hasło dla użytkownika <em>root</em></strong><br />
+				<p>
+					Następnym krokiem jest ustawienie hasła użytkownika <em>root</em> w systemie. W zależności od zastosowania systemu należy wybrać odpowiednie hasło. Dla systemów, które są podłączone do sieci lub są częścia systemów produkcyjnych to dla nich trzeba ustawić jakieś bezpieczne hasło, z kolei dla maszyny testowej możemy ustawić jakieś słabe hasło byle by go nie zgubić. Jeśli je zapomnimy to stracimy czas na usunięcie go lub reinstalacje systemu. Ja sobie ustawie hasło: toor. Hasło dość łatwe do zapamiętania, stosowanie tego hasła zapoczątkowa dystrybucja BackTrack, a poźniej Kali Linux.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_rootpassword.png" alt="Instalacja Alpine hasło dla root-a" />
+				</p>
+			</li>
+			<li><strong>Strefa czasowa</strong><br />
+				<p>
+					System aby mógł poprawnie wyświetlać informacje nt. daty oraz czasu potrzebuje strefy czasowej jaka nas obejmuje. Jeśli nie znamy naszej rodzimej strefy czasowej (<code class="code-inline">Europe/Warsaw</code>) możemy wybrać '<code class="code-inline">?</code>', przez co zostanie nam wyświetlona lista.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_timezone.png" alt="Instalacja Alpine lista stref czasowych" />
+				</p>
+				<p>
+					Pod nazwami kontynetów kryją się stolice lub wieksze miasta państw tych kontynentów. Dla Polski możemy wybrać albo <code class="code-inline">Poland</code> albo <code class="code-inline">Europe/Warsaw</code>.
+				</p>
+			</li>
+			<li><strong>Proxy dla HTTP/FTP</strong><br />
+				<p>
+					Po ustaleniu strefy czasowej instalator zapyta o adres proxy dla ruchu protoków HTTP oraz FTP, jeśli nasz ruch nie przechodzi przez proxy to pozostawiamy wartość domyślną ustawioną na <code class="code-inline">none</code>, w przeciwnym wypadku podajemy adres naszego pośrednika.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_httpftpproxy.png" alt="Instalacja Alpine, adres proxy http_ftp" />
+				</p>
+			</li>
+			<li><strong>Instalacja klienta NTP</strong><br />
+				<p>
+				<a href="#ntp">Patrz przedostatni pragraf.</a>
+				</p>
+			</li>
+			<li><strong>Wybór serwera lustrzanego</strong><br />
+				<p>
+					Po podaniu informacji nt. proxy, zostanie wyświetlona nam lista serwerów lustrzanych do wyboru źródła repozytorium. Możemy wybrać 1 z 55 podając numer z listy, wpisać własny adres URL, co prawdopodobnie daje możliwość użycia lokalnego mirrora, wpisać literę 'r' co spowoduje ustawienie losowego serwera, wpisać literę 'f', przez co zostanie wybrany najszybszy serwer lub wpisać literę 'e', przez co będziemy mogi edytować listę repozytoriów. Zawsze tutaj wybieram serwer nr 37, jest chyba najszybszym mirrorem w Polsce.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_selectmirror.png" alt="Instalacja Alpine, wybór serwera lustrzanego" />
+				</p>
+			</li>
+			<li><strong>Ustalenie daemona SSH</strong><br />
+				<p>
+					Alpine Linux podczas instalacji domyślnie daje możliwość zainstalowania serwera SSH, na naszej maszynie. Do wyboru mamy ogólnodostępne serwery SSH: dropbear oraz openssh. Dla systemów wbudowanych gdzie liczy się każdy KB RAM-u, warto wybrać dropbear. Nie ma on co prawda dobrego wsparcia SFTP, ale pełne dla SCP, więc można jakoś sobie poradzić z transferem plików, jest on jednak mniej zasobożerny niż OpenSSH. Poza systemami wbudowanymi to raczej lepiej zainstalować klasyczne OpenSSH.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_sshdaemon.png" alt="Instalacja Alpine, wybór daemon ssh" />
+				</p>
+			</li>
+			<li><strong>Instalacja właściwa systemu</strong><br />
+				<p>
+					Przebieg instalacji został w Alpine Linux, bardzo uproszczony na samym początku zostaje nam wyświetlona lista dysków.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_listdisk.png" alt="Instalacja Alpine, lista dysków" />
+				</p>
+				<p>
+					Następnie instalator prosi nas o wskazanie dysku do instalacji. Po zatwierdzeniu dysku, wybieramy sposób instalacji systemu. Do wyboru mamy dwie opcje, <code class="code-inline">sys</code> lub <code class="code-inline">data</code>. Pierwszy z nich to sposób klasyczny system jest instalowany na dysku i korzysta z niego jak każdy inny GNU/Linux. Opcją numer dwa jest załadowanie systemu do pamięci RAM, i wykorzystanie prawie całej przestrzeni dyskowej do celów aplikacji, które mają być hostowane na naszym Alpine Linux-ie. Do partycjjonowania dysków możemy również wykorzystać LVM. Jednak powyższe tryby pozostaje takie same tylko że z użyciem woluminów logicznych.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_diskinstallmode.png" alt="Instalacja Alpine, tryb instalacji" />
+				</p>
+				<p>
+					Po wybraniu trybu instalacji zostaniemy zapytani o to czy kontynuować ponieważ wybrany dysk zostaniewyczyszczony aby móc zainstalować na nim nasz system, to jest ostatnia szansa na przerwanie instalacji, jeśli mamy taką potrzebę.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_diskconfirm.png" alt="Instalacja Alpine, zatwierdzenie dysku" />
+				</p>
+				<p>
+					Po zatwierdzeniu, dysk zostaje sformatowany i rozpoczyna się proces instalacji.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_installationprocess.png" alt="Instalacja Alpine, proces instalacji" />
+				</p>
+				<p>
+					Kiedy wskaźnik postępu osiągnie 100 % wtedy rozpoczną się czynności poinstalacjyne.
+				</p>
+				<p>
+					<img src="https://files.morketsmerke.net/resources/ia_installationprocess2.png" alt="Instalacja Alpine, czynności poinstalacjyne, koniec instalacji" />
+				</p>
+				<p>
+					Ostatni komunikat mówi nam że system został poprawnie zainstalowany i teraz należy opuść środowisko LiveCD. Restartujemy naszą maszynę i bootujemy ją z dysku. System powinien się uruchomić.
+				</p>
+			</li>
+		</ol>
+		</p>
+		<p id="ntp">
+			Alpine Linux korzysta z serwerów NTP, do ustalenia daty i czasu, jednak nie przy każdej instalacji. Jeśli ktoś korzysta z QEMU to instalator nie będzie proponował instalacji NTP, klient NTP co jakiś czas musi komunikować się serwerami czasu, co może podwodować dodatkowe obciązenie systemu, a samo QEMU nie jest hipernadzorcą jest jedynie programem emulacyjnym więc i tak wydajność gosczonych przez niego systemów jest nie zbyt zadowalająca. Instalator Alpine to zwykły skrypt powłoki, pozostawiony przypuszczalnie dla zmiany trybu instalacji systemu i wewnątrz niego możemy sprawdzić dlaczego instalator nie instaluje klient NTP, na naszym systemie. Klient NTP nie zostanie zainstalowany w przypadku szybkiej instalacji (<code class="code-inline">setup-alpine -q</code>), instalacji na QEMU oraz w przypadku uruchomienia instalatora na kontenerze LXC.
+		</p>
+		<p>
+			<img src="https://files.morketsmerke.net/resources/ia_ntpclient.png" alt="Instalacja Alpine, 		instalacja klienta NTP" /><br />
+		</p>
+		<p>
+     		~xf0r3m
+		</p>
+
+			</div>
+			<p style="margin: 15px; padding: 0; outline: 0;">
+				2021; COPYLEFT; ALL RIGHT REVERSED;
+			</p>
+
+		</body>
+	</html>

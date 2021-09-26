@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Tworzenie woluminów logicznych - LVM</h1>
+    <p>
+      Czasami może zajść taka przeba że trzeba wykorzystać dwa fizyczne dyski, jednak nie w taki prosty sposób jakby się mogło wydawać. Na dyskach będzie przechowywane bardzo dużo danych i te dane muszą być w jednym katalogu ale nie zmieszczą się na jednym dysku. Opcje są dwie, oddać te zakupione dyski do sklepu i kupić większe o ile dyski są nowe lub podłączyć je do serwera i konfigurować na nich <strong>wolumin logiczny</strong>.
+    </p>
+    <p>
+      Tworzenie woluminu rozpoczniemy i klasycznego zainicjowania dysków utworzymy partycję na całej długości dysku. Do zaalokowania miejsca wykorzystamy narzędzie <em>fdisk</em>. Przedstawię poniżej kolejno wciskane klawisze podczas obsługi programu.
+    </p>
+<pre class="code-block">
+$ sudo fdisk /dev/sdb
+> o
+> n
+> p
+> [ENTER]
+> [ENTER]
+> [ENTER]
+> w
+> quit
+</pre>
+    <p>
+      Dla drugiego dysku wykonujemy identyczne czynności. Po zainicjowaniu dysków możemy przejść do programu <em>lvm</em> i rozpocząć inicjowanie woluminu logicznego.
+    </p>
+<pre class="code-block">
+$ sudo lvm
+lvm> pvcreate /dev/sdb1
+lvm> pvcreate /dev/sdc1
+</pre>
+    <p>
+      Po wydaniu tych poleceń, partycje na dyskach są gotowe do stworzenia <strong>grupy woluminów</strong>. Grupę tworzymy następującym poleceniem programu.
+    </p>
+<pre class="code-block">
+lvm> vgcreate vg0 /dev/sdb1 /dev/sdc1
+</pre>
+    <p>
+      Teraz dyski są połączone logicznie. Utworzymy na nich nasz wolumin logiczny.
+    </p>
+<pre class="code-block">
+lvm> lvcreate -L 931G vg0
+lvm> exit
+</pre>
+    <p>
+      Utworzyłem <strong>dysk logiczny</strong> składający się z dwóch dysków fizycznych, użyłem dwóch dysków o wielkości 500GB nominalnie co dało w rzeczywistości 465,5G miejsca na partycji. Dysk logiczny ma 931G rozmiaru rzeczywistego co nominalnie daje 1TB. Podczas działania lvm wszystkie polecenia są wykonywane na bierząco, więc po utworzeniu dysku możemy wpisać poprostu <code class="code-inline">exit</code>.
+    </p>
+    <p>
+      Po zamknięciu programu, kiedy wyświetlimy listę wszystkich dysków w systemie za pomoca polecenia <code class="code-inline">fdisk -l</code> nasz dysk logiczny będzie widoczny jako pusty dysk bez partycji o ścieżce wystąpienia takiej jak <code class="code-inline">/dev/mapper/vg0-lvol0</code>. Na tym dysku nie tworzymy partycji, od razu przechodzimy do formatowania.
+    </p>
+<pre class="code-block">
+$ sudo mkfs.ext4 /dev/mapper/vg0-lvol0
+</pre>
+    <p>
+      Teraz możemy montować nasz wolumin i rozpocząć z nim pracę.
+    </p>
+<pre class="code-block">
+$ sudo mount /dev/mapper/vg0-lvol0 /mnt
+</pre>
+    <p>
+       Woluminy logiczne są świetnym rozwiązaniem dla tych którzy mają mniejsze dyski fizyczne a potrzebują więcej miejsca niż te urządzenia mogą zaoferować.
+    </p>
+    <p>
+        ~xf0r3m
+    </p>
+  </div>
+	<p style="margin: 15px; padding: 0; outline: 0;">
+		2021; COPYLEFT; ALL RIGHT REVERSED;
+	</p>
+</body>
+</html>

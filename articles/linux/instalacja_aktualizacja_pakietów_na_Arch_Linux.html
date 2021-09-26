@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+        <h1 style="text-align: center;">Instalacja oraz aktualizacja pakietów na dystrybucjach bazujących na Arch Linux</h1>
+        <p>
+            Przez długi okres czasu trzymałem się kurczowo, jednej rodziny systemów GNU/Linux były to dystrybucje oparte o <strong>Debian</strong>: Ubuntu, Kali Linux itd. Znałem manager pakietów w tych dystrybucjach. Jednak kiedyś następuje czas na zmiany, wraz z czasopismem Linux Magazine była dołączona płyta DVD zawierająca dystrybucję Manjaro. Ta dystrybucja jest to taki "user-friendly" <strong>Arch Linux</strong>, jest czymś w rodzaju Ubuntu lub Linux Minta tylko zamiast Debiana jest właśnie Arch. Pomysłodawca wykonał kawał świetnej roboty przybliżając ludziom niezwiązanym za bardzo z Linuxem tą dystrybucje skierowaną głównie do entuzjastów. Podobnie jest z Debianem, tylko że on już zdąrzył dorosnąć i jest chyba najbardziej stabilną dystrybucją, której rozwój w 100% spoczywa w rękach społęczności. Ten materiał myślę że jest dla wszystkich tych, którym nie chce się przedzierać przez strony podręcznika a zaczynają swoją przygodę z Manjaro lub innym Arch-em.
+						Pierwszą rzeczą jaką zawsze robie po zainstalowaniu jakie kolwiek nowego systemu jest zainstalowanie aktualizacji, no chyba że jest to Debian, wtedy instaluje go z Internetu - podczas instalacji pobierze najnowsze pakiety. Więc jak możemy dokonać aktualizacji w systemach opartych na Arch Linux? Wydajmy poniższe polecenie.
+        </p>
+<pre class="code-block">
+$ sudo pacman -Syu
+</pre>
+        <p>
+            To polecenie spowoduje odświeżenie bazy pakietów, w raz z kluczami, które uwierzytelniają repozytoria. W Arch-ach jest wykonywane jawnie tak samo w RPM-amch takich jak Fedora czy <strong>Red Hat</strong>, w DEB-ach klucz trzeba wczytać ręcznie aby w ogóle zacząć wymieniać informacje z danym repozytorium. Po aktualizacji bazy następuje wyszukanie najnowszych wersji zainstalowanych pakietów i wyświetlenie ich listy. Zatwierdzamy aktualizacje i najnowsze pakiety zostaną ściągnięte i zainstalowane w naszym systemie.
+        </p>
+        <p>
+            Kolejną rzeczą jaką na pewno chcielibyśmy zrobić to sobie coś zainstalować. Instalacja jest równie prosta.
+        </p>
+<pre class="code-block">
+$ sudo pacman -S &lt;nazwa_pakietu&gt;
+</pre>
+        <p>
+            Do instalacji wykorzystujemy to samo polecenie tylko, że z jednym przełącznikiem nie z trzema. Po przełączniku <code class="code-inline">-S</code> podajemy nazwę pakietu. Jeśli nie znamy nazwy, możemy poszukać pakietów na stronie Arch Linux po tym linkiem: <a href="https://archlinux.org/packages/">https://archlinux.org/packages/</a>.
+        </p>
+        <p>
+            Jak możemy się domyślić nie wszystkie dystrybucje bazują na protoplastycznych trzech trzonach takich jak Red Hat, Debian czy <strong>Slackware</strong>. Jest wiele niezależnych dystrybucji, takich jak sam Arch, <strong>Gentoo</strong> czy przytaczany na tej stronie <strong>Alpine Linux</strong>. Do rozeznania się w dystrybucjach może posłużyć nam ta infografika: <a href="https://upload.wikimedia.org/wikipedia/commons/8/8c/Linux_Distribution_Timeline_Dec._2020.svg">https://upload.wikimedia.org/wikipedia/commons/8/8c/Linux_Distribution_Timeline_Dec._2020.svg</a>. Niezależne distra (skrót od dystrybucje) posiadają one raczej swoje programy służace do zarządania pakietami oprogramowania. Dlatego warto wyrobić sobie nawyk aby poszukać informacji na temat instalacji pakietów na stronie danej dystrybucji, a nie tracić czas na wyszukiwanie
+            takich artykułów jak ten.
+        </p>
+        <p>
+            ~xf0r3m
+        </p>
+    </div>
+
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+
+</body>
+</html>

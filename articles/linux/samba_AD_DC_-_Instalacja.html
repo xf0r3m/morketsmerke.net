@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+		<h1 style="text-align: center;">Samba AD DC - Instalacja</h1>
+        <p>
+            <strong>Samba Active Directory</strong> może być nieco lżejszą implementacją od usługi Active Directory oferowanej przez system Windows, jednak jego instalacja nie jest już taka prosta jak ma to miejsce w przypadku rozwiązań firmy Microsoft. Przedstawiona tutaj operacja będzie składać się z dwóch części, pierwsza z nich to właściwa instalacja usługi Samba AD DC, a drugą to <strong>instalacja usługi NTP, która jest niezbędną do prawidłowego funkcjonowania. Właśnie jest róźnica pomiędzy dwoma wyżej wymienionymi implementacjami, przy SAMBA AD jeśli zegar na komputerze klienta spóźnia się choćby o 5 minut to zalogowanie się na komputerze za pomocą użytkownika owej usługi może być już niemożliwe</strong>. Zatem przed przyłączeniem komputera do domeny, warto na początek ustawić serwer czasu na nasz kontroler domeny, a teraz zabierzemy się do właściwej instalacji. Na swój serwer wybrałem dystrybucje GNU/Linux Debian.
+        </p>
+        <p>
+            <ol>
+                <li><strong>Ustawienie statycznego adresu IP</strong>
+                    <p>
+                        Z racji tego że nasz system ma świadczyć jakieś usługi w sieci, więc powinien mieć stały adres IP. Dzięki temu można go łatwo odnaleźć w sieci oraz przypisać mu jakąś przyjazną nazwę. Otwieramy plik <em>/etc/network/interfaces</em>.
+                    </p>
+<pre class="code-block">
+allow-hotplug enp2s0
+iface enp2s0 inet static
+address 192.168.1.10
+netmask 255.255.255.0
+gateway 192.168.1.1
+dns-nameservers 192.168.1.1
+</pre>
+                </li>
+                <li><strong>Wyłączenie usługi systemd-resolved</strong>
+                    <p>
+                        Usługa systemd-resolved będzie kolidować z wbudowanymi usługami DNS Samby, więc musimy ją wyłączyć i statycznie w pliku <em>/etc/resolv.conf</em> ustawić adres IP serwera DNS, do którego będą przekazywane zapytania niezwiązane z domeną.
+                    </p>
+<pre class="code-block">
+$ sudo systemctl disable systemd-resolved.service
+$ sudo rm /etc/resolv.conf
+$ sudo su
+# echo "nameserver 192.168.8.1" > /etc/resolv.conf
+# echo "127.0.1.1   adc1" >> /etc/hosts
+# reboot
+</pre>              <p>
+                        Za pomocą polecenia <code class="code-inline">systemctl</code>, wyłączamy usługę systemd-resolved, nastepnie usuwamy przez nią stworzony plik <em>/etc/resolv.conf</em>, aby móc przekierować wyjście do plików w katalogu <em>/etc</em> musimy przełączyć się na użytkownika <em>root</em>, użycie polecenia <code class="code-inline">sudo</code> nie zadziała w tym przypadku. Do naszego nowego pliku <em>/etc/resolv.conf</em> dodajemy stały wpis adresu serwera DNS, w moim przypadku jest to adres bramy sieci, która jest nad moją siecią. Przedostatnia linia przedstawia dopisanie adresu przypisanego do naszej nazwy hosta do pliku <em>/etc/hosts</em>. Nie które aplikacje mogą ustalać tak nazwę hosta odpytując lokalny dns adresem <code class="code-inline">127.0.1.1</code>, tak robi np. polecenie <code class="code-inline">sudo</code>, które jeśli nie otrzyma odpowiedzi będzie wyświetlać komunikat po każdorazowym wykonaniu. Teraz należy uruchomić nasz serwer ponownie, aby uaktywnić wszystkie zmiany.
+                    </p>
+                </li>
+                <li><strong>Aktualizacja systemu</strong>
+                    <p>
+                        Po wykonaniu powyższych konfiguracji, jak przed każdą instalacją jakiego kolwiek pakietu warto zaktualizować nasz system.
+                    </p>
+<pre class="code-block">
+$ sudo apt update
+$ sudo apt upgrade
+$ sudo apt dist-upgrade
+</pre>
+                </li>
+                <li><strong>Instalacja niezbędnego oprogramowania</strong>
+                    <p>
+                        Aby rozpocząć konfigurację Samba AD DC, musimy zainstalować poniższe oprogramowanie.
+                    </p>
+<pre class="code-block">
+$ sudo apt install samba krb5-user krb5-config winbind libpam-winbind libnss-winbind
+</pre>
+                    <p>
+                        Podczas instalacji pakietu <strong>Kerberos</strong> (systemu uwierzytelniania wykorzystywanego przez Sambę) zostaniemy poproszeni o podanie <em>sfery Kerberos</em> gdzie podajemy nazwę naszej domeny wielki literami, np. <em>TEST.LOCAL</em>, adresu serwera Kerberos w sferze - podajemy nazwę naszej domeny małymi literami oraz adres serwera administracyjnego - identycznie jak przy serwerze Kerberos w sferze. Jak możemy się domyślić, to za nazwą naszej domeny będzie kryć się nasz serwer, który obecnie konfigurujemy.
+                    </p>
+                </li>
+                <li><strong>Zatrzymanie usług</strong>
+                    <p>
+                        W procesach poinstalacyjnych pakietu <code class="code-inline">samba</code> plik usługi AD DC został wyłączony, uruchomione zostały usługi odpowiedzialne za <em>NetBIOS</em> oraz <em>SMB</em>, które w obecnej konfiguracji nie będą nam potrzebne. Zatrzymujemy również daemona <code class="code-inline">winbind</code>, ponieważ będzie on uruchamiany przez proces kontrolera domeny w razie potrzeby.
+                    </p>
+<pre class="code-block">
+$ sudo systemctl stop samba-ad-dc.service smbd.service nmbd.service winbind.service
+$ sudo systemctl disable smbd.service nmbd.service winbind.service
+</pre>
+                </li>
+                <li><strong>Zabezpieczenie pliku konfiguracyjnego Samby</strong>
+                    <p>
+                        Warto skopiować plik, który został dostarczony wraz z pakietem na tzw. w razie czego. Jeśli coś nie wyjdzie podczas promowania, to będziemy mogli ten plik przywrócić.
+                    </p>
+<pre class="code-block">
+$ sudo mv /etc/samba/smb.conf   /etc/samba/smb.conf.init
+</pre>
+                </li>
+                <li><strong>Promowanie serwera do roli kontrolera Samba AD DC</strong>
+                    <p>
+                        Przyszedł czas na tę chwilę, aby wreszczenie promować nasz serwer do roli kontrolera domeny, jednak nie ma co się za bardzo ekscytować. Ponieważ jedyna co mamy zrobić to wpisać tylko dwie informacje, o które zapyta skrypt tj. sferę, która jest identyczna jak w przypadku Kerberos - nazwa domeny z wielkich liter oraz hasło administratora AD, które musi składać się z min 8 znaków, jedna duża litera, jedna cyfra i nie może zawierać fragmentów loginu (administrator@TEST.LOCAL).
+                    </p>
+<pre class="code-block">
+$ sudo samba-tool domain provision --use-rfc2307 --interactive
+</pre>
+                </li>
+                <li><strong>Uruchamianie konfiguracji Kerberos</strong>
+                    <p>
+                        Przy promowaniu serwera skrypt wykonał za nas konfigurację Kerberos, naszym zadaniem jest tylko ją uruchomić linkując plik wygenerowany przez program do miejsca gdzie będzie mógł być odczytany przez daemona Kerberos.
+                    </p>
+<pre class="code-block">
+$ sudo mv /etc/krb5.conf /etc/krb5.conf.init
+$ sudo ln -s /var/lib/samba/private/krb5.conf /etc
+</pre>
+                </li>
+                <li><strong>Uruchomienie daemona Samba</strong>
+                    <p>
+                        Aby uruchomić uruchomić nasz kontroler domeny, musimy odblokować plik usługi.
+                    </p>
+<pre class="code-block">
+$ sudo systemctl unmask samba-ad-dc.service
+$ sudo systemctl start samba-ad-dc.service
+$ sudo systemctl status samba-ad-dc.service
+$ sudo systemctl enable samba-ad-dc.service
+</pre>
+                    <p>
+                        Po wykonaniu tych poleceń usługa powinna wystartować.
+                    </p>
+                </li>
+                <li><strong>Sprawdzenie portów używanych przez Sambę oraz poziomu funkcjonalności domeny.</strong>
+                    <p>
+                        Aby upewnić się że usług wystartowała, wydajmy poniższe polecenia.
+                    </p>
+<pre class="code-block">
+$ sudo ss -tulpn | egrep 'smbd|samba'
+$ sudo samba-tool domain level show
+</pre>
+                    <p>
+                        Pierwsze polecenie powinno zwrócić listę portów otwartych przez Sambę, natomiast drugie określić funkcjonalność domeny przyrównując ją do funkcjonalności usług domenowych systemu Windows, zobaczymy nawet wersje systemu Windows Server, z którym funkcjonalność usług katalogowych jest identyczna.
+                    </p>
+                </li>
+                <li><strong>Przekierowanie lokalnego DNS na kontroler.</strong>
+                    <p>
+                        Teraz kiedy mamy pewność że nasz kontroler domeny teoretycznie działa możemy przekierować lokalne zapytania do niego aby upewnić się że wszystkie informacje zostaną przekazane klientom kiedy ci będą chcieli się podłączyć. Dopisujemy adres pętli zwrotnej na początku listy serwerów DNS w konfiguracji interfejsu sieciegowego.
+                    </p>
+<pre class="code-block">
+allow-hotplug enp2s0
+iface enp2s0 inet static
+address 192.168.1.10
+netmask 255.255.255.0
+gateway 192.168.1.1
+dns-nameservers 127.0.0.1 192.168.1.1
+</pre>
+                    <p>
+                        Po zapisaniu zmian przejdziemy do przygotowania nowego pliku <em>/etc/resolv.conf</em>. Oczywiście możemy zmienić plik, który jest już obecny w systemie. Ja stworzyłem inny plik, następnie nadpisałem nim plik źródłowy.
+                    </p>
+<pre class="code-block">
+$ sudo su
+# echo "nameserver 127.0.0.1" > /etc/resolv.conf.bak
+# cat /etc/resolv.conf >> /etc/resolv.conf.bak
+# echo "search test.local" >> /etc/resolv.conf.bak
+# mv /etc/resolv.conf.bak /etc/resolv.conf
+</pre>
+                    <p>
+                        Na początku pliku znajduje się deklaracja serwera DNS z adresem pętli, następnie dopisałem obecną zawartość pliku <em>/etc/resolv.conf</em>, dodałem linię z sufksem domeny do przeszukiwania kiedy podamy nazwę krótką hosta, na koniec nadpisałem plik.
+                    </p>
+                </li>
+                <li><strong>Restart serwera.</strong>
+                    <p>
+                        Warto ponownie zrestartować serwer, aby wszystkie zmiany zostały uwzględnione.
+                    </p>
+<pre class="code-block">
+# reboot
+</pre>
+                </li>
+                <li><strong>Sprawdzenie poprawności konfiguracji kontrolera domeny</strong>
+                    <p>
+                        Poniżej przedstawiłem kilka kontrolnych poleceń, które powinny wykonać się bezbłędnie gdy kontroler AD jest prawidłowo skonfigurowany.
+                    </p>
+<pre class="code-block">
+$ ping -c3 &lt;nazwa_domeny&gt;
+$ ping -c3 &lt;nazwa_hosta&gt;.&lt;nazwa_domeny&gt;
+$ ping -c3 &lt;nazwa_hosta&gt;
+$ host -t A &lt;nazwa_domeny&gt;
+$ host -t A &lt;nazwa_hosta&gt;.&lt;nazwa_domeny&gt;
+$ host -t SRV _kerberos._udp.&lt;nazwa_domeny&gt;
+$ host -t SRV _ldap._tcp.&lt;nazwa_domeny&gt;
+$ kinit administrator@&lt;NAZWA_DOMENY_Z_WIELKICH&gt;
+$ klist
+</pre>
+                </li>
+            </ol>
+        </p>
+        <p>
+            Tymi poleceniami zakończymy część pierwszą, druga znajduje się pod tym linkiem: <a href="../../articles/linux/samba_AD_DC_-_NTP.html">Samba AD DC - NTP</a>
+        </p>
+        <p>
+            ~xf0r3m
+        </p>
+    </div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHT REVERSED;
+		</p>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="utf-8" />
+			<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+			<style>
+				.code-block {
+					display: block;
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				.code-inline {
+					background-color: silver;
+					font-family: monospace;
+					font-weight: bolder;
+				}
+				p { text-align: justify; }
+			</style>
+		</head>
+		<body style="font-family: monospace;" >
+<pre>
+88                             88
+88                             88
+88                             88
+88,dPPYba,  ,adPPYba,  ,adPPYb,88
+88P'    "8a I8[    "" a8"    `Y88
+88       d8  `"Y8ba,  8b       88
+88b,   ,a8" aa    ]8I "8a,   ,d88
+8Y"Ybbd8"'  `"YbbdP"'  `"8bbdP"Y8
+</pre>
+
+		<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+			&#9760;&nbsp;<a href="https://morketsmerke.net/">morketsmerke</a>&nbsp;&#9760;
+		</p>
+<div style="margin-left: auto; margin-right: auto; width: 80%;">
+<h1 style="text-align: center;">Instalacja OpenBSD</h1>
+<br />
+<p>
+Eksperymentując długo przed poznaniem <strong>OpenBSD</strong> z GNU/Linux-owymi dystrybucjami przeznaczonymi na routery, głównie z <em>IPCop</em>, poźniej <em>IPFire</em>, następnie przesiadłem się na <em>PFsense</em>, który był oparty o firewall <strong>PF</strong>. Utworzywszy w PFsense kilka reguł okazało się że żadna z nich nie działa. Porzuciłem routery. Przyszedł czas mojej pierwszej pracy. Po ogarnięciu bałaganu sieciowego, firmowy router zaczał się wieszać... Wziąłem go na warsztat, był dosć ciekawie skonfigurowany, serwerowa płyta Intela  z socketem 478. Był tak zakurzony, że po rozkręceniu było tyle syfu że można było pomyśleć że ktoś tam piachu nasypał, ale płyta cała. Wszystkie kondestatory sprawne, ram testowany memtestem - sprawny. Dobra, czyli zmieniamy system. Tylko jakoś niechciałem GNU/Linuxa i iptables. Przypomniałem sobie o  PF. Wpisując "PF packet filter" w wyszukiwarkę, znalazłem na oficjalnej stronie OpenBSD świetną dokumentację PF, to pomyślałem o OpenBSD jako docelowym systemie. Można spróbować. Mam system operacyjny wraz z pakietem firewalla. Dokumentacja na stronie projektu była pierwszym moim przeczytanym ze zrozumieniem anglojęzycznym, technicznym tekstem. Po zapoznaniu się z PF trzeby by zainstalować sobie OpenBSD i trochę po go testować.
+</p>
+<pre class="code-block">
+(I)nstall, (U)pgrade, (A)utoinstall, or (S)hell? I
+</pre>
+<p>
+Instalacje OpenBSD rozpoczynamy od wyboru trybu pracy w środowisku instalacyjnym. Wybieramy instalacje, czyli <code class="code-inline">I</code>.
+</p>
+<p>
+Następnym krokiem jest wybór layoutu klawiatury, możemy wybrać literę <code class="code-inline">l</code> lub znak <code class="code-inline">?</code> co wyświetli nam dostępne układy, oczywiście wybieramy <code class="code-inline">pl</code>.
+</p>
+<p>
+Kolejną rzeczą do ustawienia podczas instalacji jest nazwa hosta. Na przykład <em>foo</em>.
+</p>
+<pre class="code-block">
+System hostname (short form e.g. 'foo') foo
+</pre>
+<p>
+Następnie instalator wyświetli nam listę dostępnych w systemie interfejsów sieciowych. Zapyta czy chcemy je teraz konfigurować, jeśli nie, wystarczy wpisać <code class="code-inline">done</code>. Tą wartością możemy również przerwać konfiguracje. Powiedzmy że mamy trzy interfejsy w systemie, ustawiliśmy jeden i to wystarczy. Kiedy instalator zapyta o następny, wpisujemy <code class="code-inline">done</code>. Dla pierwszego interfejsu, konfiguracja wygląda w taki sposób że po podaniu (zaakceptowaniu) nazwy (podanej przez instalator), podajemy adres IP pod jakim będzie on dostępny w sieci lub jeśli ma pobrać adres z DHCP wpisujemy <code class="code-inline">dhcp</code>. Jeśli wpisaliśmy adres, to następne pytanie będzie o maskę podsieci. System zasugeruje nam maskę, jeśli pasuje ona do naszej konfiguracji sieci to możemy ją zatwierdzić, jeśli nie to podajemy swoją.
+</p>
+<pre class="code-block">
+IPv4 address for em0 ? (or 'dhcp' or 'none') [dhcp] 10.0.0.1
+Netmask for em0 [255.255.255.0] 255.0.0.0
+</pre>
+<p>
+Możemy ją zaakceptować lub wpisać swoją. Następną konfiguracją będzie IPv6, konfigurujemy ją wedle własnego uznania, ja przeważnie wybieram opcje domyślną czyli <code class="code-inline">none</code>.
+</p>
+<pre class="code-block">
+IPv6 address for em0 ? (or 'autoconf' or 'none) [none]
+</pre>
+<p>
+Po tej konfiguracji przechodzimy do kolejnego interfejsu, tu możemy przerwać konfiguracje sieci, jeśli to zrobimy, to od razu przejdziemy do pytań o:
+</p>
+<ol>
+<li>
+<p>
+Bramę domyślną (o ile wybraliśmy statyczną konfigurację interfejsu)
+</p>
+<pre class="code-block">
+Default IPv4 route ? (IPv4 address or none) [none]
+</pre>
+</li>
+<li>
+<p>
+Domenę (dla statycznej, jak i DHCP)
+</p>
+<pre class="code-block">
+DNS domain name (e.g. 'example.com') [my.domain] morketsmerke.net
+</pre>
+</li>
+<li>
+<p>
+Adresy serwerów DNS (o ile wybraliśmy statyczną konfigurację)
+</p>
+<pre class="code-block">
+DNS nameservers? (IP address list or none) 192.168.1.1
+</pre>
+</li>
+</ol>
+<p>
+Po konfiguracji sieci, czas na ustawienia hasła użytkownika <em>root</em>.
+</p>
+<pre class="code-block">
+Password for root account ? (will not echo)
+</pre>
+<p>
+Po tym zostaniemy zapytani o to czy domyślnie uruchamiać <em>sshd</em> oraz <em>xenodm</em> wraz ze startem systemu i czy zmienić domyślną konsole na port COM. Na pytania opowiadamy w zależności od potrzeb.
+</p>
+<p>
+Na serwerach na pierwsze pytanie odpowiadamy <code class="code-inline">yes</code>.
+</p>
+<pre class="code-block">
+Start sshd(8) by default? [yes]
+</pre>
+<p>
+Na powyższym przykładzie nie ma odpowiedzi, ponieważ akceptujemy odpowiedź zasugerowaną przez instalator. Na drugie odpowiadamy <code class="code-inline">no</code> (Jeśli instalujemy OpenBSD z zamiarem uruchamiania środowiska graficznego to możemy opowiedzieć <code class="code-inline">yes</code>.)
+</p>
+<pre class="code-block">
+Do you expect to run the X Window System? [yes] no
+</pre>
+<p>
+trzecie... Tu sprawa się komplikuje. <strong>Przepuszczanie konsoli, przez port COM to</strong> generalnie fajna sprawa jeśli mamy ograniczone miejsce, podpinamy kabelek USB do laptopa na następnie podpinamy kabel do ser... okazuje się że kable usb - rs232 (czy COM) mają złącze rs232 męskie i w serwerze prawdopodobnie złacze też jest męskie, <strong>potrzebujemy kabla rs232 żeńsko-żeńskiego</strong>. Jeśli ktoś posiada wymagane okablowanie oraz odpowiednie umiejętności może wybrać tutaj <code class="code-inline">yes</code>, jednak do powszechnego użytku przekierowanie konsoli, nie będzie nam potrzebne (<code class="code-inline">no</code>).
+</p>
+<p>
+Po odpowiedzi na te trzy pytania, zostaniemy poproszeni o nazwę pierwszego użytkownika systemu. Jego będziemy wykorzystywać jako użytkownika do logowania się przez SSH do systemu.
+</p>
+<pre class="code-block">
+Setup a user? (enter a lower-case loginname, or 'no') [no] admin
+</pre>
+<p>
+Po podaniu nazwy użytkownika, zostaniemy zapytani o jego pełną nazwę czyli imię i nazwisko. Pozostawiamy tę wartość domyślną, która jest równa nazwie uzytkownika.
+</p>
+<pre class="code-block">
+Full name for user admin? [admin]
+</pre>
+<p>
+Następnie instalator zapyta nas o hasło dla nowopowstałego użytkownika.
+</p>
+<pre class="code-block">
+Password for user admin? (will not echo)
+</pre>
+<p>
+Teraz zostaniemy powiadomieni o tym że użytkownik <em>root</em>, jest celem ataków odgadywania hasła, oraz że używanie w jego przypadku kluczy publicznych do logowania przez SSH jest bezpieczniejsze, po tej informacji zostajemy zapytani o to czy zezwolić na logowanie przez SSH użytkownika <em>root</em>? Do wyboru mamy <code class="code-inline">yes</code>, <code class="code-inline">no</code> lub <code class="code-inline">prohibit-password</code>. Wybieramy wedle własnego uznania, chociaż warto wspomnieć że stworzony przed chwilą użytkownik będzie znajdować się w specjalnej grupie, która ma możliwość wykonania polecenia <code class="code-inline">su root</code>.
+</p>
+<pre class="code-block">
+Warning: root is targeted by password guessing attacks, pubkeys are safer.
+Allow root ssh login? (yes, no, prohibit-password) [no]
+</pre>
+<p>
+Pora na ustawienia właściwej strefy czasowej, znakiem zapytania <code class="code-inline">?</code> możemy wylistować sobie dostępne strefy. Może być wielce prawdopodobne że zostanie ona sama prawidłowo zasugerowana bazując na wybranym układzie klawiatury.
+</p>
+<pre class="code-block">
+What timezone are you in? ('?' for list) [Europe/Warsaw]
+</pre>
+<p>
+Teraz możemy przejść do partycjonowania. Zostanie nam przedstawiona lista dostępnych w systemie dysków.
+</p>
+<pre class="code-block">
+Available disks are: wd0
+</pre>
+<p>
+Zostaniemy poproszeni o wskazanie głównego systemu plików, system zasugeruje na dysk pierwszy na liście.
+</p>
+<pre class="code-block">
+Which disk is the root disk? ('?' for details) [wd0]
+</pre>
+<p>
+Oczywiście możemy to zmienić. W tym momencie musimy wybrać pomiędzy całym wykorzystaniem dysku z tablicą MBR a tablicą GPT lub ręcznym wydzieleniem miejsca dla BSD, w zależności od tego czy nasz dysk
+przekracza 2TB wybieramy <code class="code-inline">G</code>PT a jeśli nie to <code class="code-inline">whole</code> co oznacza MBR.
+</p>
+<pre class="code-block">
+Use (W)hole disk MBR, whole disk (G)PT or (E)dit? [whole]
+</pre>
+<p>
+Po wybraniu trybu zostanie nam wyświetlona automatyczna alokacja miejsca na dysku (partycji) (dla powszechnego użytku jest wystarczająca). Możemy ją edytować lub utworzyć swoją własną. Utworzoną alokację potwierdzamy literką <code class="code-inline">a</code>. Teraz następuję rzeczywiste ustawianie partycji.
+</p>
+<pre class="code-block">
+Use (A)uto layout, (E)dit auto layout, or create (C)ustom layout? [a]
+</pre>
+<p>
+Po tej czynności nadchodzi czas na instalacje systemu, na początku wybieramy źródło plików do instalacji, systemy BSD są systemami które mogą wystartować z instalacją z dyskietki 3,5" a następnie pobrać pakiety systemowe z Internetu. My wybieramy <code class="code-inline">cd0</code> lub <code class="code-inline">disk</code> Instalator zasugeruje nam nośnik z plikami, z którego został uruchomiony lub <code class="code-inline">http</code>.
+</p>
+<pre class="code-block">
+Location of sets? (cd0 disk http or 'done') [cd0]
+</pre>
+<p>
+W przypadku uruchomienia z dysku USB wybramy opcję <code class="code-inline">disk</code> będziemy musieli odpowiedzieć na pytanie czy dysk został zamontowany. Zasugerowana odpowiedź będzie <code class="code-inline">yes</code>, ale my wpisujemy <code class="code-inline">no</code>.
+</p>
+<pre class="code-block">
+Is the disk partition already mounted? [yes] no
+</pre>
+<p>
+Następnie zostanie nam wyświetlona lista dysków (jak do wyboru dysku systemowego) wraz z zapytaniem, który z dysków zawiera pliki instalacjyne.
+</p>
+<pre class="code-block">
+Available disk are: wd0 wd1.
+Which disk contains the install media? (or 'done') [wd0]
+</pre>
+<p>
+W moim przypadku z racji tego iż uruchamiam to na QEMU obraz dysku instalacjnego jest pierwszym dyskiem na mojej maszynie. Po wybraniu dysku zostanie wyświetlona nam list partycji
+</p>
+<pre class="code-block">
+ a:	1358848		1024	4.2BSD	2048 16384 16142
+ i:	    960		  64	 MSDOS
+Available wd0 partitions are: a i.
+Which wd0 partition has the install sets? (or 'done') [a]
+</pre>
+<p>
+Partycja z plikami instalcyjnymi jest sformatowana jako <strong>4.2BSD</strong>, i zgodnie z sugestią instalatora wybierzemy partycję oznaczoną literą 'a'. Teraz partycja zostanie przeszukana pod kątem plików instalacyjnych, o znalezieniu plików instalcyjnych zostaniemy poinformowani w sugestii instalatora na odpowiedź poniższego pytania.
+</p>
+<pre class="code-block">
+Pathname to the sets? (or 'done') [6.5/amd64]
+</pre>
+<p>
+Akceptujemy znalezioną ścieżke. Jeśli instalujemy system z płyty instalator od razu zacznie szukać ścieżki, co spowoduje przeskok do powyższego pytania.
+</p>
+<p>
+Teraz możemy wybrać jakie pakiety chcemy zainstalować. Warto wszystkie. Dlaczego? Otóż, nie które z programów uruchamianych w konsoli mogą używać czcionek, które dostępne są w pakietach ze środowiskiem graficznym. Nikt nam nie każe uruchamiać środowiska ze startem systemu jak i ręcznie, ale te pakiety warto posiadać. Czasami uruchomienie środowiska może usprawnić pracę.
+</p>
+<img src="https://files.morketsmerke.net/resources/instalacja_openbsd_0.png" style="width: 100%;" />
+<p>
+Po zatwierdzeniu zbioru pakietów, zostaniemy poinformowani o tym że na ścieżce nie znaleziono pliku z podpisem oryginalności plików instalacyjnych (dla paranoików). Na tym etapie możemy to zignorować i odpowiedzieć
+czy chcemy kontynuować bez weryfikacji <code class="code-inline">yes</code>.
+</p>
+<pre class="code-block">
+Directory does not contain SHA256.sig. Continue without verification? [no] yes
+</pre>
+<p>
+Po zakończonej instalacji, instalator znów zapyta nas o położenie plików instalacyjnych, teraz będzie sugerować <code class="code-inline">done</code>, warto posłuchać tej sugestii.
+</p>
+<pre class="code-block">
+Location of sets? (cd0 disk http or 'done') [done]
+</pre>
+<p>
+Ostatnimi komunikatami są miedzy innymi pytanie o ustawienie poprawnej daty oraz czasu.
+</p>
+<pre class="code-block">
+Time appears wrong. Set to 'Fri Apr 24 22:04:05 CEST 2020'? [yes]
+</pre>
+<p>
+Na sam koniec otrzymamy gratulacje odnośnie poprawnie zainstalowanego systemu oraz pytanie czy chcemy system zatrzymać (tak jak kiedyś na startych Windowsach, po zatrzymaniu systemu należy nacisnąć lub przytrzymać wyłącznik komputera tak samo jest z OpenBSD, kiedy wybierzemy polecenie <code class="code-inline">halt</code>), przejść do powłoki albo z resetować komputer wybieramy sugerowany restart.
+<code class="code-inline">reboot</code>.
+</p>
+<code class="code-block">
+Exit to (S)hell, (H)alt or (R)eboot? [reboot]
+</code>
+<p>
+Usuwamy nośnik i możemy cieszyć się nowym system OpenBSD.
+</p>
+<p>
+Odnośnie instalacji OpenBSD, to nie zawsze wszystko wygląda tak różowo. Instalacja na starych firmowych systemach takich jak Dell Optiplex GX620 przynosi rezultaty. Ale np. instalacja na komputerze PC, ktory był budowany przeze mnie od podstaw już nie. Na płycie Gigabyte z podstawką 1156, to włożnie pendrive-a do gniazda USB potrafi zawiesić cały komputer już na procedurze POST. Przy np. płycie MSI z podstawką 1150 system może się zainstalować ale po zainstalowaniu komputer zawiesza się na procedurze POST, odpięcie dysku SSD powodowało że komputer uruchamiał się poprawnie, jednak jeśli chciałem coś zrobić z tym komputerem musiałem wymontować dysk oraz podłączyć go na USB do innego systemu wyzerować początek i podłączyć z powrotem, bardzo irytujące. Nie wiem czy to jest wina tylko tej wersji bo próbowałem z wersją 6.8 na dzień dziejszy (23.02.2021) najnowszą. Jednak na laptopach nie ma takich problemów, dlatego laptop wydaje się najlepszym rozwiązaniem. Jednak te słowa pisze na Laptopie z OpenBSD wykorzystującym środowisko graficzne Fluxbox, chciałem mieć tu XFCE jednak podczas działania XFCE grafika (ATI Radeon) strasznie "glitch'owała", to nie wina sprzetu (bo xenodm, czy wymieniony wcześniej Fluxbox działają wyśmienicie) ale wydaje mi się że jest to wina wadliwego sterownika a te środowiska wykorzystują grafikę w znikomy sposób. Wnioskując dla OpenBSD nalepszy jest poleasingowy laptop z procesorem drugiej lub trzeciej genereacji oraz grafiką Intel HD Graphics.
+</p>
+<p>
+	~xf0r3m
+</p>
+</div>
+<p style="margin: 15px; padding: 0; outline: 0;">
+	2021; COPYLEFT; ALL RIGHT REVERSED;
+</p>
+		</body>
+	</html>

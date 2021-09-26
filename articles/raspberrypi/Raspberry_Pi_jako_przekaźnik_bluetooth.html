@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+		<pre>
+		<span style="color: green;">     .~~.   .~~.
+		    '. \ ' ' / .'</span>
+		<span style="color: red;">     .~ .~~~..~.</span>                       _                          _
+		<span style="color: red;">    : .~.'~'.~. :</span>      ___ ___ ___ ___| |_ ___ ___ ___ _ _    ___|_|
+		<span style="color: red;">   ~ (   ) (   ) ~</span>    |  _| .'|_ -| . | . | -_|  _|  _| | |  | . | |
+		<span style="color: red;">  ( : '~'.~.'~' : )</span>   |_| |__,|___|  _|___|___|_| |_| |_  |  |  _|_|
+		<span style="color: red;">   ~ .~ (   ) ~. ~</span>                |_|                 |___|  |_|
+		<span style="color: red">    (  : '~' :  )</span>
+		<span style="color: red;">     '~ .~~~. ~'
+			 '~'</span>
+		</pre>
+
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">Raspberry Pi jako przekaźnik bluetooth</h1>
+      <p>
+        Kiedyś potrzebowałem przekaźnika bluetooth, takiego który mogłem
+        podłączyć do wieży czy głośników od komputera i puszczać muzykę
+        bezprzewodowo z telefonu. Nie chciałem używać czegoś takiego jak
+        "Balena Sound", towrzyć jakieś konta, logować się. To nie w moim
+        stylu, przeglądając co wyniki wyszukiwania wujka Google trafiłem na
+        jeden lub dwa poradniki, które okazały sie klapą. Jednym z wyników
+        wyszukiwania były wątek na forum i on okazał się strzałem w 10
+        (powiedzmy, bo jakość dzwięku może srogo rozczarować). Nie owiajając w
+        bawełnę konfiguracje Raspberry Pi zaczniemy od zainstalowania systemu
+        na karcie i umożliwienia zalogowania się przez SSH.
+      </p>
+      <p>
+        Po zalogowaniu się do systemu, każdą konfigurację rozpoczynamy od
+        aktualizacji.
+      </p>
+<pre class="code-block">
+$ sudo apt update
+$ sduo apt upgrade
+</pre>
+      <p>
+        Następnie instalujemy niezbędne oprogramowanie.
+      </p>
+<pre class="code-block">
+$ sudo apt install pulseaudio pulseaudio-module-bluetooth
+</pre>
+      <p>
+        Teraz musimy dodać naszego użytkownika do grupy <em>bluetooth</em>.
+      </p>
+<pre class="code-block">
+$ sudo usermod -aG bluetooth pi
+</pre>
+      <p>
+        Aby zmiany dotyczące grupy lub użytkownika zaczęły działać należy się
+        wylogować i zalogować ponownie.
+      </p>
+      <p>
+        Kolejną czynnością jest przestawienie RPI aby było widziane jako
+        "Odpływ wysokiej jakość (A2DP)". W pliku 
+        <em>/etc/bluetooth/main.conf</em> usuwamy znak komentarza z opcji
+        <code class="code-inline">Class</code> i nadajemy jej wartość
+        <em>0x41C</em> oraz usuwamy znak komentarza z opcji
+        <code class="code-inline">DiscoverableTimeout</code>
+      </p>
+<pre class="code-block">
+...
+Class = 0x41C
+...
+DiscoverableTimeout = 0
+...
+</pre>
+      <p>
+        Po zapisaniu zmian w pliku, restartujemy usługę.
+      </p>
+<pre class="code-block">
+$ sudo systemctl restart bluetooth
+</pre>
+      <p>
+        Następnie musimy uruchomić bluetooth na RPI, po wydaniu polecenia
+        <code class="code-inline">bluetoothctl</code>, wydajemy kolejno
+        przedstawione poniżej polecenia.
+      </p>
+      <p>
+        Za nim to jednak zrobimy może być tak, że nasz kontroler bluetooth
+        będzie wyłączony za pomocą <em>rfkill</em>. W tym przypadku musimy
+        wydać polecenie <code class="code-inline">raspi-config</code> następnie
+        wybrać:
+      </p>
+<pre class="code-block">
+Localisation Options -&gt; WLAN Country -&gt; [kraj, którym znajduje się urządzenie] -&gt; Finish
+#Wyrażamy zgodę na restart RPI.
+</pre>
+<pre class="code-block">
+$ bluetoothctl
+Agent registered
+[bluetooth]# power on
+Changing power on succeeded
+[bluetooth]# discoverable on
+Changing discoverable on succeeded
+[CHG] Controler XX:XX:XX:XX:XX:XX Discoverable: yes
+[bluetooth]# pairable on
+Changing pairable on succeeded
+[bluetooth]# agent on
+Agent is already registered
+[bluetooth]# default-agent
+Default agent request successful
+[bluetooth]# quit
+</pre>
+      <p>
+        Uruchamiamy <em>pulseaudio</em>
+      </p>
+<pre class="code-block">
+$ pulseaudio --start
+</pre>
+      <p>
+        Następnie sprawdzamy czy usługa bluetooth zarejestrowała odpływ A2DP.
+      </p>
+<pre class="code-block">
+$ sudo systemctl status bluetooth
+</pre>
+      <p>
+        Jeśli zauważyliśmy jakieś linie <em>Endpoint registered</em>
+        zawierające napis "A2DP" oznacza to, że odpływ został zarejestrowany.
+        Teraz dokonamy testowego połączenia. Warto zaznaczyć, że abyśmy 
+        mogli się połączyć z RPI to będziemy musieli "zaufać" naszemu 
+        urządzeniu. Na malinie uruchamiamy polecenie
+        <code class="code-inline">bluetoothctl</code>, a na telefonie
+        wyszukujemy urządzeń bluetooth, nazwa urządzenia będzie identyczna jak
+        nazwa hosta RPI. Próbuje my się z nim połączyć. 
+      </p>
+<pre class="code-block">
+$ bluetoothctl
+</pre>
+      <p>
+        Przy próbie podłączenia zostanie na wyświetlona masa komunikatów
+        związanych z naszym telefonem, w tych komunikatch po słowie
+        <em>Device</em>, znajdować się będzie adres MAC modułu bluetooth w
+        telefonie. Nie należy zrazić się komunikatem "Błąd połączenia". Teraz
+        na RPI wpisujemy polecenie bluetooth 
+        <code class="code-inline">trust</code> oraz
+        MAC naszego bluetooth.
+      </p>
+<pre class="code-block">
+[bluetooth]# trust AA:BB:CC:DD:EE:FF
+</pre>
+      <p>
+        Powinniśmy się prawidłowo połączyć.
+        Dzwięk również już pownien działać. Dla testu warto włączyć jakąś
+        muzykę lub film na YT.
+      </p>
+      <p>
+        Mogło by się okazać, że już gotowe. Jednak to nie wszystko, teraz
+        póki co uruchamialiśmy <em>pulseaudio</em> z ręki, jednak nie bedziemy 
+        się
+        za każdym razem po włączeniu RPI logować i włączać usługę. Tu jest
+        również pewien haczyk, otóż żeby <em>pulseaudio</em> mogło działać 
+        niezbędny
+        jest zalogowany użytkownik, z poziomu którego <em>systemd</em> będzie
+        ten program uruchamiać więc poza autostartem pulseaudio do ustawienia
+        zostało jeszcze autologowanie na użytkownika <em>pi</em>.
+      <p>
+      <p>
+        Uruchomie <em>pulseaudio</em> wraz z systemem.
+      </p>
+<pre class="code-block">
+$ systemctl --user enable pulseaudio.service
+</pre>
+      <p>
+        Włączenie autologowania się na użytkownika <em>pi</em>.
+      </p>
+<pre class="code-block">
+$ sudo raspi-config
+System Options -&gt; Boot / Auto Login -&gt; Console Autologin -&gt; Ok
+</pre>
+      <p>
+        Po ustawieniu autologowania, być może będzie trzeba zrestartować
+        urządzenie.
+      </p>
+      <p>
+        Teraz formalnie to wszystko. Jednak pozostała jeszcze jedna kwestia,
+        podłączanie się urządzeń do RPI. Można to zrobić na 3 sposoby.
+      </p>
+      <p>
+         Pierwszy najprostszy, pozostawienie tego tak jak jest. Każdeme nowemu
+         urządzeniu będzie trzeba "zaufać", tak jak podczas testu.
+      </p>
+      <p>
+          Drugi pozwalający na połączenie z każdemu urządzeniu bez żadnych
+          mechanizmów kontroli.
+      </p>
+      <p>
+          Trzeci wprowadzający klasyczny "PIN". Drugi i trzeci sposób opisze
+          poniżej, każdy zdecyduje co jemu najbardziej odpowiada. 
+      </p>
+      <p>
+        W tym jak i w trzecim sposobie musimy zainstalować dodatkowy pakiet.
+        Sposoby różni tylko konfiguracja usługi <em>bt-agent</em> oraz
+        jeden dodatkowy plik w trzecim. Usługa ta
+        wchodzi w skład pakietu <em>bluez-tools</em>.
+      </p>
+<pre class="code-block">
+$ sudo apt install bluez-tools
+</pre>
+      <p><u>Sposób 2: Pozwala na podłaczenie się każdego urządzenia</u></p>
+      <p>
+        Po zainstalowaniu pakietu, musimy utworzyc plik usługi
+        <em>bt-agent.service</em> w katalogu <em>/etc/systemd/system</em>.
+      </p>
+<pre class="code-block">
+[Unit]
+Description=Bluetooth Auth Agent
+After=bluetooth.service
+PartOf=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bt-agent -c NoInputNoOutput
+
+[Install]
+WantedBy=bluetooth.target
+</pre>
+      <p>
+        Zapisujemy plik, włączamy go aby uruchamiał się zgodnie zapisaną w nim
+        sekwencją. I możemy startować usługę. Teraz każde nowe urządzenie
+        podłączy się do RPI bez żadnych przeszkód.
+      </p>
+<pre class="code-block">
+$ sudo systemctl enable bt-agent.service
+$ sudo systemctl start bt-agent.service
+$ sudo systemctl status bt-agent.service
+</pre>
+      <p><u>Sposób 3: Pozwala na podłączenie się tylko dla znających PIN</u></p>
+      <p>
+        Ten sposób rózni się konfiguracją usługi oraz
+        dodatkowym plikiem, w którym zdefiniowany jest PIN. Utworzy my teraz plik
+        z PIN-em, w pliku <em>pin.conf</em> w katalogu <em>/etc/bluetooth/</em>
+        zapisujemy poniższą linię.
+      </p>
+<pre class="code-block">
+*   12345
+</pre>
+      <p>
+        Oczywiście PIN, możemy podać własny. Nadajemy odpowienie uprawnienia
+        dla pliku.
+      </p>
+<pre class="code-block">
+$ sudo chmod 600 /etc/bluetooth/pin.conf
+</pre>
+      <p>
+        Teraz dokonujemy zmian w pliku usługi, tak aby <em>bt-agent</em>,
+        wykorzystywał PIN do uwierzytelnienia połączeń z RPI. 
+      </p>
+<pre class="code-block">
+[Unit]
+Description=Bluetooth Auth Agent
+After=bluetooth.service
+PartOf=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bt-agent -c NoInputNoOutput -p /etc/bluetooth/pin.conf
+ExecStartPost=/bin/sleep 1
+ExecStartPost=/bin/hciconfig hci0 sspmode 0
+
+[Install]
+WantedBy=bluetooth.target
+</pre>
+      <p>
+        Po zatwierdzeniu zmian, włączamy i uruchamiamy usługę.
+      </p>
+<pre class="code-block">
+$ sudo systemctl enable bt-agent.service
+$ sudo systemctl start bt-agent.service
+$ sudo systemctl status bt-agent.service
+</pre>
+      <p>
+        Nasz przekaźnik jest już gotowy. Możemy podłaczyć do niego zarówno
+        głośnik jak i zestaw kina domowego, wszystko czego połączenie opiera
+        się na złączu Jack 3,5mm.
+      </p>
+      <p>
+        ~xf0r3m
+      </p>
+	</div>
+		<p style="margin: 15px; padding: 0; outline: 0;">
+			2021; COPYLEFT; ALL RIGHTS REVERSED;
+		</p>
+
+	</body>
+	</html>

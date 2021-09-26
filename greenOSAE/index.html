@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+                               ____  _____ ___    ______
+   ____ _________  ___  ____  / __ \/ ___//   |  / ____/
+  / __ `/ ___/ _ \/ _ \/ __ \/ / / /\__ \/ /| | / __/   
+ / /_/ / /  /  __/  __/ / / / /_/ /___/ / ___ |/ /___   
+ \__, /_/   \___/\___/_/ /_/\____//____/_/  |_/_____/   
+/____/                                                  
+                                    
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+    <h1 style="text-align: center;">greenOS Arch Edition</h1>
+    <p>
+      greenOS Arch Edition jest to skonfigurowany w odpowieni sposób Arch Linux.
+      Swoim wyglądem ma przypominać greenOS, jednak nie jest to samodzielna
+      dystrybucja. Poniżej znajduje się zrzut ekranu, przestawiający pulpit.
+    </p>
+    <p>
+      <a href="https://files.morketsmerke.net/greenOS/greenOSAE_desktop_screenshot.png">
+        <figure>
+          <img src="https://files.morketsmerke.net/greenOS/greenOSAE_desktop_screenshot_thumbnail.png" />
+          <figcaption>Kilknij obrazek, aby otworzyć w pełnym rozmiarze</figcaption>
+        </figure>
+      </a>
+    </p>
+    <p>
+      W tej konfiguracji użyto manadżera wyświetlania <em>LightDM</em> oraz
+      środowiska graficznego <em>XFCE4</em>. Zainstalowano takie programy jak
+      Firefox, Thunderbird, VLC, QMMP, Redshift, Snap, ncspot oraz KVM.
+      Poniżej znajduje się lista kroków, którą należy wykonać, aby
+      skonfigurować w ten sposób Arch Linux. Podanej listy można użyć do
+      utworzenia skryptu, lub wprowadzać polecenia ręcznie dokonują niezbędnych
+      dla siebie modyfikacji. Tak przygotowany system, można spakować do
+      archiwum i instalować na róznych maszynach zaoszczędzając wten sposób
+      czas na konfigurowaniu identycznych środowisk jak i reinstalacji
+      stanowiska z tym systemem w tej konfiguracji.
+    </p>
+    <p>
+     <ol>
+      <li>
+        Pobranie najnowszego obrazu Arch Linux-a i uruchomienie z niego maszyny
+        wirtualne bądź fizycznego komputera. Obraz płyty możemy pobrać z linku poniżej
+        <a href="http://ftp.icm.edu.pl/pub/linux/distributions/archlinux/iso">
+          http://ftp.icm.edu.pl/pub/linux/distributions/archlinux/iso
+        </a>.
+      </li>
+      <li>
+        Po uruchomieniu się systemu, uruchamiamy program <em>tmux</em>,
+        dzielimy konsole na dwa poziome okna (w języku polskim brakuje dobrego
+        tłumaczenia słowa angielskiego "pane"). Na jednym zostawiamy prompt
+        (znak zachęty) na drugim uruchamiamy polecenie 
+        <em>installation_guide</em>. Instalujemy system zgodnie z wytycznymi
+        poradnika. Jest jednak kilka czynności jakie należy wykonać w trakcie
+        instalacji.
+        <ul>
+        <li>Pakiety do zainstalowania (przy pobieraniu obrazu): base, linux,
+              linux-firmware,
+              networkmanager, grub, vim, man-db, man-pages, texinfo.</li>
+        <li>Po zamianie głównego katalogu, na ten obrazu należy uruchomić 
+              Network Manager:
+<pre class="code-block">
+[archiso /]# systemctl enable NetworkManager.service
+</pre>
+        </li>
+        <li>
+          W pliku <em>/etc/vconsole.conf</em> poza zmienną <em>LANG</em>
+          zapisujemy zmienną <em>FONT</em> ustawioną na <em>lat2-16</em> oraz
+          zmienną <em>FONTMAP</em> ustawioną na <em>8859-2</em>
+        </li>
+        <li>
+          Tworzymy użytkownika, instalujemy <em>sudo</em>, które ustawiamy w
+          taki sposób aby nie trzeba było wpisywać hasła (ten podpunkt można
+          potraktować wedle własnych preferencji).
+        </li>
+       </ul>
+      </li>
+      <li>
+        Instalujemy środowisko graficzne:
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo pacman -Syu xfce4 xfce4-goodies xorg lightdm lightdm-gtk-greeter 
+</pre>
+      </li>
+      <li>
+        Zmieniamy kilka ustawień <em>lightdm</em>, po to aby wczytało
+        zainstalowany wcześniej temat, oraz reagowało odpowienio na różnych
+        kartach graficznych.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo vim /etc/lightdm/lightdm.conf
+#w sekcji [LightDM] usuwamy znak komentarz sprzed poniższej opcji i nadajemy
+#jej poniższą wartość.
+logind-check-graphical=true
+#w sekcji [Seat:*] tak jak powyżej
+greeter-session=lightdm-gtk-greeter
+</pre>
+      </li>
+      <li>
+        Tapety. Pobranie tapet greenOS. Ten punkt można sobie odpuścić jeśli,
+        ktoś szuka tylko konfiguracji XFCE dla Arch.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo pacman -Syu wget
+[user@greenOSAE ~]$ wget http://files.morketsmerke.net/greenOS/greenOS_wallpapper.png
+[user@greenOSAE ~]$ wget http://files.morketsmerke.net/greenOS/greenOS_lightdm_wallpaper.png
+[user@greenOSAE ~]$ sudo mv greenos_lightdm_wallpaper.png /usr/share/pixmaps
+[user@greenOSAE ~]$ sudo mv greenos_wallpaper /user/share/backgrounds/xfce
+</pre>
+      </li>
+      <li>
+        Włączenie LightDM. Cały trick tej konfiguracji polega na tym, że 
+        użyjemy mendżera wyświetlania, przez co użytkownik koncowy
+        takiego systemu nie zorientuje się nawet, że środowisko graficzne na
+        tym sprzęcie było instalowane z ręki. Ponieważ po załadowaniu systemu
+        wystartuje LightDM, po zalogowaniu użytkownika wystaruje on pierwsze
+        dostępne środowisko graficzne, o ile użytkownik nie zdefiniował 
+        inaczej, za pomocą pliku <em>.xinitrc</em>.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo systemctl enable lightdm
+</pre>
+      </li>
+      <li>
+        Restart komputera. Po załączeniu <em>LightDM</em>, możemy zrestartować
+        komputer, aby sprawdzić czy nasze środowisko graficzne zostanie
+        poprawnie uruchomione. Jeśli nasze środowisko nie wystatowało, ekranie
+        pojawiąją się różne dziwne rzeczy związane z grafiką. Może to
+        oznaczać, że brakuje odpowiedniego sterownika, niestety źle działający
+        <em>LightDM</em>, psuje również działanie pozostałych konsol. Tak więc
+        aby go wyłączyć musimy uruchomić system z <em>LiveCD Arch Linux</em>
+        podmontować główny system plików, następnie zmienić główny katalog
+        za pomocą polecenia <code class="code-inline">arch-chroot</code>,
+        następnie wyłączyć <em>LightDM</em> poniższym poleceniem:
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo systemctl disable lightdm
+</pre>
+        Następnie uruchomić ręcznie XFCE, jednak będzie to wymagać stworzenia
+        pliku <em>.xinitrc</em>. Po zalogowaniu się na swoje konto.
+<pre class="code-block">
+[user@greenOSAE ~]$ vim .xinitrc
+exec startxfce4
+#zapisujemy zamiany.
+[user@greenOSAE ~]$ startx
+</pre>
+        Po wydaniu ostatniego polecenia środowisko powinno wystartować.
+        W późniejszych podpunktach będzie podane jak zainstalować sterownik
+        Nvidii (jest nieco powszechniejsza w użyciu niż Radeon choć mniej
+        rekomendowana).
+      </li>
+      <li>
+        Konfiguracja XFCE. Po zalogowaniu się usuwamy dolny panel, a górny
+        przenosimy na dół. Następnie zmieniamy ilość przestrzeniu roboczych
+        ilość pozostawiamy wedle uznania. Usuwamy to podstawowe menu i
+        zastępujemy je <em>Menu Whisker</em>. Konfigurując menu, w zakładce
+        <em>Przycisk panelu</em> pole <em>Wyświetlanie</em> ustawiamy na
+        <em>Ikona i etykieta</em> Ustawiamy następnie swoją ikonę i etykietę, jeśli jednak ma być to greenOS, to należy pobrać
+        z <a href="https://files.morketsmerke.net/greenOS/leaf.png">
+          https://files.morketsmerke.net/greenOS/leaf.png</a> ikonę oraz
+        ustawić etykietę na <em>greenOS</em>. Z panelu usuwamy wskaźnik baterii
+        jeśli będziemy używać systemu na laptopie, to możemy go zostawić.
+        Modyfikujemy przyciski sesji, z polu <em>Wygląd</em> ustawiamy
+        <em>Przyciski sesji</em>, z przycisków odznaczamy wszystkie, poza
+        <em>Zablokowaniem ekranu</em> znajdującym się pod nim 
+        <em>sepraratorem</em> oraz <em>Wyłączeniem</em>. Za pomocą apletu
+        <em>Wygląd</em> wybranym z menu (kategoria <em>Ustawienia</em>), 
+        zmieniamy motyw systemu na <em>Adwaita (ciemny)</em>. Na koniec 
+        zmieniamy tapetę, klikając PPM na pulpit i wybierając
+        <em>Ustawienia pulpitu</em> następnie jedną z tapet.<br />
+        <u>Problem z tapetą użytkownika:</u><br />
+        Jeśli zamierzamy użyć tego systemu jako archiwum, to warto mieć na
+        uwadze, że XFCE mimo ustawionej tapety, która za każdym wyłączeniem/
+        włączeniem komputera jest taka sam to po ponowym zainstalowaniu systemu
+        z archiwum tapeta jest inna mimo tego samego konta. Przyczyn problemu
+        nieznam, chociaż mam jego rozwiązanie XFCE (jeden z jego programów)
+        cały czas ustawia tę samą tapetę, z racji tego należy ją przenieść, ale
+        tak żeby nie zginęła. Na przykład do <em>/usr/share/pixmaps</em>.
+<pre class="code-block">
+[user@greenOSAE ~]$ mv /usr/share/backgrounds/xfce/xfce-verticals.png /usr/share/pixmaps
+</pre>
+        Następnie tworzymy dowiązanie symboliczne do naszej tapety o nazwie
+        wskazującej na tą niedawno przeniesioną.
+<pre class="code-block">
+[user@greenOSAE ~]$ ln -s /usr/share/backgrounds/xfce/greenos_wallpaper.png /usr/share/backgrounds/xfce/xfce-verticals.png
+</pre>
+        Teraz tapeta powinna być cały czas taka sama. 
+      </li>
+      <li>
+        Polskie znaki w terminalu. Jeśli uruchomimy terminal to możemy
+        zauważyć, że nie można wpisać żadnego z polskich znaków. Należy to
+        naprawić, wymaga to jednego polecenia i zrestartowania komputera.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo localctl set-x11-keymap pl
+</pre>
+        Restartujemy komputer, lub zamykamy i uruchamiamy ponownie serwer
+        <em>X window</em>.
+      </li>
+      <li>
+        Ustawienia terminala. W preferencjach emulatora terminala w zakładce
+        <em>Kolory</em> wybieramy profil <em>Zielone na czarnym</em> oraz
+        kolor aktywnych kart na jaskrawożółty, w zakładce <em>Wygląc</em>
+        zmieniamy czcionkę na <em>Source Code Pro Regular</em> oraz ustawiamy
+        przezroczyste tło na poziomie 0.85.
+      </li>
+      <li>
+        Zmiana kolorystki okna logowania, tapety okna logowania oraz domyślnego
+        obrazu użytkowników. W tym celu uruchamiamy program
+        <em>lightdm-gtk-greeter-settings</em> i ustawiamy motyw na
+        <em>Adwaita-dark</em> i ikony na <em>Adwaita</em>. Następnie ustawiamy
+        tapetę. Z folderu <em>/usr/share/pixmaps</em> wybieramy
+        <em>greenos_lightdm_wallpaper.png</em>. Kolejną rzeczą do ustawienia
+        jest domyślny obraz użytkowników, z pod menu wybieramy plik następnie
+        wybieramy logo Arch Linux <em>/usr/share/pixmaps/archlinix-logo.png</em>
+      </li>
+      <li>
+        Instalacja oprogramowania użytkowego.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo pacman -Syu firefox thunderbird vlc qmmp pulseaudio pulseaudio-alsa pavucontrol
+</pre>
+      </li>
+      <li>
+        Instalacja sterowników własnościowych od Nvidii.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo pacman -Syu nvidia
+[user@greenOSAE ~]$ sudo mkinitcpio -P
+</pre>
+      </li>
+      <li>
+        Instalacja oprogramowania Redshift. Program ten pomagachronić wzrok
+        podczas wieczornej pracy przy komputerze usuwając barwę niebieską - 
+        ocieplając wyświetlane kolory. Ze względów geograficznych nie wszędzie
+        na świecie jest noc, dlatego też ten program do swojego działania
+        połączenia z GPS lub ręcznego podania lokalizacji. Tak też zrobimy w
+        naszym przypadku. Podamy ręcznie współrzędne geograficzne. Najpierw 
+        jednak pobierzemy domyślną konfigurację Redshift i zapiszemy ją na
+        ścieżce: <em>~/.config/redshift/redshift.conf</em>, konfigurację można
+        pobrać z linku poniżej:
+        <a href="https://raw.githubusercontent.com/jonls/redshift/master/redshift.conf.sample">https://raw.githubusercontent.com/jonls/redshift/redshift/master/redshift.conf.sample</a>
+        W pliku w sekcji <em>[manual]</em> podajemy współrzędne geograficzne,
+        które możemy pobrać z tego odnośnika: <a href="https://location.services.mozilla.com/v1/geolocate?key=geoclue">https://location.services.mozilla.com/v1/geolocate?key=geoclue</a>.
+        Kolejną rzeczą jak została do ustawienia jeśli chodzi
+        o Redshift to jest to autostart. W ustawieniach przechozimy do 
+        <em>Sesja i uruchamianie</em>, w zakładce <em>Uruchamiane programy</em>
+        kilkamy <em>+</em> w oknie <em>Dodawanie programu</em>,w polu
+        <em>Nazwa</em> wpisujemy <em>Redshift</em>, opis można pominąć, w polu
+        <em>Polecenie</em> wpisujemy <em>/usr/bin/redshift</em>. Po ponownym
+        zalogowaniu Redshift powinien zostać uruchomiony.
+      </li>
+      <li>
+        Instalacja snap oraz ncspot. <em>Snap</em> jest rodzajem mendżera 
+        pakietów
+        dającym m.in. możliwość instalowania tego samego
+        oprogramowania na różnych dystrybucjach, z kolei
+        <em>ncspot</em> jest lekką wersją klienta serwisu
+        <em>Spotify</em>. Na Arch Linux <em>Snap</em> nie jest
+        od tak dostępny, i trzeba go zainstalować z pakietów
+        AUR. Pakiety AUR są paczkami zawierającymi kod źródłowy przygotowany do
+        kompilacji pod Arch Linux, skompilowany kod może zostać zamieniony na 
+        pakiet mendżera <em>Pacman</em> i zostać przez niego zinstalowany jak
+        każdy inny pakiet pobrany z repozytorium. Na początek ppotrzebujemy
+        oprogramowania do pobrania pakietu AUR oraz jego kompilacji:
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo pacman -Syu git base-devel
+</pre>
+        Następną czynnością jest skolonowanie repozytorium ze snapd i
+przjeście do katalogu zawierającego pobrane pliki.
+<pre class="code-block">
+[user@greenOSAE ~]$ git clone https://aur.archlinux.org/snapd.git
+[user@greenOSAE ~]$ cd snapd
+</pre>
+        Teraz przechodzimy do kompilacji z pomocą polecenia
+        <code class="code-inline">makepkg</code>. Opcja <em>-s</em> nakazuje
+        zainstalować wszystkie zależności potrzebne do zbudowania pakietu a 
+        opcja <em>-i</em> zapyta o instalacje pakietu zaraz po jego zbudowaniu.
+        Po zostając w katalogu <em>snapd</em> wywołujemy poniższe polecenie:
+<pre class="code-block">
+[user@greenOSAE ~]$ makepkg -si
+</pre> 
+        Po zbudowaniu musimy włączyć i uruchomić socket dla snapd oraz utowrzyć 
+        dowiązanie symboliczne.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo systemctl enable --now snapd.socket
+[user@greenOSAE ~]$ sudo ln -s /var/lib/snapd/snap /snap
+</pre>
+        Teraz należy zrestartować maszynę, po uruchomieniu wydajemy następujące
+        polecenie.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo snap install ncspot
+</pre>
+        Może się zdarzyć, że zostanie wyświetlony błąd 
+        <em>Too early for operations...</em>, wtedy należy wydać poniższe
+        polecenie i spróbować ponownie wydać polecenie instalacji.
+<pre class="code-block">
+[user@greenOSAE ~]$ sudo snap refresh
+</pre>
+      </li>
+      <li>
+        Ostatnią czynnościa do wykonania, pozostaje
+        zainstalować jakąś metodę wirtualizacji. Oracle VirtualBox nie jest
+        dobry rozwiązaniem jeśli chodzi o systemy Linux ze
+        względu na to iż bywa niestabilny, szczególnie te wersjwersje od 6.0.
+        Do wyboru pozostaje KVM oraz XEN. Ja przesiadłem się z VirtualBox-a na 
+        właśnie KVM i to też zainstalujemy. Instalacje rozpoczynamy od
+        zainstalowania paczek z repozytorium.
+<pre class="code-block">
+[user@greenOSAE: ~]$ sudo pacman -Syu virt-manager qemu vde2 ebetables dnsmasq bridge-utils openbsd-netcat
+</pre>
+        Następnie włączamy usługę do autostartu i uruchamiamy ją.
+<pre class="code-block">
+[user@greenOSAE: ~]$ sudo systemctl enable libvirtd.service
+[user@greenOSAE: ~]$ sudo systemctl start libvirtd.service
+</pre>
+        Kolejną rzeczą jaką należy wykonać jest odblokowanie opcji w pliku
+        <em>/etc/libvirt/libvirtd.conf</em> musimy od szukać
+i odblokować <code class="code-inline">unix_sock_group = "libvirtd"</code> oraz
+        <code class="code-inline">unix_sock_rw_perms = "0770"</code>.
+        Zapisujemy zmiany w pliku. Abyśmy mogli korzystać z
+maszyn wirtualnych jako zwykły użytkownik musimy dodać użytkownika do grupy
+        oraz ją utworzyć.
+<pre class="code-block">
+[user@greenOSAE: ~]$ sudo usermod -a -G libvirt user
+[user@greenOSAE: ~]$ newgrp libvirt
+</pre>
+        Na koniec należy zrestartować usługę.
+<pre class="code-block">
+[user@greenOSAE: ~]$ sudo systemctl restart libvirtd.service
+</pre>
+      </li>
+     </ol> 
+    </p>
+    <p>
+      Podsumowując Arch Linux jest dystrybucją na pewno skierowaną do bardziej
+      zaawansowanych użytkowników. W zamian za trudy konfiguracji mamy dostęp
+      najnowszego jądra oraz najnowszych wersji programów.
+      Dzięki staraniom deweloperów Arch-a możemy zainstalować
+      Linuxa np. na Chrombookach i wykorzytać w pełni potencjał
+      takiej maszyny. Gdzie np. na dystrybucjach pochodnych
+      Debiana jak i na samym Debianie na części (jak nie na większości) 
+      Chromebooków nie będzie działać dźwięk. Proszę nie brać tej oceny jako
+      atak wymierzony w kierunku Debiana, ponieważ nadal nie 
+      znam bardziej stablinej dystrybucji niż Debian. Wciąż
+      ze wsparciem dla starego sprzętu, czego brakuje w Arch-u czy CentOS-ie.
+    </p>
+    <p>
+      <u>Źródła:</u><br />
+      <ol>
+        <li>
+          <u>Problemy z grafiką LightDM</u>
+          <a href="https://wiki.archlinux.org/title/LightDM#Autologin_does_not_work">https://wiki.archlinux.org/title/LightDM#Autologin_does_not_work</a>
+        </li>
+        <li>
+          <u>Ustawienie tematu dla LightDM</u>
+          <a href="https://wiki.archlinux.org/title/LightDM#Greeter">https://wiki.archlinux.org/title/LightDM#Greeter</a>
+        </li>
+        <li>
+          <u>Instalacja sterowników własnościowych Nvidii</u>
+          <a href="https://wiki.archlinux.org/title/Nvidia#Installation">https://wiki.archlinux.org/title/Nvidia#Installation</a>
+        </li>
+        <li>
+          <u>O Redshift:</u>
+          <a href="https://wiki.archlinux.org/title/Redshift#Configuration">https://wiki.archlinux.org/title/Redshift#Configuration</a>
+        </li>
+        <li>
+          <u>Dodanie programu do autostartu:</u>
+          <a href="https://wiki.archlinux.org/title/XFCE#Autostart">https://wiki.archlinux.org/title/XFCE#Autostart</a>
+        </li>
+        <li>
+          <u>Instalacja Snap na Arch Linux:</u>
+          <a href="https://snapcraft.io/docs/installing-snap-on-arch-linux">https://snapcraft.io/docs/installing-snap-on-arch-linux</a>
+        </li>
+        <li>
+          <u>Instalacja KVM na Arch Linux:</u>
+          <a href="https://linuxhint.com/install_configure_kvm_archlinux">https://linuxhint.com/install_configure_kvm_archlinux</a>
+        </li>
+      </ol>
+    </p>
+    <p>
+    ~xf0r3m
+    </p>
+  </div>
+  <p style="margin: 15px; padding: 0; outline: 0;">
+	  2021; COPYLEFT; ALL RIGHTS REVERSED;
+  </p>
+
+</body>
+</html>

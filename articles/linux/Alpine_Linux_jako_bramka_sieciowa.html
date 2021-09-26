@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/png" href="https://files.morketsmerke.net/resources/mm.png">
+		<style>
+			.code-block {
+				display: block;
+				background-color: silver;
+				font-family: monospace;
+				font-weight: bolder;
+			}
+			.code-inline {
+				background-color: silver;
+				font-family: monospace;
+
+				font-weight: bolder;
+			}
+			p { text-align: justify; }
+		</style>
+	</head>
+	<body style="font-family: monospace;" >
+<pre>
+  _____ _   _ _    _    ___      _
+ / ____| \ | | |  | |  / / |    (_)
+| |  __|  \| | |  | | / /| |     _ _ __  _   ___  __
+| | |_ | . ` | |  | |/ / | |    | | '_ \| | | \ \/ /
+| |__| | |\  | |__| / /  | |____| | | | | |_| |>  <
+ \_____|_| \_|\____/_/   |______|_|_| |_|\__,_/_/\_\
+</pre>
+	<p style="margin: 15px; padding: 0; outline: 0; font-size: 18pt;">
+		&#9760;&nbsp;<a href="https://morketsmerke.net">morketsmerke</a>&nbsp;&#9760;
+	</p>
+	<div style="margin-left: auto; margin-right: auto; width: 80%;">
+
+		<h1 style="text-align: center;">Alpine Linux jako bramka sieciowa</h1>
+		<p>
+			Ostatnio budowaliśmy bramkę w oparciu o system OpenBSD, nie było to jakoś trudne zdanie. Teraz zajemiemy się tym samym zagadniem co poprzednio,
+			tylko że z systemem GNU/Linux. Do tego celu wybrałem kolejną dystrybucje, która jest nieco bardzie podrasowana jeśli chodzi o bezpieczeństwo,
+			prosto z Norwegii, <strong>Alpine Linux</strong>. Ciekawą rzeczą w tej dystrybucji jest to że możemy zainstalać usługę, która umożliwi nam kontrolowanie
+			naszego systemu z poziomu przeglądarki. Nie ma się co napalać, jak szczerbaty na suchary, ale to zawsze coś. Może pojawi się tutaj jakiś
+			materiał odnośnie <em>ACF</em>, bo tak to się dokładnie nazywa. Pozwole sobie tutaj na nawiązania do materiału o robieniu bramki z OpenBSD, pozowoli
+			to ograniczyć wypełniacz merytoryczny, przez co ten artykuł będzie znacznie krótszy.
+		</p>
+		<p><strong>
+			Uwaga! Wszystkie znajdujące się tu polecenia wykonujemy z poziomu użytkownika <em>root</em>.
+		</strong></p>
+		<ol>
+			<li>Instalacja systemu
+				<p>
+				Instalacja Alpine Linux została już tutaj przedstawiona jednym z umieszczonych tutaj materiałów. Podobnie jak na OpenBSD jeśli czytamy
+				 to jeszcze przed rozpoczęciem jakich kolwiek prac, to ustawienia interfejsów sieciowych możemy skonfigurować już na poziomie instalatora.
+				</p>
+			</li>
+			<li>Instalacja niezbędnego oprogramowania
+				<p>
+					Menedżerem pakietów w Alpine jest program <strong>APK</strong>, jak rozszerzenie paczek oprogramowania na Androidzie. Dystrybucja po instalacji pozostaje natywnie pusta, aby dać użytkownikowi jak największe pole do manewru. Do zainstalowania mamy aż trzy pakiety: ISC DHCPD - <em>dhcp</em>, <em>dnsmasq</em>, <em>iptables</em>. Aby użyć polecenia <code class="code-inline">apk</code> do instalacji pakietów należy użyć opcji <code class="code-inline">add</code> następnie po niej podać nazwę interesującego nas pakietu.
+				</p>
+<pre class="code-block">
+# apk add dhcp dnsmasq iptables
+</pre>
+				<p>
+					Po zainstalowaniu potrzebnych usług oraz programów, możemy przejść do ich konfiguracji. Na początek, tak samo jak przy OpenBSD skupimy się na DHCP.
+				</p>
+			</li>
+			<li>Konfiguracja DHCP
+				<p>
+					Aby daemon DHCP mógł odczytać nasz plik konfiguracji musimy nazwać <em>dhcpd.conf</em> i umieścić w katalogu <em>/etc/dhcpd</em>. Konfiguracja tutaj jest identyczna do tej jaką tworzliśmy na dla OpenBSD, ponieważ jest to ten sam program. Dla leniwych, którym nie chce się przejrzeć tamtego artykułu i dla samej zapachajdziury, opisze linia po linii konfiguracje DHCP.
+				</p>
+<pre class="code-block">
+subnet 192.168.0.0 netmask 255.255.255.0 {
+	range 192.168.0.100 192.168.0.199;
+	option routers 192.168.0.1;
+	option domain-name "morketsmerke.net";
+	option domain-name-servers 192.168.0.1;
+}
+</pre>
+				<p>
+					Pierwsza linia otwiera nam deklaracje pod sieci, po słowie <code class="code-inline">subnet</code> występuje adres sieci, z kolei po słowie <code class="code-inline">netmask</code> maska sieciowa. W następnej linii deklarowany jest zakres adresów przeznaczonych dla hostów w naszej sieci. <code class="code-inline">option routers</code> będzie przekazywać taki parametr adres bramy domyślnej, <code class="code-inline">option domain-name</code> zawiera sufiks DNS dla naszych hostów a ostatnia linia <code class="code-inline">option domain-name-servers</code> zawiera adresy serwerów DNS, może być ich wiele, jednak nie wszystkie systemu obsługują więcej niż dwa adresy. W przykłdzie znajduje się tylko jedna sieć jeśli nasza bramka ma obsługiwać więcej sieci to deklaracje można powtórzyć oczywiście dostosowując ją do adresacji zastosowanej w owej sieci.
+				</p>
+				<p>
+					Jako ciekawostkę albo nieco bardzie zaawansowaną konfiguracje podam że rezerwacje adresów, które wyglądają o tak:
+				</p>
+<pre class="code-block">
+host admin-komputer {
+	hardware ethernet 00:de:ad:be:ef:00;
+	fixed-address 192.168.0.10;
+	option host-name "admtop";
+}
+</pre>
+				<p>
+					Rezerwacje mogą zupełnie wybiegać poza zakres, a daemon i tak nada zarezerwowane adresy tym komputerom.
+				</p>
+			</li>
+			<li>Konfiguracja daemona DHCP<br />
+				<p>
+					Do uruchomienia daemona w Alpine Linux wykorzystywany jest jeszcze jeden plik <em>/etc/conf.d/dhcpd</em>. W tym pliku musimy ustawić dwie zmienne <code class="code-inline">DHCPD_CONF</code> oraz <code class="code-inline">DHCPD_IFACE</code>, aby je ustawić nadajemy im wartość i usuwamy poprzedzający je znak komentarza. Jakie wartości należy im nadać? Otóż zmienna <code class="code-inline">DHCPD_CONF</code> przechowuje ścieżkę to pliku konfiguracyjnego. Wartość tej zmiennej może już wskazywać na nasz pliki, jeśli nie to należy to skorygować. Zmienna <code class="code-inline">DHCPD_IFACE</code>, przechowuje interfejsy na jakich nasłuchiwać ma nasze DHCPD.
+				</p>
+<pre class="code-block">
+DHCPD_CONF="/etc/dhcpd/dhcpd.conf";
+DHCPD_IFACE="eth0 eth1";
+</pre>
+				</p>
+			</li>
+			<li>Ustawienie interfejsu dla dnsmasq<br />
+				<p>
+					Podobnie do konfiguracji zastosowanej w OpenBSD i w tym przypadku jeśli dnsmasq ma nam służyć tylko i wyłącznie jako maskarada DNS lub przekaźnik (bo taką rolę pełni) to nie potrzeba w zasadzie nic konfigurować, jedne co należy zrobić to wskazać odpowiednie interfejsy. W pliku konfiguracyjnym odnajdujemy opcje <code class="code-inline">#interface</code> jest ujęta w komentarz aby ją włączyć musimy usunąć znak komentarza, a po znaku równości (<strong>=</strong>) wpisać nazwę interfejsu.
+				</p>
+<pre class=="code-block">
+interface=eth1
+</pre>
+				<p>
+					Następnie zapisujemy oraz restartujemy usługę, tutaj warto wspomnieć, że Alpine Linux jest dystrybucją opartą na <strong>OpenRC</strong>, a więc restart usługi odbywa się jak w starych systemach GNU/Linux.
+				</p>
+<pre class="code-block">
+# /etc/init.d/dnsmasq restart
+</pre>
+				<p>
+					Identycznie jak przy OpenBSD, jeśli chcemy wymusić nasłuchiwanie na konkretnym interfejsie, musimy odblokować opcję <code class="code-inline">bind-interfaces</code>.
+				</p>
+<pre class="code-block">
+bind-interfaces
+</pre>
+			</li>
+			<li>Ewentualne wpisy do <em>/etc/hosts</em>*<br />
+				<p>
+					Wykorzystując plik <em>/etc/hosts</em> na naszej bramce możemy zdefiniować nazwy domenowe dla naszych serwerów w sieci lokalnej. Przeważnie w konfiguracji odpytywania UNIX-y skonstrułowane są w taki sposób że na początku sprawdzają zawartość tego pliku, i jeśli nie znajdą odpowiedniego dla zapytania rekordu, kierują zapytanie do swoich adresów DNS. Format wpisu jest taki sam dla wszystkich UNIX-ów, składa się on z trzech części: adresu IP, FQDN (pełnej nazwy domenowej), hostname (nazwy hosta). Nazw hosta możemy używać tylko jeśli na naszym komputerze został został zdefiniowany sufiks DNS. Przykładowy wpis znajduje się poniżej:
+				</p>
+<pre class="code-blocks">
+192.168.0.10 serwer.morketsmerke.net serwer
+</pre>
+			</li>
+			<li>NAT<br />
+				<p>
+					Podbnie jak w przypadku <em>PF</em> (pakiet firewalla na OpenBSD) <strong>NAT</strong> to jedna reguła. Reguła, która do poprawnego działania wymaga przestawienia opcji jądra, opcji przekazywania pakietów z jednego interfejsu na drugi wewnątrz systemu. Poniżej znajdują się polecenia jakie należy wykonać aby uruchomić NAT.
+				</p>
+<pre class="code-block">
+# iptables -t NAT -A POSTROUTING -o eth0 -j MASQUERADE
+# echo 1 &gt; /proc/sys/net/ipv4/ip_forward
+</pre>
+				<p>
+					Pierwsze polecenie jest ustawieniem reguły pakietu zapory sieciowej na GNU/Linux, którą jest <strong>iptables</strong>. Przy iptables reguły dodawane są na bieżąco, a co za tym idzie będą tak długo załadowane jak długo uruchomiony jest system. To jest jedna z różnic pomiędzy PF a iptables. Do trwałego zapisania reguł będzie potrzebny nam zewnętrzny pakiet. Tym zajmiemy się na koniec. Teraz przejdźmy samej reguły. Przełącznik <code class="code-inline">-t</code> wskazuje nam tablice - zbióry reguł stosowane na podstawie przeznaczenia pakietów. Na przykład reguły podejmujące działania pakietach wygenerowanych przez bramkę lub do niej zaadresowane zostaną zdefiniowane w innej tablicy niż te które mają działać na pakietach, które przez tą bramkę przechodzą. Nas będą interesować tylko tablice <code class="code-inline">filter</code> (tablica domyślna), która zajmuje się pakietami z i do bramki oraz tablica <code class="code-inline">nat</code>, zajmująca się pakietami przecodzącymi przez bramkę.
+					W iptables są jeszcze dwie tablice, jednak na nie są nam one potrzebne także ich opis pominę. Opcja <code class="code-inline">-A</code> spowoduje dopisanie naszej reguły na końcu łańcucha. Łańcuchy są to podzbiory reguł, których cechą charkterystyczną jest konkretny moment podróży pakietu za nim dotrze do aplikacji, której dane przenosi lub zostanie przesłany dalej w głąb innych sieci. Najproście zobrazować to sobie w ten sposób, że do kiedy pakiet dociera do systemu zawsze na początku trafia do łańcucha <code class="code-inline">PREROUTING</code> tablicy <code class="code-inline">nat</code> w tym łańcuchu dokonywane są wszelkie zmiany (akcje) dla pakietu, kiedy tylko się pojawi, może zostać przekierowany albo do łańcucha <code class="code-inline">INPUT</code> albo do łańcucha <code class="code-inline">FORWARD</code> tablicy <code class="code-inline">filter</code> łańcuch <code class="code-inline">INPUT</code> przeznaczony jest dla pakietów kierowanych dla tego komputera,
+					z kolei łańcuch <code class="code-inline">FORWARD</code> dla tych pakietów, które przechodzą przez ten komputer. Jeśli pakiet trafił do <code class="code-inline">INPUT</code>, wtedy trafia lokalnego procesu.
+					Proces może odpowiedzieć, wygerowany przez proces pakiet trafia najpierw do odpowiedniego łańcucha tj. <code class="code-inline">OUTPUT</code> tablicy <code class="code-inline">filter</code> następnie do łańcucha <code class="code-inline">OUTPUT</code> tablicy <code class="code-inline">nat</code>, gdzie mogą być dokonywane zmiany dla wygenerowaych pakietów.
+					Tutaj obydwie ścieżki łączą się ponieważ pakiety opuszaczające łańcuch <code class="code-inline">FORWARD</code> oraz łańcuch <code class="code-inline">OUTPUT</code> tablicy <code class="code-inline">nat</code> są przetwarzane ostatecznie w łańcuchu <code class="code-inline">POSTROUTING</code> tablicy <code class="code-inline">nat</code>, czyli momencie gdy mają opuścić ten komputer. Tutaj właśnie wykorzystywana jest akcja <code class="code-inline">MASQUERADE</code>, która zapisaliśmy w pierwszym poleceniu, po łańcuchu umieszczony jest przełącznik <code class="code-inline">-o</code> określający interfejs wyjściowy (nasz interfejs podłączony do internetu).
+					Ostatnią składową jest reguły jest cel/akcja (po przełączniku <code class="code-inline">-j</code>) podejmowana na pakiecie, kiedy zostaje dopasowany do reguły.
+					Podsumowując pakiety przechodzą z tablicy do tablicy z łańcucha do łańcucha w poszukiwaniu pasujących reguł, kiedy reguła zostanie dopasowana wtedy podejmowany jest dla pakietu cel/akcja, może być ona <code class="code-inline">ACCEPT</code> lub <code class="code-inline">DROP</code> lub specjalna jak <code class="code-inline">MASQUERADE</code>.
+				</p>
+				<p>
+					Odnośnie zamiany adresów czyli właśnie NAT-u to istnieją dwa sposoby. Jeśli nasz adres na interfejsie podłączonym do sieci rozległej/Internetu jest przydzielany dynamicznie powinniśmy użyć własnie <code class="code-inline">MASQUERADE</code> jeśli nasz adres jest stały, to wtenczas należało by użyć <code class="code-inline">SNAT</code> a następnie podać za pomocą dodatkowej opcji <code class="code-inline">--to-source</code> adres jakie należy użyć podczas NAT-u.
+				</p>
+<pre class="code-block">
+# iptables -t nat -A POSTROUTING -o eth0 -j SNAT --to-source 10.20.40.34
+</pre>
+				<p>
+					Drugie polecnie nie jest już tak skomplikowane, uruchamia ono przekazywanie pakietów wewnątrz systemu.
+				</p>
+			</li>
+			<li>Zapisanie reguł do pliku<br />
+				<p>
+					Niestety reguły iptables są przechowywane w łańcuchach do momentu kolejnego uruchomienia komputera. W Alpine Linux wraz z iptables otrzymujemy polecenie <code class="code-inline">iptables-save</code>, którego uruchomienie spowoduje wyświetlenie nam tablic z łańcuchami w formacie, który poźniej pozwoli na ich automatyczne przywrócenie, aby całość zadziałała po ustawieniu NAT-u należy przekierować wyjście tego właśnie polecenia do pliku <em>/etc/iptables/rules-save</em>. Przy zapisie reguł warto pamiętać o tym że włączenie przekazywania pakietów w systemie też powinno się odbywać automatycznie. Możemy zrobić to na dwa sposoby. Pierwszy z nich to dopisanie opcji <code class="code-inline">net.ipv4.ip_forward = 1</code> do pliku <em>/etc/sysctl.d/00-alpine.conf</em> lub skorzystać z konfiguracji iptables w <em>/etc/conf.d/iptables</em>, gdzie powinniśmy znaleźć opcje <code class="code-inline">IPFORWARD</code>, która należy przestawić na <code class="code-inline">yes</code>.
+				</p>
+			</li>
+			<li>Ustawienie autostartu usług
+				<p>
+					Alpine Linux jest dystrybucją, która została nieco inaczej zbudowana niż te powszechnie nam znane, w których programem typu init jest moloch systemd, który automatycznie załącza znane usługi do startu wraz z systemem, najwyżej usługa nie wystartuje z powodu braku konfiguracji. Tutaj programem typu init jest OpenRC, gdzie sytuacja nie jest już tak kolorowa. Nie ma jednak tragedii - "Not great, not terrible". Aby włączyć uruchamie konkretnych usług przy użyciu OpenRC jako programu init, wystarczy wydać konkretne polecenie jak te przedstawione poniżej:
+				</p>
+<pre class="code-block">
+# rc-update add dnsmasq default
+# rc-update add dhcpd default
+# rc-update add iptables default
+</pre>
+<br />
+				</p>
+			</li>
+		</ol>
+		<p>
+		Jak widać na powyższej liście stworzenie prostej bramki opartej dobry system GNU/Linux, nie jest jakoś bardzo skomplikowane, wymaga wydania kilku poleceń oraz wyedytowania kilku plików. Dla mnie, gdzie mam trochę wprawy dużo rzeczy wydaje się banalnych, ale jeśli spojrzał bym kilka lat wstecz to już samo zagadnienie budowania bramki na GNU/Linux było by sporą abstrakcją, co dopiero na systemie, który trochę odbiega nurtu głównych dystrybucji takich jak GNU/Linux Debian czy CentOS. Serio, dla mnie łatwiejsze było nauczenie się zupełnie innego systemu operacyjnego oraz zupełnie innego pakietu zapory niż zabranie się za iptables, i mimochodem znając nieco bardziej iptables niż wtedy to pozostał bym wierny OpenBSD oraz PF.
+		</p>
+		<p>
+     		~xf0r3m
+		</p>
+
+			</div>
+			<p style="margin: 15px; padding: 0; outline: 0;">
+				2021; COPYLEFT; ALL RIGHT REVERSED;
+			</p>
+
+			</body>
+		</html>
